@@ -30,13 +30,15 @@ class ConversationAdapter extends TypeAdapter<Conversation> {
       summary: fields[10] as String?,
       lastSummarizedMessageCount: fields[11] as int?,
       scrollOffset: fields[12] as double?,
+      scrollMessageId: fields[13] as String?,
+      scrollMessageOffset: fields[14] as double?,
     );
   }
 
   @override
   void write(BinaryWriter writer, Conversation obj) {
     writer
-      ..writeByte(13)
+      ..writeByte(15)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -62,7 +64,11 @@ class ConversationAdapter extends TypeAdapter<Conversation> {
       ..writeByte(11)
       ..write(obj.lastSummarizedMessageCount)
       ..writeByte(12)
-      ..write(obj.scrollOffset);
+      ..write(obj.scrollOffset)
+      ..writeByte(13)
+      ..write(obj.scrollMessageId)
+      ..writeByte(14)
+      ..write(obj.scrollMessageOffset);
   }
 
   @override

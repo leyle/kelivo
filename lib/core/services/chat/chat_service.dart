@@ -472,6 +472,38 @@ class ChatService extends ChangeNotifier {
     // No notifyListeners - scroll offset is UI state, not data
   }
 
+  /// Saves message-based scroll position for a conversation (silently, no notifyListeners).
+  /// [messageId] is the first visible message ID, [messageOffset] is its offset from viewport top.
+  Future<void> saveScrollPosition(String conversationId, String? messageId, double messageOffset) async {
+    if (!_initialized) return;
+
+    if (_draftConversations.containsKey(conversationId)) {
+      final draft = _draftConversations[conversationId]!;
+      draft.scrollMessageId = messageId;
+      draft.scrollMessageOffset = messageOffset;
+      return;
+    }
+
+    final conversation = _conversationsBox.get(conversationId);
+    if (conversation == null) return;
+
+    conversation.scrollMessageId = messageId;
+    conversation.scrollMessageOffset = messageOffset;
+    await conversation.save();
+  }
+
+  /// Gets message-based scroll position for a conversation.
+  /// Returns (messageId, messageOffset) or (null, 0.0) if no saved position.
+  (String?, double) getScrollPosition(String conversationId) {
+    Conversation? convo;
+    if (_draftConversations.containsKey(conversationId)) {
+      convo = _draftConversations[conversationId];
+    } else {
+      convo = _conversationsBox.get(conversationId);
+    }
+    return (convo?.scrollMessageId, convo?.scrollMessageOffset ?? 0.0);
+  }
+
   Future<void> togglePinConversation(String id) async {
     if (!_initialized) return;
 

@@ -51,6 +51,14 @@ class Conversation extends HiveObject {
   @HiveField(12)
   double scrollOffset;
 
+  // Message-based scroll position: first visible message ID (null means use scrollOffset)
+  @HiveField(13)
+  String? scrollMessageId;
+
+  // Offset of the first visible message from viewport top (pixels)
+  @HiveField(14)
+  double scrollMessageOffset;
+
   Conversation({
     String? id,
     required this.title,
@@ -65,6 +73,8 @@ class Conversation extends HiveObject {
     this.summary,
     int? lastSummarizedMessageCount,
     double? scrollOffset,
+    this.scrollMessageId,
+    double? scrollMessageOffset,
   })  : id = id ?? const Uuid().v4(),
         createdAt = createdAt ?? DateTime.now(),
         updatedAt = updatedAt ?? DateTime.now(),
@@ -74,7 +84,8 @@ class Conversation extends HiveObject {
         truncateIndex = truncateIndex ?? -1,
         versionSelections = versionSelections ?? <String, int>{},
         lastSummarizedMessageCount = lastSummarizedMessageCount ?? 0,
-        scrollOffset = scrollOffset ?? -1.0;
+        scrollOffset = scrollOffset ?? -1.0,
+        scrollMessageOffset = scrollMessageOffset ?? 0.0;
 
   Conversation copyWith({
     String? id,
@@ -91,6 +102,9 @@ class Conversation extends HiveObject {
     int? lastSummarizedMessageCount,
     bool clearSummary = false,
     double? scrollOffset,
+    String? scrollMessageId,
+    double? scrollMessageOffset,
+    bool clearScrollMessageId = false,
   }) {
     return Conversation(
       id: id ?? this.id,
@@ -107,6 +121,8 @@ class Conversation extends HiveObject {
       lastSummarizedMessageCount:
           lastSummarizedMessageCount ?? this.lastSummarizedMessageCount,
       scrollOffset: scrollOffset ?? this.scrollOffset,
+      scrollMessageId: clearScrollMessageId ? null : (scrollMessageId ?? this.scrollMessageId),
+      scrollMessageOffset: scrollMessageOffset ?? this.scrollMessageOffset,
     );
   }
 
@@ -125,6 +141,8 @@ class Conversation extends HiveObject {
       'summary': summary,
       'lastSummarizedMessageCount': lastSummarizedMessageCount,
       'scrollOffset': scrollOffset,
+      'scrollMessageId': scrollMessageId,
+      'scrollMessageOffset': scrollMessageOffset,
     };
   }
 
@@ -143,6 +161,8 @@ class Conversation extends HiveObject {
       summary: json['summary'] as String?,
       lastSummarizedMessageCount: json['lastSummarizedMessageCount'] as int? ?? 0,
       scrollOffset: (json['scrollOffset'] as num?)?.toDouble() ?? -1.0,
+      scrollMessageId: json['scrollMessageId'] as String?,
+      scrollMessageOffset: (json['scrollMessageOffset'] as num?)?.toDouble() ?? 0.0,
     );
   }
 }

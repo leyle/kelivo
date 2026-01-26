@@ -1057,19 +1057,68 @@ class HomePageController extends ChangeNotifier {
   void _scrollToBottom({bool animate = true}) => _scrollCtrl.scrollToBottom(animate: animate);
   void _scrollToBottomSoon({bool animate = true}) => _scrollCtrl.scrollToBottomSoon(animate: animate);
 
-  /// Save current scroll position to the current conversation.
+  /// Save current scroll position to the current conversation using message-based positioning.
+  /// This finds the first visible message and saves its ID + offset from viewport top.
   void _saveCurrentScrollPosition() {
     try {
       final convoId = currentConversation?.id;
       if (convoId == null) return;
       if (!_scrollController.hasClients) return;
-      final offset = _scrollController.position.pixels;
-      _viewModel.saveScrollOffset(convoId, offset);
+      if (messages.isEmpty) return;
+
+      // Find the first visible message in the viewport
+      final (messageId, messageOffset) = _findFirstVisibleMessage();
+      if (messageId != null) {
+        _viewModel.saveScrollPosition(convoId, messageId, messageOffset);
+      } else {
+        // Fallback to pixel-based offset if no message found
+        final offset = _scrollController.position.pixels;
+        _viewModel.saveScrollOffset(convoId, offset);
+      }
     } catch (_) {}
   }
 
+  /// Find the first visible message in the viewport.
+  /// Returns (messageId, offsetFromViewportTop) or (null, 0.0) if not found.
+  (String?, double) _findFirstVisibleMessage() {
+    if (!_scrollController.hasClients) return (null, 0.0);
+
+    final viewportTop = _scrollController.position.pixels;
+    final viewportBottom = viewportTop + _scrollController.position.viewportDimension;
+
+    // Iterate through messages to find the first one visible in the viewport
+    for (final message in messages) {
+      final key = _messageKeys[message.id];
+      if (key == null) continue;
+
+      final ctx = key.currentContext;
+      if (ctx == null) continue;
+
+      final renderBox = ctx.findRenderObject() as RenderBox?;
+      if (renderBox == null || !renderBox.hasSize) continue;
+
+      // Get the message's position relative to the scroll view
+      final ancestor = _scrollController.position.context.storageContext.findRenderObject();
+      if (ancestor == null) continue;
+
+      try {
+        final messageTop = renderBox.localToGlobal(Offset.zero, ancestor: ancestor).dy;
+        final messageBottom = messageTop + renderBox.size.height;
+
+        // Check if this message is at least partially visible
+        if (messageBottom > viewportTop && messageTop < viewportBottom) {
+          // Return the offset of this message from the viewport top
+          return (message.id, messageTop - viewportTop);
+        }
+      } catch (_) {
+        continue;
+      }
+    }
+    return (null, 0.0);
+  }
+
   /// Restore saved scroll position for the current conversation.
-  /// If no position saved (scrollOffset == -1.0), scrolls to bottom.
+  /// Uses message-based positioning with smart retry (no fixed delay).
   void _restoreScrollPosition({bool animate = false}) {
     try {
       final convoId = currentConversation?.id;
@@ -1077,40 +1126,141 @@ class HomePageController extends ChangeNotifier {
         _scrollToBottom(animate: animate);
         return;
       }
+
+      // Try message-based position first
+      final (savedMessageId, savedMessageOffset) = _viewModel.getScrollPosition(convoId);
+
+      if (savedMessageId != null) {
+        _restoreToMessage(savedMessageId, savedMessageOffset, animate: animate);
+        return;
+      }
+
+      // Fallback to pixel-based offset
       final savedOffset = _viewModel.getScrollOffset(convoId);
       if (savedOffset < 0) {
-        // No saved position, scroll to bottom
         _scrollToBottom(animate: animate);
         return;
       }
-      // Restore saved position after frames to ensure list is fully built
-      void doRestore() {
-        if (!_scrollController.hasClients) return;
-        final maxExtent = _scrollController.position.maxScrollExtent;
-        // If maxExtent is 0 or too small, the list hasn't built yet
-        if (maxExtent < 10) return;
-        final targetOffset = savedOffset.clamp(0.0, maxExtent);
+
+      _restoreToOffset(savedOffset, animate: animate);
+    } catch (_) {
+      _scrollToBottom(animate: animate);
+    }
+  }
+
+  /// Restore scroll position to a specific message with smart retry.
+  void _restoreToMessage(String messageId, double messageOffset, {bool animate = false, int retryCount = 0}) {
+    const maxRetries = 10;  // Max ~500ms total (10 * 50ms average frame time)
+
+    void tryRestore() {
+      if (!_scrollController.hasClients) return;
+      if (!_scrollController.hasClients) {
+        // Controller not attached yet, retry after next frame
+        if (retryCount < maxRetries) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _restoreToMessage(messageId, messageOffset, animate: animate, retryCount: retryCount + 1);
+          });
+        }
+        return;
+      }
+
+      // Find the message by ID
+      final messageIndex = messages.indexWhere((m) => m.id == messageId);
+      if (messageIndex < 0) {
+        // Message not found (maybe deleted), scroll to bottom
+        _scrollToBottom(animate: animate);
+        return;
+      }
+
+      // Check if the message widget is built
+      final key = _messageKeys[messageId];
+      final ctx = key?.currentContext;
+      final renderBox = ctx?.findRenderObject() as RenderBox?;
+
+      if (renderBox == null || !renderBox.hasSize) {
+        // Widget not built yet, retry after next frame
+        if (retryCount < maxRetries) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _restoreToMessage(messageId, messageOffset, animate: animate, retryCount: retryCount + 1);
+          });
+        } else {
+          // Max retries reached, fall back to approximate position
+          _scrollToBottom(animate: animate);
+        }
+        return;
+      }
+
+      // Calculate target scroll offset
+      try {
+        final ancestor = _scrollController.position.context.storageContext.findRenderObject();
+        if (ancestor == null) {
+          _scrollToBottom(animate: animate);
+          return;
+        }
+
+        final messageTop = renderBox.localToGlobal(Offset.zero, ancestor: ancestor).dy;
+        final currentOffset = _scrollController.position.pixels;
+
+        // Target offset = current offset + (where message is now) - (where we want it)
+        final targetOffset = currentOffset + messageTop - messageOffset;
+        final clampedOffset = targetOffset.clamp(0.0, _scrollController.position.maxScrollExtent);
+
         if (animate) {
           _scrollController.animateTo(
-            targetOffset,
+            clampedOffset,
             duration: const Duration(milliseconds: 200),
             curve: Curves.easeOutCubic,
           );
         } else {
-          _scrollController.jumpTo(targetOffset);
+          _scrollController.jumpTo(clampedOffset);
         }
+      } catch (_) {
+        _scrollToBottom(animate: animate);
       }
-      // First attempt after immediate frame
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        doRestore();
-      });
-      // Second attempt after a short delay (for lazy-loaded content)
-      Future.delayed(const Duration(milliseconds: 150), () {
-        doRestore();
-      });
-    } catch (_) {
-      _scrollToBottom(animate: animate);
     }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) => tryRestore());
+  }
+
+  /// Restore scroll position to a pixel offset with smart retry.
+  void _restoreToOffset(double savedOffset, {bool animate = false, int retryCount = 0}) {
+    const maxRetries = 10;
+
+    void tryRestore() {
+      if (!_scrollController.hasClients) return;
+      if (!_scrollController.hasClients) {
+        if (retryCount < maxRetries) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _restoreToOffset(savedOffset, animate: animate, retryCount: retryCount + 1);
+          });
+        }
+        return;
+      }
+
+      final maxExtent = _scrollController.position.maxScrollExtent;
+      if (maxExtent < 10) {
+        // List hasn't built yet, retry
+        if (retryCount < maxRetries) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _restoreToOffset(savedOffset, animate: animate, retryCount: retryCount + 1);
+          });
+        }
+        return;
+      }
+
+      final targetOffset = savedOffset.clamp(0.0, maxExtent);
+      if (animate) {
+        _scrollController.animateTo(
+          targetOffset,
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutCubic,
+        );
+      } else {
+        _scrollController.jumpTo(targetOffset);
+      }
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) => tryRestore());
   }
 
   (double, double) _getViewportBounds() {
