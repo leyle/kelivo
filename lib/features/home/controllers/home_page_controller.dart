@@ -138,6 +138,9 @@ class HomePageController extends ChangeNotifier {
   // ignore: unused_field
   bool _appInForeground = true;
 
+  // Debounced scroll position saving
+  Timer? _scrollPositionSaveTimer;
+
   // Sidebar state (tablet/desktop)
   bool _tabletSidebarOpen = true;
   bool _rightSidebarOpen = true;
@@ -332,6 +335,18 @@ class HomePageController extends ChangeNotifier {
       getAutoScrollEnabled: () => _context.read<SettingsProvider>().autoScrollEnabled,
       getAutoScrollIdleSeconds: () => _context.read<SettingsProvider>().autoScrollIdleSeconds,
     );
+    // Add listener to save scroll position when user stops scrolling
+    _scrollController.addListener(_onScrollChanged);
+  }
+
+  /// Called when scroll position changes. Debounces and saves position.
+  void _onScrollChanged() {
+    // Cancel any pending save
+    _scrollPositionSaveTimer?.cancel();
+    // Schedule a save after scroll stops (500ms debounce)
+    _scrollPositionSaveTimer = Timer(const Duration(milliseconds: 500), () {
+      _saveCurrentScrollPosition();
+    });
   }
 
   void _initializeProviders() {
@@ -1168,7 +1183,6 @@ class HomePageController extends ChangeNotifier {
     const maxRetries = 10;  // Max ~500ms total (10 * 50ms average frame time)
 
     void tryRestore() {
-      if (!_scrollController.hasClients) return;
       if (!_scrollController.hasClients) {
         // Controller not attached yet, retry after next frame
         if (retryCount < maxRetries) {
@@ -1242,8 +1256,8 @@ class HomePageController extends ChangeNotifier {
     const maxRetries = 10;
 
     void tryRestore() {
-      if (!_scrollController.hasClients) return;
       if (!_scrollController.hasClients) {
+        // Controller not attached yet, retry after next frame
         if (retryCount < maxRetries) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             _restoreToOffset(savedOffset, animate: animate, retryCount: retryCount + 1);
@@ -1355,6 +1369,8 @@ class HomePageController extends ChangeNotifier {
   void dispose() {
     _convoFadeController.dispose();
     _mcpProvider?.removeListener(_onMcpChanged);
+    _scrollPositionSaveTimer?.cancel();
+    _scrollController.removeListener(_onScrollChanged);
     _scrollCtrl.dispose();
     try { _chatActionSub?.cancel(); } catch (_) {}
     _chatController.dispose();
