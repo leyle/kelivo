@@ -328,6 +328,7 @@ class _ActionEditorDialogState extends State<_ActionEditorDialog> {
   late TextEditingController _nameController;
   late TextEditingController _pathController;
   late String _selectedIcon;
+  late ActionDisplayMode _selectedDisplayMode;
 
   @override
   void initState() {
@@ -335,6 +336,7 @@ class _ActionEditorDialogState extends State<_ActionEditorDialog> {
     _nameController = TextEditingController(text: widget.existing?.name ?? '');
     _pathController = TextEditingController(text: widget.existing?.scriptPath ?? '');
     _selectedIcon = widget.existing?.iconName ?? 'terminal';
+    _selectedDisplayMode = widget.existing?.displayMode ?? ActionDisplayMode.iconAndText;
   }
 
   @override
@@ -422,6 +424,31 @@ class _ActionEditorDialogState extends State<_ActionEditorDialog> {
                 );
               }).toList(),
             ),
+            const SizedBox(height: 16),
+            Text('Display Mode', style: TextStyle(fontSize: 12, color: cs.onSurface.withValues(alpha: 0.7))),
+            const SizedBox(height: 8),
+            SegmentedButton<ActionDisplayMode>(
+              segments: const [
+                ButtonSegment(
+                  value: ActionDisplayMode.iconOnly,
+                  label: Text('Icon'),
+                ),
+                ButtonSegment(
+                  value: ActionDisplayMode.iconAndText,
+                  label: Text('Icon + Text'),
+                ),
+                ButtonSegment(
+                  value: ActionDisplayMode.textOnly,
+                  label: Text('Text'),
+                ),
+              ],
+              selected: {_selectedDisplayMode},
+              onSelectionChanged: (set) => setState(() => _selectedDisplayMode = set.first),
+              style: ButtonStyle(
+                visualDensity: VisualDensity.compact,
+                textStyle: WidgetStatePropertyAll(TextStyle(fontSize: 12)),
+              ),
+            ),
           ],
         ),
       ),
@@ -437,8 +464,8 @@ class _ActionEditorDialogState extends State<_ActionEditorDialog> {
             if (name.isEmpty || path.isEmpty) return;
             
             final action = widget.existing != null
-                ? widget.existing!.copyWith(name: name, scriptPath: path, iconName: _selectedIcon)
-                : SelectionAction.create(name: name, scriptPath: path, iconName: _selectedIcon);
+                ? widget.existing!.copyWith(name: name, scriptPath: path, iconName: _selectedIcon, displayMode: _selectedDisplayMode)
+                : SelectionAction.create(name: name, scriptPath: path, iconName: _selectedIcon, displayMode: _selectedDisplayMode);
             Navigator.of(context).pop(action);
           },
           child: Text(isEditing ? 'Save' : 'Add'),

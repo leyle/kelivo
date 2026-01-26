@@ -1,6 +1,16 @@
 import 'dart:convert';
 import 'package:uuid/uuid.dart';
 
+/// Display mode for selection action buttons in the toolbar.
+enum ActionDisplayMode {
+  /// Show only the icon
+  iconOnly,
+  /// Show only the text label
+  textOnly,
+  /// Show both icon and text label
+  iconAndText,
+}
+
 /// Represents a configurable action for the selection action bar.
 /// Each action can run a custom script when triggered.
 class SelectionAction {
@@ -9,6 +19,7 @@ class SelectionAction {
   final String iconName;
   final String scriptPath;
   final bool enabled;
+  final ActionDisplayMode displayMode;
 
   const SelectionAction({
     required this.id,
@@ -16,6 +27,7 @@ class SelectionAction {
     required this.iconName,
     required this.scriptPath,
     this.enabled = true,
+    this.displayMode = ActionDisplayMode.iconAndText,
   });
 
   /// Create a new action with a generated UUID
@@ -24,6 +36,7 @@ class SelectionAction {
     required String iconName,
     required String scriptPath,
     bool enabled = true,
+    ActionDisplayMode displayMode = ActionDisplayMode.iconAndText,
   }) {
     return SelectionAction(
       id: const Uuid().v4(),
@@ -31,6 +44,7 @@ class SelectionAction {
       iconName: iconName,
       scriptPath: scriptPath,
       enabled: enabled,
+      displayMode: displayMode,
     );
   }
 
@@ -39,6 +53,7 @@ class SelectionAction {
     String? iconName,
     String? scriptPath,
     bool? enabled,
+    ActionDisplayMode? displayMode,
   }) {
     return SelectionAction(
       id: id,
@@ -46,6 +61,7 @@ class SelectionAction {
       iconName: iconName ?? this.iconName,
       scriptPath: scriptPath ?? this.scriptPath,
       enabled: enabled ?? this.enabled,
+      displayMode: displayMode ?? this.displayMode,
     );
   }
 
@@ -56,6 +72,7 @@ class SelectionAction {
       'iconName': iconName,
       'scriptPath': scriptPath,
       'enabled': enabled,
+      'displayMode': displayMode.name,
     };
   }
 
@@ -66,7 +83,21 @@ class SelectionAction {
       iconName: json['iconName'] as String,
       scriptPath: json['scriptPath'] as String,
       enabled: json['enabled'] as bool? ?? true,
+      displayMode: _parseDisplayMode(json['displayMode'] as String?),
     );
+  }
+
+  static ActionDisplayMode _parseDisplayMode(String? value) {
+    switch (value) {
+      case 'iconOnly':
+        return ActionDisplayMode.iconOnly;
+      case 'textOnly':
+        return ActionDisplayMode.textOnly;
+      case 'iconAndText':
+        return ActionDisplayMode.iconAndText;
+      default:
+        return ActionDisplayMode.iconAndText;
+    }
   }
 
   static List<SelectionAction> listFromJson(String jsonString) {

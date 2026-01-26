@@ -70,12 +70,21 @@ class _SelectableWithActionsState extends State<SelectableWithActions> {
         onRunAction: _runAction,
         onCopy: _copyToClipboard,
         onDismiss: _hideOverlay,
+        onHoverChanged: _handleBarHoverChanged,
       ),
     );
     Overlay.of(context).insert(_overlayEntry!);
 
     // Auto-hide after 5 seconds of inactivity
     _hideTimer = Timer(const Duration(seconds: 5), _hideOverlay);
+  }
+
+  void _handleBarHoverChanged(bool isHovering) {
+    _hideTimer?.cancel();
+    if (!isHovering) {
+      // Restart timer when cursor leaves the bar
+      _hideTimer = Timer(const Duration(seconds: 5), _hideOverlay);
+    }
   }
 
   Future<void> _runAction(SelectionAction action) async {
@@ -190,6 +199,7 @@ class _SelectionActionBar extends StatefulWidget {
     required this.onRunAction,
     required this.onCopy,
     required this.onDismiss,
+    required this.onHoverChanged,
   });
 
   final Offset position;
@@ -199,6 +209,7 @@ class _SelectionActionBar extends StatefulWidget {
   final Future<void> Function(SelectionAction) onRunAction;
   final VoidCallback onCopy;
   final VoidCallback onDismiss;
+  final ValueChanged<bool> onHoverChanged;
 
   @override
   State<_SelectionActionBar> createState() => _SelectionActionBarState();
@@ -275,34 +286,61 @@ class _SelectionActionBarState extends State<_SelectionActionBar> {
 
     return Positioned(
       left: widget.position.dx - barWidth / 2,
-      top: widget.position.dy - 50,
+      top: widget.position.dy - 70, // Position higher to avoid blocking text
       child: MouseRegion(
-        onEnter: (_) => setState(() => _isHovering = true),
-        onExit: (_) => setState(() => _isHovering = false),
+        onEnter: (_) {
+          setState(() => _isHovering = true);
+          widget.onHoverChanged(true);
+        },
+        onExit: (_) {
+          setState(() => _isHovering = false);
+          widget.onHoverChanged(false);
+        },
         child: TapRegion(
           onTapOutside: _isLoading ? null : (_) => widget.onDismiss(),
           child: Material(
             type: MaterialType.transparency,
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(14),
               child: BackdropFilter(
-                filter: ui.ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                filter: ui.ImageFilter.blur(sigmaX: 40, sigmaY: 40),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                   decoration: BoxDecoration(
-                    color: isDark
-                        ? Colors.black.withOpacity(0.7)
-                        : Colors.white.withOpacity(0.85),
-                    borderRadius: BorderRadius.circular(12),
+                    // iOS 26-style glass: truly transparent with blur
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: isDark
+                          ? [
+                              Colors.white.withValues(alpha: 0.10),
+                              Colors.white.withValues(alpha: 0.05),
+                            ]
+                          : [
+                              Colors.white.withValues(alpha: 0.25),
+                              Colors.white.withValues(alpha: 0.15),
+                            ],
+                    ),
+                    borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                      color: cs.outlineVariant.withOpacity(0.3),
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.15)
+                          : Colors.white.withValues(alpha: 0.8),
                       width: 0.5,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.15),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
+                        color: Colors.black.withValues(alpha: 0.12),
+                        blurRadius: 20,
+                        spreadRadius: 0,
+                        offset: const Offset(0, 6),
+                      ),
+                      // Inner glow for depth
+                      BoxShadow(
+                        color: Colors.white.withValues(alpha: isDark ? 0.05 : 0.3),
+                        blurRadius: 1,
+                        spreadRadius: 0,
+                        offset: const Offset(0, -0.5),
                       ),
                     ],
                   ),
@@ -336,6 +374,10 @@ class _SelectionActionBarState extends State<_SelectionActionBar> {
     final isLoading = _loadingActionId == action.id;
     final isSuccess = _successActionId == action.id;
     
+    // Determine what to show based on display mode
+    final showIcon = action.displayMode != ActionDisplayMode.textOnly;
+    final showLabel = action.displayMode != ActionDisplayMode.iconOnly;
+    
     return _ActionButton(
       icon: isSuccess ? LucideIcons.check : (isLoading ? null : _getIconForAction(action)),
       isLoading: isLoading,
@@ -343,6 +385,8 @@ class _SelectionActionBarState extends State<_SelectionActionBar> {
       onTap: () => _handleAction(action),
       enabled: !_isLoading && !isSuccess,
       successColor: isSuccess ? Colors.green : null,
+      showIcon: showIcon || isLoading || isSuccess,
+      showLabel: showLabel || isLoading || isSuccess,
     );
   }
 
@@ -351,7 +395,7 @@ class _SelectionActionBarState extends State<_SelectionActionBar> {
       width: 1,
       height: 20,
       margin: const EdgeInsets.symmetric(horizontal: 4),
-      color: cs.outlineVariant.withOpacity(0.3),
+      color: cs.outlineVariant.withValues(alpha: 0.3),
     );
   }
 }
@@ -364,6 +408,8 @@ class _ActionButton extends StatefulWidget {
     this.isLoading = false,
     this.enabled = true,
     this.successColor,
+    this.showIcon = true,
+    this.showLabel = true,
   });
 
   final IconData? icon;
@@ -372,6 +418,8 @@ class _ActionButton extends StatefulWidget {
   final bool isLoading;
   final bool enabled;
   final Color? successColor;
+  final bool showIcon;
+  final bool showLabel;
 
   @override
   State<_ActionButton> createState() => _ActionButtonState();
@@ -410,7 +458,7 @@ class _ActionButtonState extends State<_ActionButton> with SingleTickerProviderS
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final effectiveColor = widget.successColor ?? 
-        (_hovering && widget.enabled ? cs.primary : cs.onSurface.withOpacity(widget.enabled ? 0.8 : 0.4));
+        (_hovering && widget.enabled ? cs.primary : cs.onSurface.withValues(alpha: widget.enabled ? 0.8 : 0.4));
     
     return MouseRegion(
       onEnter: widget.enabled ? (_) => setState(() => _hovering = true) : null,
@@ -422,7 +470,7 @@ class _ActionButtonState extends State<_ActionButton> with SingleTickerProviderS
           duration: const Duration(milliseconds: 150),
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
-            color: _hovering && widget.enabled ? cs.primary.withOpacity(0.1) : Colors.transparent,
+            color: _hovering && widget.enabled ? cs.primary.withValues(alpha: 0.1) : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Row(
@@ -437,21 +485,23 @@ class _ActionButtonState extends State<_ActionButton> with SingleTickerProviderS
                     color: effectiveColor,
                   ),
                 )
-              else if (widget.icon != null)
+              else if (widget.showIcon && widget.icon != null)
                 Icon(
                   widget.icon,
                   size: 16,
                   color: effectiveColor,
                 ),
-              const SizedBox(width: 6),
-              Text(
-                widget.label,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: effectiveColor,
+              if (widget.showIcon && widget.showLabel && (widget.icon != null || widget.isLoading))
+                const SizedBox(width: 6),
+              if (widget.showLabel)
+                Text(
+                  widget.label,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: effectiveColor,
+                  ),
                 ),
-              ),
             ],
           ),
         ),
