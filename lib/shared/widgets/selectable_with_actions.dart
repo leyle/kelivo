@@ -381,7 +381,7 @@ class _SelectionActionBarState extends State<_SelectionActionBar> {
     return _ActionButton(
       icon: isSuccess ? LucideIcons.check : (isLoading ? null : _getIconForAction(action)),
       isLoading: isLoading,
-      label: isSuccess ? 'Done' : (isLoading ? 'Running...' : action.name),
+      label: isSuccess ? 'Done' : action.name, // Keep original label during loading
       onTap: () => _handleAction(action),
       enabled: !_isLoading && !isSuccess,
       successColor: isSuccess ? Colors.green : null,
