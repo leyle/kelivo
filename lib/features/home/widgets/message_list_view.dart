@@ -254,8 +254,10 @@ class MessageListView extends StatelessWidget {
     final message = messages[index];
     final r = reasoning[message.id];
     final t = translations[message.id];
-    final chatScale = context.watch<SettingsProvider>().chatFontScale;
+    final settings = context.watch<SettingsProvider>();
     final assistant = context.watch<AssistantProvider>().currentAssistant;
+    // Use assistant's chatFontScale if set, otherwise fall back to global setting
+    final chatScale = assistant?.chatFontScale ?? settings.chatFontScale;
     final useAssist = assistant?.useAssistantAvatar == true;
     final showDivider = truncCollapsed >= 0 && index == truncCollapsed;
     final gid = (message.groupId ?? message.id);

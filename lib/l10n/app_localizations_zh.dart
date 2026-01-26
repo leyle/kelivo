@@ -673,6 +673,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get assistantEditChatBackgroundDescription => '设置助手聊天页面的背景图片';
 
   @override
+  String get assistantEditChatFontScaleTitle => '聊天字体大小';
+
+  @override
+  String get assistantEditChatFontScaleDescription =>
+      '为此助手的聊天消息和输入区域设置自定义字体大小。禁用时使用全局设置。';
+
+  @override
+  String get assistantEditChatFontScaleSampleText => '这是一段用于预览字体大小的示例文本。';
+
+  @override
   String get assistantEditChooseImageButton => '选择背景图片';
 
   @override
@@ -4286,6 +4296,16 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get assistantEditChatBackgroundDescription => '设置助手聊天页面的背景图片';
 
   @override
+  String get assistantEditChatFontScaleTitle => '聊天字体大小';
+
+  @override
+  String get assistantEditChatFontScaleDescription =>
+      '为此助手的聊天消息和输入区域设置自定义字体大小。禁用时使用全局设置。';
+
+  @override
+  String get assistantEditChatFontScaleSampleText => '这是一段用于预览字体大小的示例文本。';
+
+  @override
   String get assistantEditChooseImageButton => '选择背景图片';
 
   @override
@@ -7862,6 +7882,16 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get assistantEditChatBackgroundDescription => '設定助理聊天頁面的背景圖片';
+
+  @override
+  String get assistantEditChatFontScaleTitle => '聊天字體大小';
+
+  @override
+  String get assistantEditChatFontScaleDescription =>
+      '為此助理的聊天訊息和輸入區域設定自訂字體大小。停用時使用全域設定。';
+
+  @override
+  String get assistantEditChatFontScaleSampleText => '這是一段用於預覽字體大小的範例文字。';
 
   @override
   String get assistantEditChooseImageButton => '選擇背景圖片';

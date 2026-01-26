@@ -1917,6 +1917,83 @@ class _BasicSettingsTabState extends State<_BasicSettingsTab> {
             ),
           ),
         ),
+        const SizedBox(height: 16),
+
+        // Chat font scale (separate iOS card)
+        Container(
+          decoration: BoxDecoration(
+            color: isDark ? Colors.white10 : Colors.white.withOpacity(0.96),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: cs.outlineVariant.withOpacity(isDark ? 0.08 : 0.06),
+              width: 0.6,
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Lucide.CaseSensitive, size: 18, color: cs.onSurface),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        l10n.assistantEditChatFontScaleTitle,
+                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                    IosSwitch(
+                      value: a.chatFontScale != null,
+                      onChanged: (v) async {
+                        if (v) {
+                          await context.read<AssistantProvider>().updateAssistant(
+                            a.copyWith(chatFontScale: 1.0),
+                          );
+                        } else {
+                          await context.read<AssistantProvider>().updateAssistant(
+                            a.copyWith(clearChatFontScale: true),
+                          );
+                        }
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  l10n.assistantEditChatFontScaleDescription,
+                  style: TextStyle(fontSize: 12, color: cs.onSurface.withOpacity(0.7)),
+                ),
+                if (a.chatFontScale != null) ...[
+                  const SizedBox(height: 12),
+                  _SliderTileNew(
+                    value: a.chatFontScale!.clamp(0.5, 1.5),
+                    min: 0.5,
+                    max: 1.5,
+                    divisions: 20,
+                    label: '${(a.chatFontScale! * 100).round()}%',
+                    onChanged: (v) => context
+                        .read<AssistantProvider>()
+                        .updateAssistant(a.copyWith(chatFontScale: v)),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.white.withOpacity(0.04) : const Color(0xFFF2F3F5),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      l10n.assistantEditChatFontScaleSampleText,
+                      style: TextStyle(fontSize: 16 * a.chatFontScale!),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -6846,6 +6923,61 @@ class _DesktopAssistantBasicPaneState extends State<_DesktopAssistantBasicPane> 
                     ),
                     const SizedBox(height: 12),
                     ClipRRect(borderRadius: BorderRadius.circular(10), child: _BackgroundPreview(path: a.background!)),
+                  ],
+                ],
+              ),
+            ),
+            sectionDivider(),
+            // Chat font scale
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(l10n.assistantEditChatFontScaleTitle, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                      ),
+                      IosSwitch(
+                        value: a.chatFontScale != null,
+                        onChanged: (v) async {
+                          if (v) {
+                            await context.read<AssistantProvider>().updateAssistant(a.copyWith(chatFontScale: 1.0));
+                          } else {
+                            await context.read<AssistantProvider>().updateAssistant(a.copyWith(clearChatFontScale: true));
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    l10n.assistantEditChatFontScaleDescription,
+                    style: TextStyle(fontSize: 12, color: cs.onSurface.withOpacity(0.6)),
+                  ),
+                  if (a.chatFontScale != null) ...[
+                    const SizedBox(height: 12),
+                    _SliderTileNew(
+                      value: a.chatFontScale!.clamp(0.5, 1.5),
+                      min: 0.5,
+                      max: 1.5,
+                      divisions: 20,
+                      label: '${(a.chatFontScale! * 100).round()}%',
+                      onChanged: (v) => context.read<AssistantProvider>().updateAssistant(a.copyWith(chatFontScale: v)),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: isDark ? Colors.white.withOpacity(0.04) : const Color(0xFFF2F3F5),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        l10n.assistantEditChatFontScaleSampleText,
+                        style: TextStyle(fontSize: 16 * a.chatFontScale!),
+                      ),
+                    ),
                   ],
                 ],
               ),

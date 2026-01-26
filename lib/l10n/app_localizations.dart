@@ -1361,6 +1361,24 @@ abstract class AppLocalizations {
   /// **'Set a background image for this assistant'**
   String get assistantEditChatBackgroundDescription;
 
+  /// No description provided for @assistantEditChatFontScaleTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat Font Size'**
+  String get assistantEditChatFontScaleTitle;
+
+  /// No description provided for @assistantEditChatFontScaleDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Set a custom font size for this assistant\'s chat messages and input area. When disabled, uses global setting.'**
+  String get assistantEditChatFontScaleDescription;
+
+  /// No description provided for @assistantEditChatFontScaleSampleText.
+  ///
+  /// In en, this message translates to:
+  /// **'This is a sample text to preview the font size.'**
+  String get assistantEditChatFontScaleSampleText;
+
   /// No description provided for @assistantEditChooseImageButton.
   ///
   /// In en, this message translates to:

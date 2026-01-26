@@ -179,6 +179,7 @@ Future<File?> _renderAndSaveMessageImage(
 }) async {
   final cs = Theme.of(context).colorScheme;
   final settings = context.read<SettingsProvider>();
+  final assistant = context.read<AssistantProvider>().currentAssistant;
   final l10n = AppLocalizations.of(context)!;
   // Pre-render mermaid diagrams to images for export
   try {
@@ -188,6 +189,8 @@ Future<File?> _renderAndSaveMessageImage(
 
   // Desktop uses larger width and lower pixel ratio for better proportions
   final bool isDesktop = Platform.isWindows || Platform.isLinux || Platform.isMacOS;
+  // Use assistant's chatFontScale if set, otherwise fall back to global setting
+  final chatFontScale = assistant?.chatFontScale ?? settings.chatFontScale;
 
   final content = ExportCaptureScope(
     enabled: true,
@@ -195,7 +198,7 @@ Future<File?> _renderAndSaveMessageImage(
     message: message,
     title: context.read<ChatService>().getConversation(message.conversationId)?.title ?? l10n.messageExportSheetDefaultTitle,
     cs: cs,
-    chatFontScale: settings.chatFontScale,
+    chatFontScale: chatFontScale,
     showThinkingAndToolCards: showThinkingAndToolCards,
     expandThinkingContent: expandThinkingContent,
     isDesktop: isDesktop,
@@ -231,6 +234,7 @@ Future<File?> _renderAndSaveChatImage(
 }) async {
   final cs = Theme.of(context).colorScheme;
   final settings = context.read<SettingsProvider>();
+  final assistant = context.read<AssistantProvider>().currentAssistant;
   final l10n = AppLocalizations.of(context)!;
   // Pre-render all mermaid diagrams found in selected messages
   try {
@@ -243,13 +247,15 @@ Future<File?> _renderAndSaveChatImage(
 
   // Desktop uses larger width and lower pixel ratio for better proportions
   final bool isDesktop = Platform.isWindows || Platform.isLinux || Platform.isMacOS;
+  // Use assistant's chatFontScale if set, otherwise fall back to global setting
+  final chatFontScale = assistant?.chatFontScale ?? settings.chatFontScale;
 
   final content = ExportCaptureScope(
     enabled: true,
     child: _ExportedChatImage(
     conversationTitle: (conversation.title.trim().isNotEmpty) ? conversation.title : l10n.messageExportSheetDefaultTitle,
     cs: cs,
-    chatFontScale: settings.chatFontScale,
+    chatFontScale: chatFontScale,
     messages: messages,
     timestamp: conversation.updatedAt,
     showThinkingAndToolCards: showThinkingAndToolCards,

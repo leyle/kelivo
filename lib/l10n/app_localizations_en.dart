@@ -690,6 +690,17 @@ class AppLocalizationsEn extends AppLocalizations {
       'Set a background image for this assistant';
 
   @override
+  String get assistantEditChatFontScaleTitle => 'Chat Font Size';
+
+  @override
+  String get assistantEditChatFontScaleDescription =>
+      'Set a custom font size for this assistant\'s chat messages and input area. When disabled, uses global setting.';
+
+  @override
+  String get assistantEditChatFontScaleSampleText =>
+      'This is a sample text to preview the font size.';
+
+  @override
   String get assistantEditChooseImageButton => 'Choose Image';
 
   @override

@@ -31,6 +31,8 @@ class Assistant {
   final List<PresetMessage> presetMessages;
   // Regex replacement rules
   final List<AssistantRegex> regexRules;
+  // Chat font scale (null = use global setting; 0.5-1.5)
+  final double? chatFontScale;
 
   const Assistant({
     required this.id,
@@ -57,6 +59,7 @@ class Assistant {
     this.enableRecentChatsReference = false,
     this.presetMessages = const <PresetMessage>[],
     this.regexRules = const <AssistantRegex>[],
+    this.chatFontScale,
   });
 
   Assistant copyWith({
@@ -84,6 +87,7 @@ class Assistant {
     bool? enableRecentChatsReference,
     List<PresetMessage>? presetMessages,
     List<AssistantRegex>? regexRules,
+    double? chatFontScale,
     bool clearChatModel = false,
     bool clearAvatar = false,
     bool clearTemperature = false,
@@ -91,6 +95,7 @@ class Assistant {
     bool clearThinkingBudget = false,
     bool clearMaxTokens = false,
     bool clearBackground = false,
+    bool clearChatFontScale = false,
   }) {
     return Assistant(
       id: id ?? this.id,
@@ -118,6 +123,7 @@ class Assistant {
           enableRecentChatsReference ?? this.enableRecentChatsReference,
       presetMessages: presetMessages ?? this.presetMessages,
       regexRules: regexRules ?? this.regexRules,
+      chatFontScale: clearChatFontScale ? null : (chatFontScale ?? this.chatFontScale),
     );
   }
 
@@ -146,6 +152,7 @@ class Assistant {
         'enableRecentChatsReference': enableRecentChatsReference,
         'presetMessages': PresetMessage.encodeList(presetMessages),
         'regexRules': regexRules.map((e) => e.toJson()).toList(),
+        'chatFontScale': chatFontScale,
     };
 
   static Assistant fromJson(Map<String, dynamic> json) => Assistant(
@@ -213,6 +220,7 @@ class Assistant {
           }
           return const <AssistantRegex>[];
         })(),
+        chatFontScale: (json['chatFontScale'] as num?)?.toDouble(),
       );
 
   static String encodeList(List<Assistant> list) => jsonEncode(list.map((e) => e.toJson()).toList());

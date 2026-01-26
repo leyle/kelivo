@@ -1399,7 +1399,12 @@ class _ChatInputBarState extends State<ChatInputBar> with WidgetsBindingObserver
                           //   );
                           // }
 
-                            final enterToSend = context.watch<SettingsProvider>().enterToSendOnMobile;
+                            final settings = context.watch<SettingsProvider>();
+                            final assistant = context.watch<AssistantProvider>().currentAssistant;
+                            final enterToSend = settings.enterToSendOnMobile;
+                            // Use assistant's chatFontScale if set, otherwise fall back to global setting
+                            final chatFontScale = assistant?.chatFontScale ?? settings.chatFontScale;
+                            final baseFontSize = (Platform.isWindows || Platform.isLinux || Platform.isMacOS) ? 14.0 : 15.0;
                             return GestureDetector(
                               behavior: HitTestBehavior.deferToChild,
                               // onSecondaryTapDown: (details) {
@@ -1423,13 +1428,13 @@ class _ChatInputBarState extends State<ChatInputBar> with WidgetsBindingObserver
                                 autofocus: false,
                                 decoration: InputDecoration(
                                   hintText: _hint(context),
-                                  hintStyle: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.45)),
+                                  hintStyle: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.45), fontSize: baseFontSize * chatFontScale),
                                   border: InputBorder.none,
                                   contentPadding: const EdgeInsets.symmetric(vertical: 2),
                                 ),
                                 style: TextStyle(
                                   color: theme.colorScheme.onSurface,
-                                  fontSize: (Platform.isWindows || Platform.isLinux || Platform.isMacOS) ? 14 : 15,
+                                  fontSize: baseFontSize * chatFontScale,
                                 ),
                                 cursorColor: theme.colorScheme.primary,
                               ),
