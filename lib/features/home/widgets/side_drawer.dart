@@ -1246,6 +1246,15 @@ class _SideDrawerState extends State<SideDrawer> with TickerProviderStateMixin {
       _closeAssistantPicker();
     }
     final ap = context.read<AssistantProvider>();
+    final chatService = context.read<ChatService>();
+
+    // Save current conversation as the last conversation for the previous assistant
+    final previousAssistantId = ap.currentAssistantId;
+    final currentConvoId = chatService.currentConversationId;
+    if (previousAssistantId != null && currentConvoId != null) {
+      await ap.setLastConversation(previousAssistantId, currentConvoId);
+    }
+
     await ap.setCurrentAssistant(assistant.id);
     // Desktop: optionally switch to Topics tab per user preference
     try {
@@ -1258,20 +1267,29 @@ class _SideDrawerState extends State<SideDrawer> with TickerProviderStateMixin {
     if (forceNewChat) {
       widget.onNewConversation?.call(closeDrawer: closeDrawer);
     } else {
-      // Jump to the most recent conversation for this assistant if any,
-      // otherwise create a new conversation.
+      // Try to restore the last opened conversation for this assistant,
+      // otherwise fall back to most recent, or create new.
       try {
-        final chatService = context.read<ChatService>();
         final all = chatService.getAllConversations();
-        // Filter conversations owned by this assistant and pick the newest
-        final recent = all
-            .where((c) => c.assistantId == assistant.id)
-            .toList();
-        if (recent.isNotEmpty) {
-          // getAllConversations is already sorted by updatedAt desc
-          widget.onSelectConversation?.call(recent.first.id, closeDrawer: closeDrawer);
-        } else {
+        // Filter conversations owned by this assistant
+        final assistantConvos = all.where((c) => c.assistantId == assistant.id).toList();
+
+        if (assistantConvos.isEmpty) {
           widget.onNewConversation?.call(closeDrawer: closeDrawer);
+        } else {
+          // Check if there's a saved last conversation for this assistant
+          final lastConvoId = ap.getLastConversation(assistant.id);
+          final lastConvo = lastConvoId != null
+              ? assistantConvos.where((c) => c.id == lastConvoId).firstOrNull
+              : null;
+
+          if (lastConvo != null) {
+            // Restore the last opened conversation
+            widget.onSelectConversation?.call(lastConvo.id, closeDrawer: closeDrawer);
+          } else {
+            // Fall back to most recent (getAllConversations is sorted by updatedAt desc)
+            widget.onSelectConversation?.call(assistantConvos.first.id, closeDrawer: closeDrawer);
+          }
         }
       } catch (_) {
         // Fallback: new conversation on any error

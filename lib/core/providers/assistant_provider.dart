@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:io';
+import 'dart:convert';
 import '../../utils/sandbox_path_resolver.dart';
 import '../models/assistant.dart';
 import '../models/assistant_regex.dart';
@@ -13,9 +14,14 @@ import '../../utils/app_directories.dart';
 class AssistantProvider extends ChangeNotifier {
   static const String _assistantsKey = 'assistants_v1';
   static const String _currentAssistantKey = 'current_assistant_id_v1';
+  static const String _lastConversationPerAssistantKey = 'last_conversation_per_assistant_v1';
 
   final List<Assistant> _assistants = <Assistant>[];
   String? _currentAssistantId;
+
+  /// Tracks the last opened conversation for each assistant.
+  /// Key: assistantId, Value: conversationId
+  final Map<String, String> _lastConversationPerAssistant = <String, String>{};
 
   List<Assistant> get assistants => List.unmodifiable(_assistants);
   String? get currentAssistantId => _currentAssistantId;
@@ -71,6 +77,18 @@ class AssistantProvider extends ChangeNotifier {
       _currentAssistantId = savedId;
     } else {
       _currentAssistantId = null;
+    }
+    // Restore last conversation per assistant map
+    final lastConvoRaw = prefs.getString(_lastConversationPerAssistantKey);
+    if (lastConvoRaw != null && lastConvoRaw.isNotEmpty) {
+      try {
+        final Map<String, dynamic> decoded = Map<String, dynamic>.from(
+          jsonDecode(lastConvoRaw) as Map,
+        );
+        _lastConversationPerAssistant
+          ..clear()
+          ..addAll(decoded.map((k, v) => MapEntry(k, v.toString())));
+      } catch (_) {}
     }
     notifyListeners();
   }
@@ -175,6 +193,35 @@ class AssistantProvider extends ChangeNotifier {
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_currentAssistantKey, id);
+  }
+
+  /// Save the last opened conversation for an assistant.
+  Future<void> setLastConversation(String assistantId, String conversationId) async {
+    _lastConversationPerAssistant[assistantId] = conversationId;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_lastConversationPerAssistantKey, jsonEncode(_lastConversationPerAssistant));
+  }
+
+  /// Get the last opened conversation for an assistant.
+  /// Returns null if no last conversation is recorded.
+  String? getLastConversation(String assistantId) {
+    return _lastConversationPerAssistant[assistantId];
+  }
+
+  /// Remove a conversation from the last conversation tracking (when conversation is deleted).
+  Future<void> removeLastConversation(String conversationId) async {
+    final keysToRemove = <String>[];
+    _lastConversationPerAssistant.forEach((assistantId, convoId) {
+      if (convoId == conversationId) {
+        keysToRemove.add(assistantId);
+      }
+    });
+    if (keysToRemove.isEmpty) return;
+    for (final key in keysToRemove) {
+      _lastConversationPerAssistant.remove(key);
+    }
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_lastConversationPerAssistantKey, jsonEncode(_lastConversationPerAssistant));
   }
 
   Assistant? getById(String id) {

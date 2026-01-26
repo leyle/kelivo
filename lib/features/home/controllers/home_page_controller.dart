@@ -501,6 +501,9 @@ class HomePageController extends ChangeNotifier {
     notifyListeners();
     try { await WidgetsBinding.instance.endOfFrame; } catch (_) {}
 
+    // Save as last conversation for the assistant
+    _saveLastConversationForAssistant();
+
     // Restore scroll position or scroll to bottom if none saved
     _restoreScrollPosition(animate: false);
 
@@ -512,6 +515,18 @@ class HomePageController extends ChangeNotifier {
         _inputFocus.requestFocus();
       });
     }
+  }
+
+  /// Save the current conversation as the last opened conversation for its assistant.
+  void _saveLastConversationForAssistant() {
+    try {
+      final convo = currentConversation;
+      if (convo == null) return;
+      final assistantId = convo.assistantId;
+      if (assistantId == null) return;
+      final ap = _context.read<AssistantProvider>();
+      ap.setLastConversation(assistantId, convo.id);
+    } catch (_) {}
   }
 
   Future<void> createNewConversationAnimated() async {
