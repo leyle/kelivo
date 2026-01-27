@@ -127,6 +127,13 @@ class HomePageController extends ChangeNotifier {
   // Message widget keys for navigation
   final Map<String, GlobalKey> _messageKeys = <String, GlobalKey>{};
 
+  // Per-conversation restoration timestamps - prevents saves during restore.
+  // Key is conversation ID, value is when restoration started.
+  final Map<String, DateTime> _scrollRestoreTimestamps = {};
+  
+  // How long to block saves after a restoration (ms)
+  static const int _scrollRestoreBlockMs = 2000;
+
   // Selection mode
   bool _selecting = false;
   final Set<String> _selectedItems = <String>{};
@@ -343,6 +350,28 @@ class HomePageController extends ChangeNotifier {
   void _onScrollChanged() {
     // Cancel any pending save
     _scrollPositionSaveTimer?.cancel();
+    
+    // Log the current scroll position for debugging
+    final currentOffset = _scrollController.hasClients ? _scrollController.position.pixels : -1;
+    final maxOffset = _scrollController.hasClients ? _scrollController.position.maxScrollExtent : -1;
+    debugPrint('[ScrollPos] SCROLL: offset=$currentOffset / max=$maxOffset');
+    
+    // Clear the restoration timestamp after a brief initial period.
+    // This allows the user's manual scrolling to override the restored position.
+    // We use a short delay (300ms) to let the initial restoration jump settle.
+    final convoId = currentConversation?.id;
+    if (convoId != null) {
+      final restoreTime = _scrollRestoreTimestamps[convoId];
+      if (restoreTime != null) {
+        final elapsed = DateTime.now().difference(restoreTime).inMilliseconds;
+        // After 300ms, assume user is manually scrolling, clear the block
+        if (elapsed > 300) {
+          debugPrint('[ScrollPos] CLEARING timestamp for ${convoId.substring(0, 8)} (user scrolled after ${elapsed}ms)');
+          _scrollRestoreTimestamps.remove(convoId);
+        }
+      }
+    }
+    
     // Schedule a save after scroll stops (500ms debounce)
     _scrollPositionSaveTimer = Timer(const Duration(milliseconds: 500), () {
       _saveCurrentScrollPosition();
@@ -503,8 +532,14 @@ class HomePageController extends ChangeNotifier {
     try { await _viewModel.flushCurrentConversationProgress(); } catch (_) {}
     if (currentConversation?.id == id) return;
 
+    // Cancel any pending debounced scroll save to prevent it from overwriting
+    // the position we're about to save
+    _scrollPositionSaveTimer?.cancel();
+    _scrollPositionSaveTimer = null;
+
     // Save current scroll position before switching
-    _saveCurrentScrollPosition();
+    debugPrint('[ScrollPos] SWITCH: from ${currentConversation?.id?.substring(0, 8)} to ${id.substring(0, 8)}');
+    _saveCurrentScrollPosition(explicit: true);
 
     if (!isDesktopPlatform) {
       try { await _convoFadeController.reverse(); } catch (_) {}
@@ -1087,22 +1122,45 @@ class HomePageController extends ChangeNotifier {
   void _scrollToBottom({bool animate = true}) => _scrollCtrl.scrollToBottom(animate: animate);
   void _scrollToBottomSoon({bool animate = true}) => _scrollCtrl.scrollToBottomSoon(animate: animate);
 
-  /// Save current scroll position to the current conversation using message-based positioning.
-  /// This finds the first visible message and saves its ID + offset from viewport top.
-  void _saveCurrentScrollPosition() {
+  /// Save current scroll position to the current conversation using pixel offset.
+  /// This is more reliable than message-based positioning since ListView is lazy-loaded.
+  /// 
+  /// [explicit] - If true, bypasses the restoration window block (used for switches).
+  /// Auto-saves are blocked during restoration to prevent saving drifted positions.
+  void _saveCurrentScrollPosition({bool explicit = false}) {
     try {
       final convoId = currentConversation?.id;
       if (convoId == null) return;
       if (!_scrollController.hasClients) return;
-      if (messages.isEmpty) return;
 
-      // Find the first visible message in the viewport
-      final (messageId, messageOffset) = _findFirstVisibleMessage();
-      if (messageId != null) {
-        _viewModel.saveScrollPosition(convoId, messageId, messageOffset);
+      // Only block auto-saves during restoration window, not explicit saves
+      if (!explicit) {
+        final restoreTime = _scrollRestoreTimestamps[convoId];
+        if (restoreTime != null) {
+          final elapsed = DateTime.now().difference(restoreTime).inMilliseconds;
+          if (elapsed < _scrollRestoreBlockMs) {
+            debugPrint('[ScrollPos] AUTO-SAVE BLOCKED for ${convoId.substring(0, 8)} (${elapsed}ms < ${_scrollRestoreBlockMs}ms)');
+            return;
+          }
+          // Clear expired timestamp
+          _scrollRestoreTimestamps.remove(convoId);
+        }
+      }
+
+      final pos = _scrollController.position;
+      final offset = pos.pixels;
+      final maxExtent = pos.maxScrollExtent;
+      
+      // If at or near bottom, save special marker (-2.0) to indicate "at bottom"
+      // This handles the case where maxScrollExtent changes between save and restore
+      const bottomTolerance = 50.0;
+      final isAtBottom = (maxExtent - offset) <= bottomTolerance;
+      
+      if (isAtBottom) {
+        debugPrint('[ScrollPos] SAVING for ${convoId.substring(0, 8)}: AT_BOTTOM (offset=$offset, max=$maxExtent)${explicit ? " (explicit)" : ""}');
+        _viewModel.saveScrollOffset(convoId, -2.0); // Special marker for "at bottom"
       } else {
-        // Fallback to pixel-based offset if no message found
-        final offset = _scrollController.position.pixels;
+        debugPrint('[ScrollPos] SAVING for ${convoId.substring(0, 8)}: offset=$offset${explicit ? " (explicit)" : ""}');
         _viewModel.saveScrollOffset(convoId, offset);
       }
     } catch (_) {}
@@ -1116,8 +1174,9 @@ class HomePageController extends ChangeNotifier {
     final viewportTop = _scrollController.position.pixels;
     final viewportBottom = viewportTop + _scrollController.position.viewportDimension;
 
-    // Iterate through messages to find the first one visible in the viewport
-    for (final message in messages) {
+    // Iterate through collapsed messages (which match rendered widgets with GlobalKeys)
+    final collapsedMessages = collapseVersions(messages);
+    for (final message in collapsedMessages) {
       final key = _messageKeys[message.id];
       if (key == null) continue;
 
@@ -1148,7 +1207,7 @@ class HomePageController extends ChangeNotifier {
   }
 
   /// Restore saved scroll position for the current conversation.
-  /// Uses message-based positioning with smart retry (no fixed delay).
+  /// Uses pixel-based positioning which works reliably with lazy-loaded ListView.
   void _restoreScrollPosition({bool animate = false}) {
     try {
       final convoId = currentConversation?.id;
@@ -1157,21 +1216,26 @@ class HomePageController extends ChangeNotifier {
         return;
       }
 
-      // Try message-based position first
-      final (savedMessageId, savedMessageOffset) = _viewModel.getScrollPosition(convoId);
-
-      if (savedMessageId != null) {
-        _restoreToMessage(savedMessageId, savedMessageOffset, animate: animate);
-        return;
-      }
-
-      // Fallback to pixel-based offset
       final savedOffset = _viewModel.getScrollOffset(convoId);
-      if (savedOffset < 0) {
+      
+      // -1.0 means no saved position, scroll to bottom
+      if (savedOffset == -1.0) {
+        debugPrint('[ScrollPos] RESTORE for ${convoId.substring(0, 8)}: NO_SAVED_POSITION, scrolling to bottom');
         _scrollToBottom(animate: animate);
         return;
       }
-
+      
+      // -2.0 is special marker meaning "at bottom"
+      if (savedOffset == -2.0) {
+        debugPrint('[ScrollPos] RESTORE for ${convoId.substring(0, 8)}: AT_BOTTOM marker, scrolling to bottom');
+        // Set restoration timestamp to block saves while content loads
+        _scrollRestoreTimestamps[convoId] = DateTime.now();
+        // Use repeated scroll-to-bottom since content keeps loading and expanding
+        _restoreToBottom(convoId, animate: animate);
+        return;
+      }
+      
+      debugPrint('[ScrollPos] RESTORE for ${convoId.substring(0, 8)}: offset=$savedOffset');
       _restoreToOffset(savedOffset, animate: animate);
     } catch (_) {
       _scrollToBottom(animate: animate);
@@ -1193,8 +1257,9 @@ class HomePageController extends ChangeNotifier {
         return;
       }
 
-      // Find the message by ID
-      final messageIndex = messages.indexWhere((m) => m.id == messageId);
+      // Find the message by ID in collapsed list (which matches rendered widgets)
+      final collapsedMessages = collapseVersions(messages);
+      final messageIndex = collapsedMessages.indexWhere((m) => m.id == messageId);
       if (messageIndex < 0) {
         // Message not found (maybe deleted), scroll to bottom
         _scrollToBottom(animate: animate);
@@ -1253,9 +1318,23 @@ class HomePageController extends ChangeNotifier {
 
   /// Restore scroll position to a pixel offset with smart retry.
   void _restoreToOffset(double savedOffset, {bool animate = false, int retryCount = 0}) {
-    const maxRetries = 10;
+    const maxRetries = 15;  // Increased for lazy-loaded content
+    
+    // Get the conversation ID we're restoring for
+    final convoId = currentConversation?.id;
+    if (convoId == null) return;
+    
+    // On first attempt, record the restoration timestamp for this conversation
+    if (retryCount == 0) {
+      _scrollRestoreTimestamps[convoId] = DateTime.now();
+    }
 
     void tryRestore() {
+      // Check if conversation changed during retry
+      if (currentConversation?.id != convoId) {
+        return;
+      }
+      
       if (!_scrollController.hasClients) {
         // Controller not attached yet, retry after next frame
         if (retryCount < maxRetries) {
@@ -1277,19 +1356,81 @@ class HomePageController extends ChangeNotifier {
         return;
       }
 
-      final targetOffset = savedOffset.clamp(0.0, maxExtent);
+      // If savedOffset exceeds current maxExtent, the list may still be building.
+      // Jump to maxExtent for now, and retry to see if list expands.
+      if (savedOffset > maxExtent) {
+        _scrollController.jumpTo(maxExtent);
+        
+        // Retry if we haven't reached max retries - list might still be building
+        if (retryCount < maxRetries) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _restoreToOffset(savedOffset, animate: animate, retryCount: retryCount + 1);
+          });
+        }
+        return;
+      }
+
+      // savedOffset is within bounds, jump to it
       if (animate) {
         _scrollController.animateTo(
-          targetOffset,
+          savedOffset,
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeOutCubic,
         );
       } else {
-        _scrollController.jumpTo(targetOffset);
+        _scrollController.jumpTo(savedOffset);
       }
+      
+      // The timestamp will automatically expire after _scrollRestoreBlockMs (2 seconds).
+      // This prevents saves during the restoration window while the layout settles.
     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) => tryRestore());
+  }
+
+  /// Restore scroll position to bottom with retries as content loads.
+  /// This handles lazy-loaded ListView where maxScrollExtent keeps changing.
+  void _restoreToBottom(String convoId, {bool animate = false, int retryCount = 0}) {
+    // Use a few spaced retries: 0ms, 200ms, 500ms, 1000ms, 1500ms
+    const retryDelays = [0, 200, 500, 1000, 1500];
+    
+    if (retryCount >= retryDelays.length) return;
+    
+    void doScroll() {
+      // Check if conversation changed
+      if (currentConversation?.id != convoId) return;
+      
+      if (!_scrollController.hasClients) {
+        // Controller not attached yet, retry with next delay
+        final nextDelay = retryCount + 1 < retryDelays.length ? retryDelays[retryCount + 1] : 0;
+        if (nextDelay > 0) {
+          Future.delayed(Duration(milliseconds: nextDelay - (retryCount > 0 ? retryDelays[retryCount] : 0)), () {
+            _restoreToBottom(convoId, animate: animate, retryCount: retryCount + 1);
+          });
+        }
+        return;
+      }
+      
+      // Scroll to current bottom
+      final maxExtent = _scrollController.position.maxScrollExtent;
+      _scrollController.jumpTo(maxExtent);
+      
+      // Schedule next retry if not the last one
+      if (retryCount + 1 < retryDelays.length) {
+        final nextDelay = retryDelays[retryCount + 1] - retryDelays[retryCount];
+        Future.delayed(Duration(milliseconds: nextDelay), () {
+          _restoreToBottom(convoId, animate: animate, retryCount: retryCount + 1);
+        });
+      }
+    }
+    
+    if (retryCount == 0) {
+      // First call: execute immediately via post-frame callback
+      WidgetsBinding.instance.addPostFrameCallback((_) => doScroll());
+    } else {
+      // Subsequent calls: already delayed, execute now
+      doScroll();
+    }
   }
 
   (double, double) _getViewportBounds() {
