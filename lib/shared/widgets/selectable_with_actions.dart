@@ -11,6 +11,181 @@ import '../../core/models/selection_action.dart';
 import 'snackbar.dart';
 import '../../l10n/app_localizations.dart';
 
+/// Global state for tracking running actions across all SelectableWithActions instances.
+/// Uses a separate overlay for compact loading mode that persists during scroll.
+class _GlobalActionState {
+  static _GlobalActionState? _instance;
+  static _GlobalActionState get instance => _instance ??= _GlobalActionState._();
+  
+  _GlobalActionState._();
+  
+  bool isRunning = false;
+  String? actionName;
+  OverlayEntry? compactOverlay;
+  VoidCallback? onComplete;
+  
+  void startAction(String name, BuildContext context) {
+    isRunning = true;
+    actionName = name;
+  }
+  
+  void enterCompactMode(BuildContext context) {
+    if (!isRunning || actionName == null) return;
+    
+    // Remove any existing compact overlay
+    compactOverlay?.remove();
+    
+    // Create new compact overlay
+    compactOverlay = OverlayEntry(
+      builder: (ctx) => _GlobalCompactLoadingBar(
+        actionName: actionName!,
+        onHoverEnter: () {
+          // When hovering back on compact overlay, do nothing special
+          // It stays compact until action completes
+        },
+      ),
+    );
+    
+    Overlay.of(context).insert(compactOverlay!);
+  }
+  
+  void completeAction() {
+    isRunning = false;
+    actionName = null;
+    compactOverlay?.remove();
+    compactOverlay = null;
+    onComplete?.call();
+    onComplete = null;
+  }
+  
+  void reset() {
+    isRunning = false;
+    actionName = null;
+    compactOverlay?.remove();
+    compactOverlay = null;
+    onComplete = null;
+  }
+}
+
+/// Global compact loading bar widget
+class _GlobalCompactLoadingBar extends StatefulWidget {
+  const _GlobalCompactLoadingBar({
+    required this.actionName,
+    required this.onHoverEnter,
+  });
+  
+  final String actionName;
+  final VoidCallback onHoverEnter;
+  
+  @override
+  State<_GlobalCompactLoadingBar> createState() => _GlobalCompactLoadingBarState();
+}
+
+class _GlobalCompactLoadingBarState extends State<_GlobalCompactLoadingBar>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _spinController;
+  
+  @override
+  void initState() {
+    super.initState();
+    _spinController = AnimationController(
+      duration: const Duration(milliseconds: 1000),
+      vsync: this,
+    )..repeat();
+  }
+  
+  @override
+  void dispose() {
+    _spinController.dispose();
+    super.dispose();
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final screenSize = MediaQuery.of(context).size;
+    
+    const bottomPadding = 100.0;
+    final leftPadding = (screenSize.width * 0.2).clamp(200.0, 350.0);
+    
+    return Positioned(
+      left: leftPadding,
+      bottom: bottomPadding,
+      child: MouseRegion(
+        onEnter: (_) => widget.onHoverEnter(),
+        child: TapRegion(
+          onTapOutside: null,
+          child: Material(
+            type: MaterialType.transparency,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: BackdropFilter(
+                filter: ui.ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: isDark
+                          ? [
+                              Colors.white.withValues(alpha: 0.10),
+                              Colors.white.withValues(alpha: 0.05),
+                            ]
+                          : [
+                              Colors.white.withValues(alpha: 0.25),
+                              Colors.white.withValues(alpha: 0.15),
+                            ],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.15)
+                          : Colors.white.withValues(alpha: 0.8),
+                      width: 0.5,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.12),
+                        blurRadius: 20,
+                        spreadRadius: 0,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      RotationTransition(
+                        turns: _spinController,
+                        child: Icon(
+                          LucideIcons.loader,
+                          size: 16,
+                          color: cs.onSurface.withValues(alpha: 0.8),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        widget.actionName,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: cs.onSurface.withValues(alpha: 0.8),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// A wrapper widget that provides a floating action bar when text is selected.
 /// Only active on desktop platforms (macOS, Windows, Linux).
 /// 
@@ -44,17 +219,24 @@ class _SelectableWithActionsState extends State<SelectableWithActions> {
 
   @override
   void dispose() {
-    _hideOverlay();
+    _hideOverlay(preserveGlobalCompact: true);
     _hideTimer?.cancel();
     super.dispose();
   }
 
-  void _hideOverlay() {
+  void _hideOverlay({bool preserveGlobalCompact = false}) {
     _overlayEntry?.remove();
     _overlayEntry = null;
+    // Only reset global state if not preserving compact mode
+    if (!preserveGlobalCompact && !_GlobalActionState.instance.isRunning) {
+      _GlobalActionState.instance.reset();
+    }
   }
 
   void _showActionBar(Offset position) {
+    // Don't show new toolbar if an action is already running
+    if (_GlobalActionState.instance.isRunning) return;
+    
     _hideOverlay();
     _hideTimer?.cancel();
 
@@ -69,21 +251,28 @@ class _SelectableWithActionsState extends State<SelectableWithActions> {
         actions: actions,
         onRunAction: _runAction,
         onCopy: _copyToClipboard,
-        onDismiss: _hideOverlay,
+        onDismiss: () => _hideOverlay(),
         onHoverChanged: _handleBarHoverChanged,
+        onEnterCompactMode: () {
+          // Transfer to global compact overlay
+          _GlobalActionState.instance.enterCompactMode(context);
+          // Remove the local overlay
+          _overlayEntry?.remove();
+          _overlayEntry = null;
+        },
       ),
     );
     Overlay.of(context).insert(_overlayEntry!);
 
     // Auto-hide after 5 seconds of inactivity
-    _hideTimer = Timer(const Duration(seconds: 5), _hideOverlay);
+    _hideTimer = Timer(const Duration(seconds: 5), () => _hideOverlay());
   }
 
-  void _handleBarHoverChanged(bool isHovering) {
+  void _handleBarHoverChanged(bool isHovering, bool isLoading) {
     _hideTimer?.cancel();
-    if (!isHovering) {
-      // Restart timer when cursor leaves the bar
-      _hideTimer = Timer(const Duration(seconds: 5), _hideOverlay);
+    if (!isHovering && !isLoading) {
+      // Restart timer when cursor leaves the bar (only if not loading)
+      _hideTimer = Timer(const Duration(seconds: 5), () => _hideOverlay());
     }
   }
 
@@ -92,6 +281,9 @@ class _SelectableWithActionsState extends State<SelectableWithActions> {
 
     // Cancel auto-hide timer while script runs
     _hideTimer?.cancel();
+    
+    // Mark action as running globally
+    _GlobalActionState.instance.startAction(action.name, context);
 
     try {
       // Run the script with selected text as argument
@@ -118,6 +310,9 @@ class _SelectableWithActionsState extends State<SelectableWithActions> {
         );
       }
     }
+    
+    // Action completed - reset global state (this removes compact overlay too)
+    _GlobalActionState.instance.completeAction();
   }
 
   void _copyToClipboard() {
@@ -175,8 +370,10 @@ class _SelectableWithActionsState extends State<SelectableWithActions> {
             } else {
               _selectedText = null;
               // Delay hiding to allow clicking on the action bar
+              // But don't hide if an action is currently running
               _hideTimer = Timer(const Duration(milliseconds: 250), () {
-                if (_selectedText == null || _selectedText!.isEmpty) {
+                if ((_selectedText == null || _selectedText!.isEmpty) && 
+                    !_GlobalActionState.instance.isRunning) {
                   _hideOverlay();
                 }
               });
@@ -200,6 +397,7 @@ class _SelectionActionBar extends StatefulWidget {
     required this.onCopy,
     required this.onDismiss,
     required this.onHoverChanged,
+    required this.onEnterCompactMode,
   });
 
   final Offset position;
@@ -209,7 +407,8 @@ class _SelectionActionBar extends StatefulWidget {
   final Future<void> Function(SelectionAction) onRunAction;
   final VoidCallback onCopy;
   final VoidCallback onDismiss;
-  final ValueChanged<bool> onHoverChanged;
+  final void Function(bool isHovering, bool isLoading) onHoverChanged;
+  final VoidCallback onEnterCompactMode;
 
   @override
   State<_SelectionActionBar> createState() => _SelectionActionBarState();
@@ -217,7 +416,6 @@ class _SelectionActionBar extends StatefulWidget {
 
 class _SelectionActionBarState extends State<_SelectionActionBar> {
   String? _loadingActionId;
-  String? _successActionId;
   bool _isHovering = false;
 
   bool get _isLoading => _loadingActionId != null;
@@ -232,19 +430,15 @@ class _SelectionActionBarState extends State<_SelectionActionBar> {
     try {
       await widget.onRunAction(action);
       if (mounted) {
-        setState(() {
-          _loadingActionId = null;
-          _successActionId = action.id;
-        });
-        // Show checkmark briefly then dismiss or reset
-        await Future.delayed(const Duration(milliseconds: 200));
-        if (mounted) {
-          if (_isHovering) {
-            // Reset success state so button is clickable again
-            setState(() => _successActionId = null);
-          } else {
-            widget.onDismiss();
-          }
+        // Only dismiss if not hovering; if hovering, just reset to normal
+        if (_isHovering) {
+          // Stay visible, reset loading state so button is clickable again
+          setState(() {
+            _loadingActionId = null;
+          });
+        } else {
+          // Not hovering - dismiss
+          widget.onDismiss();
         }
       }
     } catch (e) {
@@ -254,6 +448,20 @@ class _SelectionActionBarState extends State<_SelectionActionBar> {
         });
       }
     }
+  }
+
+  void _handleHoverEnter() {
+    setState(() => _isHovering = true);
+    widget.onHoverChanged(true, _isLoading);
+  }
+
+  void _handleHoverExit() {
+    setState(() => _isHovering = false);
+    // If loading and hover exits, switch to global compact mode
+    if (_isLoading) {
+      widget.onEnterCompactMode();
+    }
+    widget.onHoverChanged(false, _isLoading);
   }
 
   IconData _getIconForAction(SelectionAction action) {
@@ -288,14 +496,8 @@ class _SelectionActionBarState extends State<_SelectionActionBar> {
       left: widget.position.dx - barWidth / 2,
       top: widget.position.dy - 70, // Position higher to avoid blocking text
       child: MouseRegion(
-        onEnter: (_) {
-          setState(() => _isHovering = true);
-          widget.onHoverChanged(true);
-        },
-        onExit: (_) {
-          setState(() => _isHovering = false);
-          widget.onHoverChanged(false);
-        },
+        onEnter: (_) => _handleHoverEnter(),
+        onExit: (_) => _handleHoverExit(),
         child: TapRegion(
           onTapOutside: _isLoading ? null : (_) => widget.onDismiss(),
           child: Material(
@@ -372,21 +574,19 @@ class _SelectionActionBarState extends State<_SelectionActionBar> {
 
   Widget _buildActionButton(SelectionAction action, ColorScheme cs) {
     final isLoading = _loadingActionId == action.id;
-    final isSuccess = _successActionId == action.id;
     
     // Determine what to show based on display mode
     final showIcon = action.displayMode != ActionDisplayMode.textOnly;
     final showLabel = action.displayMode != ActionDisplayMode.iconOnly;
     
     return _ActionButton(
-      icon: isSuccess ? LucideIcons.check : (isLoading ? null : _getIconForAction(action)),
+      icon: isLoading ? null : _getIconForAction(action),
       isLoading: isLoading,
-      label: isSuccess ? 'Done' : action.name, // Keep original label during loading
+      label: action.name,
       onTap: () => _handleAction(action),
-      enabled: !_isLoading && !isSuccess,
-      successColor: isSuccess ? Colors.green : null,
-      showIcon: showIcon || isLoading || isSuccess,
-      showLabel: showLabel || isLoading || isSuccess,
+      enabled: !_isLoading,
+      showIcon: showIcon || isLoading,
+      showLabel: showLabel || isLoading,
     );
   }
 
@@ -407,7 +607,6 @@ class _ActionButton extends StatefulWidget {
     required this.onTap,
     this.isLoading = false,
     this.enabled = true,
-    this.successColor,
     this.showIcon = true,
     this.showLabel = true,
   });
@@ -417,7 +616,6 @@ class _ActionButton extends StatefulWidget {
   final VoidCallback onTap;
   final bool isLoading;
   final bool enabled;
-  final Color? successColor;
   final bool showIcon;
   final bool showLabel;
 
@@ -457,8 +655,8 @@ class _ActionButtonState extends State<_ActionButton> with SingleTickerProviderS
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final effectiveColor = widget.successColor ?? 
-        (_hovering && widget.enabled ? cs.primary : cs.onSurface.withValues(alpha: widget.enabled ? 0.8 : 0.4));
+    final effectiveColor = 
+        _hovering && widget.enabled ? cs.primary : cs.onSurface.withValues(alpha: widget.enabled ? 0.8 : 0.4);
     
     return MouseRegion(
       onEnter: widget.enabled ? (_) => setState(() => _hovering = true) : null,
