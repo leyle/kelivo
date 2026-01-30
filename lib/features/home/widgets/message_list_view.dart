@@ -74,6 +74,8 @@ class MessageListView extends StatelessWidget {
     required this.selecting,
     required this.selectedItems,
     required this.dividerPadding,
+    this.messageSearchMatches = const <String>{},
+    this.messageSearchActiveId,
     this.pinnedStreamingMessageId,
     this.isPinnedIndicatorActive = false,
     this.streamingContentNotifier,
@@ -105,6 +107,8 @@ class MessageListView extends StatelessWidget {
   final bool selecting;
   final Set<String> selectedItems;
   final EdgeInsetsGeometry dividerPadding;
+  final Set<String> messageSearchMatches;
+  final String? messageSearchActiveId;
   final String? pinnedStreamingMessageId;
   final bool isPinnedIndicatorActive;
 
@@ -276,75 +280,98 @@ class MessageListView extends StatelessWidget {
         streamingContentNotifier != null &&
         streamingContentNotifier!.hasNotifier(message.id);
 
+    final isMatch = messageSearchMatches.contains(message.id);
+    final isActiveMatch = messageSearchActiveId == message.id;
+
+    final row = Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (selecting && (message.role == 'user' || message.role == 'assistant'))
+          Padding(
+            padding: const EdgeInsets.only(left: 10, right: 6),
+            child: IosCheckbox(
+              value: selectedItems.contains(message.id),
+              onChanged: (v) {
+                onToggleSelection?.call(message.id, v);
+              },
+            ),
+          ),
+        Expanded(
+          child: Builder(
+            builder: (context) {
+              final textScale = MediaQuery.textScaleFactorOf(context);
+              final baseMediaQuery = context.getInheritedWidgetOfExactType<MediaQuery>();
+              final baseData = baseMediaQuery?.data;
+              return MediaQuery(
+                // Keep chat font scaling without rebuilding on keyboard insets.
+                data: (baseData ?? MediaQuery.of(context)).copyWith(
+                  textScaleFactor: textScale * chatScale,
+                ),
+                child: isStreaming
+                    ? _buildStreamingMessageWidget(
+                        context,
+                        message: message,
+                        index: index,
+                        messages: messages,
+                        byGroup: byGroup,
+                        r: r,
+                        t: t,
+                        useAssist: useAssist,
+                        assistant: assistant,
+                        showMsgNav: showMsgNav,
+                        gid: gid,
+                        selectedIdx: selectedIdx,
+                        total: total,
+                        effectiveIndex: effectiveIndex,
+                        effectiveTotal: effectiveTotal,
+                      )
+                    : _buildChatMessageWidget(
+                        context,
+                        message: message,
+                        index: index,
+                        messages: messages,
+                        byGroup: byGroup,
+                        r: r,
+                        t: t,
+                        useAssist: useAssist,
+                        assistant: assistant,
+                        showMsgNav: showMsgNav,
+                        gid: gid,
+                        selectedIdx: selectedIdx,
+                        total: total,
+                        effectiveIndex: effectiveIndex,
+                        effectiveTotal: effectiveTotal,
+                      ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+
+    final rowWithHighlight = isMatch
+        ? AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOutCubic,
+            margin: const EdgeInsets.symmetric(vertical: 2),
+            padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary.withOpacity(isActiveMatch ? 0.14 : 0.08),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Theme.of(context).colorScheme.primary.withOpacity(isActiveMatch ? 0.65 : 0.4),
+                width: isActiveMatch ? 1.5 : 1.0,
+              ),
+            ),
+            child: row,
+          )
+        : row;
+
     return Column(
       key: _keyForMessage(message.id),
       mainAxisSize: MainAxisSize.min,
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (selecting && (message.role == 'user' || message.role == 'assistant'))
-              Padding(
-                padding: const EdgeInsets.only(left: 10, right: 6),
-                child: IosCheckbox(
-                  value: selectedItems.contains(message.id),
-                  onChanged: (v) {
-                    onToggleSelection?.call(message.id, v);
-                  },
-                ),
-              ),
-            Expanded(
-              child: Builder(
-                builder: (context) {
-                  final textScale = MediaQuery.textScaleFactorOf(context);
-                  final baseMediaQuery = context.getInheritedWidgetOfExactType<MediaQuery>();
-                  final baseData = baseMediaQuery?.data;
-                  return MediaQuery(
-                    // Keep chat font scaling without rebuilding on keyboard insets.
-                    data: (baseData ?? MediaQuery.of(context)).copyWith(
-                      textScaleFactor: textScale * chatScale,
-                    ),
-                    child: isStreaming
-                        ? _buildStreamingMessageWidget(
-                            context,
-                            message: message,
-                            index: index,
-                            messages: messages,
-                            byGroup: byGroup,
-                            r: r,
-                            t: t,
-                            useAssist: useAssist,
-                            assistant: assistant,
-                            showMsgNav: showMsgNav,
-                            gid: gid,
-                            selectedIdx: selectedIdx,
-                            total: total,
-                            effectiveIndex: effectiveIndex,
-                            effectiveTotal: effectiveTotal,
-                          )
-                        : _buildChatMessageWidget(
-                            context,
-                            message: message,
-                            index: index,
-                            messages: messages,
-                            byGroup: byGroup,
-                            r: r,
-                            t: t,
-                            useAssist: useAssist,
-                            assistant: assistant,
-                            showMsgNav: showMsgNav,
-                            gid: gid,
-                            selectedIdx: selectedIdx,
-                            total: total,
-                            effectiveIndex: effectiveIndex,
-                            effectiveTotal: effectiveTotal,
-                          ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
+        rowWithHighlight,
         if (showDivider)
           Padding(
             padding: dividerPadding,

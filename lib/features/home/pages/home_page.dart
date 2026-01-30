@@ -25,6 +25,8 @@ import '../../../desktop/mcp_servers_popover.dart';
 import '../../../desktop/mini_map_popover.dart';
 import '../../../desktop/quick_phrase_popover.dart';
 import '../../../desktop/instruction_injection_popover.dart';
+import '../../../desktop/hotkeys/chat_action_bus.dart';
+import '../../../icons/lucide_adapter.dart';
 import '../../chat/widgets/bottom_tools_sheet.dart';
 import '../../chat/widgets/reasoning_budget_sheet.dart';
 import '../../search/widgets/search_settings_sheet.dart';
@@ -70,6 +72,13 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   final ScrollController _scrollController = ScrollController();
   final GlobalKey _inputBarKey = GlobalKey();
   StreamSubscription<String>? _processTextSub;
+  final TextEditingController _messageSearchController = TextEditingController();
+  final FocusNode _messageSearchFocus = FocusNode();
+  StreamSubscription<ChatAction>? _chatActionSub;
+  bool _messageSearchVisible = false;
+  List<String> _messageSearchMatches = const <String>[];
+  int _messageSearchIndex = -1;
+  String? _messageSearchConversationId;
 
   // ============================================================================
   // Page Controller (manages all business logic and state)
@@ -99,6 +108,12 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
 
     _controller.addListener(_onControllerChanged);
     _drawerController.addListener(_onDrawerValueChanged);
+    _chatActionSub = ChatActionBus.instance.stream.listen((action) {
+      if (action == ChatAction.openMessageSearch) {
+        _showMessageSearch();
+      }
+    });
+    _messageSearchController.addListener(_onMessageSearchChanged);
 
     _controller.initChat();
     _initProcessText();
@@ -134,18 +149,23 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   void dispose() {
     try { WidgetsBinding.instance.removeObserver(this); } catch (_) {}
     _processTextSub?.cancel();
+    _chatActionSub?.cancel();
     _controller.removeListener(_onControllerChanged);
     _drawerController.removeListener(_onDrawerValueChanged);
     _inputFocus.dispose();
     _inputController.dispose();
     _scrollController.dispose();
+    _messageSearchController.dispose();
+    _messageSearchFocus.dispose();
     _controller.dispose();
     routeObserver.unsubscribe(this);
     super.dispose();
   }
 
   void _onControllerChanged() {
-    if (mounted) setState(() {});
+    if (!mounted) return;
+    _rebuildMessageSearchMatches(resetIndex: false);
+    setState(() {});
   }
 
   void _onDrawerValueChanged() {
@@ -196,6 +216,108 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   }
 
   // ============================================================================
+  // Message Search (In-Topic)
+  // ============================================================================
+
+  void _showMessageSearch({bool focus = true}) {
+    if (!_messageSearchVisible) {
+      setState(() => _messageSearchVisible = true);
+    }
+    _rebuildMessageSearchMatches(resetIndex: true);
+    if (focus) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _messageSearchFocus.requestFocus();
+        _messageSearchController.selection = TextSelection(
+          baseOffset: 0,
+          extentOffset: _messageSearchController.text.length,
+        );
+      });
+    }
+    _jumpToCurrentMessageSearchMatch();
+  }
+
+  void _hideMessageSearch({bool clear = true}) {
+    setState(() {
+      _messageSearchVisible = false;
+      if (clear) {
+        _messageSearchController.clear();
+        _messageSearchMatches = const <String>[];
+        _messageSearchIndex = -1;
+      }
+    });
+  }
+
+  void _onMessageSearchChanged() {
+    if (!_messageSearchVisible) return;
+    setState(() {
+      _rebuildMessageSearchMatches(resetIndex: true);
+    });
+    _jumpToCurrentMessageSearchMatch();
+  }
+
+  void _rebuildMessageSearchMatches({required bool resetIndex}) {
+    final query = _messageSearchController.text.trim();
+    final convoId = _controller.currentConversation?.id;
+    final convoChanged = convoId != _messageSearchConversationId;
+    _messageSearchConversationId = convoId;
+
+    if (query.isEmpty) {
+      _messageSearchMatches = const <String>[];
+      _messageSearchIndex = -1;
+      return;
+    }
+
+    final lower = query.toLowerCase();
+    final collapsed = _controller.collapseVersions(_controller.messages);
+    final matches = <String>[];
+    for (final m in collapsed) {
+      final hay = _messageSearchHaystack(m).toLowerCase();
+      if (hay.contains(lower)) matches.add(m.id);
+    }
+    _messageSearchMatches = matches;
+    if (matches.isEmpty) {
+      _messageSearchIndex = -1;
+    } else if (resetIndex || convoChanged || _messageSearchIndex < 0 || _messageSearchIndex >= matches.length) {
+      _messageSearchIndex = 0;
+    }
+  }
+
+  String _messageSearchHaystack(ChatMessage message) {
+    final buffer = StringBuffer(message.content);
+    if (message.translation != null && message.translation!.trim().isNotEmpty) {
+      buffer.write('\n${message.translation}');
+    }
+    if (message.reasoningText != null && message.reasoningText!.trim().isNotEmpty) {
+      buffer.write('\n${message.reasoningText}');
+    }
+    return buffer.toString();
+  }
+
+  Future<void> _jumpToCurrentMessageSearchMatch() async {
+    if (!_messageSearchVisible) return;
+    if (_messageSearchIndex < 0 || _messageSearchIndex >= _messageSearchMatches.length) return;
+    final id = _messageSearchMatches[_messageSearchIndex];
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      await _controller.scrollToMessageId(id);
+    });
+  }
+
+  Future<void> _jumpToNextMessageSearchMatch({bool forward = true}) async {
+    if (_messageSearchMatches.isEmpty) return;
+    setState(() {
+      if (forward) {
+        _messageSearchIndex = (_messageSearchIndex + 1) % _messageSearchMatches.length;
+      } else {
+        _messageSearchIndex = (_messageSearchIndex - 1);
+        if (_messageSearchIndex < 0) _messageSearchIndex = _messageSearchMatches.length - 1;
+      }
+    });
+    await _jumpToCurrentMessageSearchMatch();
+  }
+
+  // ============================================================================
   // Build Methods
   // ============================================================================
 
@@ -219,6 +341,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
         providerName: modelInfo.providerName,
         modelDisplay: modelInfo.modelDisplay,
         cs: cs,
+        onOpenMessageSearch: _showMessageSearch,
       );
     }
 
@@ -228,6 +351,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       providerName: modelInfo.providerName,
       modelDisplay: modelInfo.modelDisplay,
       cs: cs,
+      onOpenMessageSearch: _showMessageSearch,
     );
   }
 
@@ -237,6 +361,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     required String? providerName,
     required String? modelDisplay,
     required ColorScheme cs,
+    required VoidCallback onOpenMessageSearch,
   }) {
     return HomeMobileScaffold(
       scaffoldKey: _scaffoldKey,
@@ -275,6 +400,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       },
       onSelectModel: () => showModelSelectSheet(context),
       body: _wrapWithDropTarget(_buildMobileBody(context, cs)),
+      onOpenMessageSearch: onOpenMessageSearch,
     );
   }
 
@@ -329,6 +455,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
         _buildSelectionToolbarOverlay(),
         // Scroll navigation buttons
         _buildScrollButtons(),
+        _buildMessageSearchOverlay(),
       ],
     );
   }
@@ -339,6 +466,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     required String? providerName,
     required String? modelDisplay,
     required ColorScheme cs,
+    required VoidCallback onOpenMessageSearch,
   }) {
     _controller.initDesktopUi();
 
@@ -374,6 +502,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       onRightSidebarWidthChangeEnd: _controller.saveRightSidebarWidth,
       buildAssistantBackground: _buildAssistantBackground,
       body: _wrapWithDropTarget(_buildTabletBody(context, cs)),
+      onOpenMessageSearch: onOpenMessageSearch,
     );
   }
 
@@ -425,6 +554,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
         ),
         _buildSelectionToolbarOverlay(),
         _buildScrollButtons(),
+        _buildMessageSearchOverlay(),
       ],
     );
   }
@@ -547,6 +677,10 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       selecting: _controller.selecting,
       selectedItems: _controller.selectedItems,
       dividerPadding: dividerPadding,
+      messageSearchMatches: _messageSearchMatches.toSet(),
+      messageSearchActiveId: (_messageSearchIndex >= 0 && _messageSearchIndex < _messageSearchMatches.length)
+          ? _messageSearchMatches[_messageSearchIndex]
+          : null,
       streamingContentNotifier: _controller.streamingContentNotifier,
       onVersionChange: (groupId, version) async {
         await _controller.setSelectedVersion(groupId, version);
@@ -571,6 +705,113 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       onToggleReasoningSegment: (messageId, segmentIndex) {
         _controller.toggleReasoningSegment(messageId, segmentIndex);
       },
+    );
+  }
+
+  Widget _buildMessageSearchOverlay() {
+    if (!_messageSearchVisible) return const SizedBox.shrink();
+    final l10n = AppLocalizations.of(context)!;
+    final cs = Theme.of(context).colorScheme;
+    final topPad = kToolbarHeight + MediaQuery.paddingOf(context).top + 8;
+    final width = MediaQuery.sizeOf(context).width;
+    final maxWidth = (width < AppBreakpoints.tablet ? width - 24 : 420).clamp(260.0, 560.0).toDouble();
+    final hasQuery = _messageSearchController.text.trim().isNotEmpty;
+    final hasMatches = _messageSearchMatches.isNotEmpty;
+    final countText = !hasQuery
+        ? ''
+        : hasMatches
+            ? '${_messageSearchIndex + 1}/${_messageSearchMatches.length}'
+            : l10n.homePageMessageSearchNoResults;
+
+    return Positioned(
+      top: topPad,
+      left: 0,
+      right: 0,
+      child: Center(
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            width: maxWidth,
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(
+              color: cs.surface.withOpacity(0.96),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: cs.outlineVariant.withOpacity(0.6)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.12),
+                  blurRadius: 14,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Icon(Lucide.Search, size: 18, color: cs.onSurface.withOpacity(0.7)),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: SizedBox(
+                    height: 34,
+                    child: TextField(
+                      controller: _messageSearchController,
+                      focusNode: _messageSearchFocus,
+                      textInputAction: TextInputAction.search,
+                      onSubmitted: (_) => _jumpToNextMessageSearchMatch(forward: true),
+                      decoration: InputDecoration(
+                        hintText: l10n.homePageMessageSearchHint,
+                        isDense: true,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        filled: true,
+                        fillColor: cs.surfaceVariant.withOpacity(0.5),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: cs.outlineVariant.withOpacity(0.7)),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: cs.outlineVariant.withOpacity(0.7)),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: cs.primary.withOpacity(0.9)),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                if (countText.isNotEmpty)
+                  Text(
+                    countText,
+                    style: TextStyle(fontSize: 12, color: cs.onSurface.withOpacity(0.7)),
+                  ),
+                const SizedBox(width: 4),
+                IconButton(
+                  tooltip: l10n.homePageMessageSearchPrev,
+                  icon: Icon(Lucide.ChevronUp, size: 18, color: cs.onSurface.withOpacity(hasMatches ? 0.9 : 0.3)),
+                  onPressed: hasMatches ? () => _jumpToNextMessageSearchMatch(forward: false) : null,
+                  constraints: const BoxConstraints.tightFor(width: 34, height: 34),
+                  padding: EdgeInsets.zero,
+                ),
+                IconButton(
+                  tooltip: l10n.homePageMessageSearchNext,
+                  icon: Icon(Lucide.ChevronDown, size: 18, color: cs.onSurface.withOpacity(hasMatches ? 0.9 : 0.3)),
+                  onPressed: hasMatches ? () => _jumpToNextMessageSearchMatch(forward: true) : null,
+                  constraints: const BoxConstraints.tightFor(width: 34, height: 34),
+                  padding: EdgeInsets.zero,
+                ),
+                IconButton(
+                  tooltip: MaterialLocalizations.of(context).closeButtonLabel,
+                  icon: Icon(Lucide.X, size: 18, color: cs.onSurface.withOpacity(0.7)),
+                  onPressed: () => _hideMessageSearch(clear: true),
+                  constraints: const BoxConstraints.tightFor(width: 34, height: 34),
+                  padding: EdgeInsets.zero,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 

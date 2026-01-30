@@ -175,6 +175,11 @@
   "languageSelectSheetClearButton": "Clear Translation",
   "homePageClearContext": "Clear Context",
   "homePageClearContextWithCount": "Clear Context ({actual}/{configured})",
+  "homePageMessageSearchHint": "Search in this conversation",
+  "homePageMessageSearchNoResults": "No matches",
+  "homePageMessageSearchPrev": "Previous match",
+  "homePageMessageSearchNext": "Next match",
+  "homePageMessageSearchTooltip": "Find in conversation",
   "@homePageClearContextWithCount": {
     "placeholders": {
       "actual": {
@@ -489,6 +494,7 @@
   "hotkeySwitchModel": "Switch Model",
   "hotkeyToggleAssistantPanel": "Toggle Assistants",
   "hotkeyToggleTopicPanel": "Toggle Topics",
+  "hotkeySearchInTopic": "Find in Conversation",
   "hotkeysPressShortcut": "Press a shortcut",
   "hotkeysResetDefault": "Reset to default",
   "hotkeysClearShortcut": "Clear shortcut",

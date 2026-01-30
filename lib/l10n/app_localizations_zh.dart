@@ -321,6 +321,21 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get homePageMessageSearchHint => '在当前对话中搜索';
+
+  @override
+  String get homePageMessageSearchNoResults => '无匹配结果';
+
+  @override
+  String get homePageMessageSearchPrev => '上一处匹配';
+
+  @override
+  String get homePageMessageSearchNext => '下一处匹配';
+
+  @override
+  String get homePageMessageSearchTooltip => '查找对话';
+
+  @override
   String get homePageDefaultAssistant => '默认助手';
 
   @override
@@ -1093,6 +1108,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get hotkeyToggleTopicPanel => '切换话题显示';
+
+  @override
+  String get hotkeySearchInTopic => '查找对话';
 
   @override
   String get hotkeysPressShortcut => '按下快捷键';
@@ -3944,6 +3962,21 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   }
 
   @override
+  String get homePageMessageSearchHint => '在当前对话中搜索';
+
+  @override
+  String get homePageMessageSearchNoResults => '无匹配结果';
+
+  @override
+  String get homePageMessageSearchPrev => '上一处匹配';
+
+  @override
+  String get homePageMessageSearchNext => '下一处匹配';
+
+  @override
+  String get homePageMessageSearchTooltip => '查找对话';
+
+  @override
   String get homePageDefaultAssistant => '默认助手';
 
   @override
@@ -4716,6 +4749,9 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get hotkeyToggleTopicPanel => '切换话题显示';
+
+  @override
+  String get hotkeySearchInTopic => '查找对话';
 
   @override
   String get hotkeysPressShortcut => '按下快捷键';
@@ -7532,6 +7568,21 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   }
 
   @override
+  String get homePageMessageSearchHint => '在目前對話中搜尋';
+
+  @override
+  String get homePageMessageSearchNoResults => '無符合結果';
+
+  @override
+  String get homePageMessageSearchPrev => '上一個符合';
+
+  @override
+  String get homePageMessageSearchNext => '下一個符合';
+
+  @override
+  String get homePageMessageSearchTooltip => '搜尋對話';
+
+  @override
   String get homePageDefaultAssistant => '預設助理';
 
   @override
@@ -8304,6 +8355,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get hotkeyToggleTopicPanel => '切換話題顯示';
+
+  @override
+  String get hotkeySearchInTopic => '搜尋對話';
 
   @override
   String get hotkeysPressShortcut => '按下快捷鍵';

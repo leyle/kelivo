@@ -43,6 +43,7 @@ class HomeDesktopScaffold extends StatelessWidget {
     required this.onNewConversation,
     required this.onCreateNewConversation,
     required this.onSelectModel,
+    required this.onOpenMessageSearch,
     required this.onSidebarWidthChanged,
     required this.onSidebarWidthChangeEnd,
     required this.onRightSidebarWidthChanged,
@@ -73,6 +74,7 @@ class HomeDesktopScaffold extends StatelessWidget {
   final VoidCallback onNewConversation;
   final Future<void> Function() onCreateNewConversation;
   final VoidCallback onSelectModel;
+  final VoidCallback onOpenMessageSearch;
   final void Function(double dx) onSidebarWidthChanged;
   final VoidCallback onSidebarWidthChangeEnd;
   final void Function(double dx) onRightSidebarWidthChanged;
@@ -384,6 +386,7 @@ class HomeDesktopScaffold extends StatelessWidget {
   }
 
   List<Widget> _buildActions(BuildContext context, bool topicsOnRight) {
+    final l10n = AppLocalizations.of(context)!;
     return [
       // Right sidebar toggle (desktop + topics on right)
       if (_isDesktop && topicsOnRight)
@@ -394,6 +397,15 @@ class HomeDesktopScaffold extends StatelessWidget {
           icon: Lucide.panelRight,
           onTap: onToggleRightSidebar,
         ),
+      const SizedBox(width: 2),
+      IosIconButton(
+        size: 20,
+        padding: const EdgeInsets.all(8),
+        minSize: 40,
+        icon: Lucide.Search,
+        semanticLabel: l10n.homePageMessageSearchTooltip,
+        onTap: onOpenMessageSearch,
+      ),
       const SizedBox(width: 2),
       IosIconButton(
         size: 20,

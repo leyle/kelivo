@@ -676,6 +676,36 @@ abstract class AppLocalizations {
   /// **'Clear Context ({actual}/{configured})'**
   String homePageClearContextWithCount(String actual, String configured);
 
+  /// No description provided for @homePageMessageSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search in this conversation'**
+  String get homePageMessageSearchHint;
+
+  /// No description provided for @homePageMessageSearchNoResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No matches'**
+  String get homePageMessageSearchNoResults;
+
+  /// No description provided for @homePageMessageSearchPrev.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous match'**
+  String get homePageMessageSearchPrev;
+
+  /// No description provided for @homePageMessageSearchNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next match'**
+  String get homePageMessageSearchNext;
+
+  /// No description provided for @homePageMessageSearchTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Find in conversation'**
+  String get homePageMessageSearchTooltip;
+
   /// No description provided for @homePageDefaultAssistant.
   ///
   /// In en, this message translates to:
@@ -2188,6 +2218,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Toggle Topics'**
   String get hotkeyToggleTopicPanel;
+
+  /// No description provided for @hotkeySearchInTopic.
+  ///
+  /// In en, this message translates to:
+  /// **'Find in Conversation'**
+  String get hotkeySearchInTopic;
 
   /// No description provided for @hotkeysPressShortcut.
   ///

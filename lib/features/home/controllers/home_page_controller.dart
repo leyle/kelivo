@@ -442,6 +442,9 @@ class HomePageController extends ChangeNotifier {
         case ChatAction.switchModel:
           await showModelSelectSheet(_context);
           break;
+        case ChatAction.openMessageSearch:
+          // Handled by HomePage UI layer.
+          break;
       }
     });
   }

@@ -324,6 +324,21 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get homePageMessageSearchHint => 'Search in this conversation';
+
+  @override
+  String get homePageMessageSearchNoResults => 'No matches';
+
+  @override
+  String get homePageMessageSearchPrev => 'Previous match';
+
+  @override
+  String get homePageMessageSearchNext => 'Next match';
+
+  @override
+  String get homePageMessageSearchTooltip => 'Find in conversation';
+
+  @override
   String get homePageDefaultAssistant => 'Default Assistant';
 
   @override
@@ -1122,6 +1137,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get hotkeyToggleTopicPanel => 'Toggle Topics';
+
+  @override
+  String get hotkeySearchInTopic => 'Find in Conversation';
 
   @override
   String get hotkeysPressShortcut => 'Press a shortcut';

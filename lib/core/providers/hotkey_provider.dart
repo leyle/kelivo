@@ -74,6 +74,14 @@ class HotkeyProvider extends ChangeNotifier {
       defaultMac: '',
       enabledByDefault: true,
     ),
+    // Find in conversation (chat)
+    'search_in_topic': AppHotkey(
+      id: 'search_in_topic',
+      l10nLabelKey: 'hotkeySearchInTopic',
+      defaultWinLinux: 'ctrl+f',
+      defaultMac: 'cmd+f',
+      enabledByDefault: true,
+    ),
     // Toggle assistants panel (left topics layout only)
     'toggle_assistants': AppHotkey(
       id: 'toggle_assistants',
@@ -234,6 +242,9 @@ class HotkeyProvider extends ChangeNotifier {
         break;
       case 'switch_model':
         HotkeyEventBus.instance.fire(HotkeyAction.switchModel);
+        break;
+      case 'search_in_topic':
+        HotkeyEventBus.instance.fire(HotkeyAction.searchInChat);
         break;
       case 'toggle_assistants':
         HotkeyEventBus.instance.fire(HotkeyAction.toggleLeftPanelAssistants);
