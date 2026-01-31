@@ -157,6 +157,11 @@ class _SelectionActionsCardState extends State<_SelectionActionsCard> {
                     key: ValueKey(action.id),
                     action: action,
                     index: index,
+                    onToggle: (enabled) async {
+                      await context.read<SettingsProvider>().updateSelectionAction(
+                            action.copyWith(enabled: enabled),
+                          );
+                    },
                     onEdit: () => _showActionEditor(context, action),
                     onDelete: () async {
                       await context.read<SettingsProvider>().removeSelectionAction(action.id);
@@ -210,6 +215,7 @@ class _SelectionActionsCardState extends State<_SelectionActionsCard> {
 class _ActionItem extends StatefulWidget {
   final SelectionAction action;
   final int index;
+  final ValueChanged<bool> onToggle;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
@@ -217,6 +223,7 @@ class _ActionItem extends StatefulWidget {
     super.key,
     required this.action,
     required this.index,
+    required this.onToggle,
     required this.onEdit,
     required this.onDelete,
   });
@@ -293,16 +300,28 @@ class _ActionItemState extends State<_ActionItem> {
                 children: [
                   Text(
                     widget.action.name,
-                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: widget.action.enabled ? null : cs.onSurface.withOpacity(0.45),
+                    ),
                   ),
                   Text(
                     widget.action.scriptPath,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 11, color: cs.onSurface.withOpacity(0.5)),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: cs.onSurface.withOpacity(widget.action.enabled ? 0.5 : 0.3),
+                    ),
                   ),
                 ],
               ),
+            ),
+            Switch(
+              value: widget.action.enabled,
+              onChanged: widget.onToggle,
+              activeColor: cs.primary,
             ),
             if (_hover) ...[
               _SmallIconBtn(icon: lucide.Lucide.Settings2, onTap: widget.onEdit),
@@ -329,6 +348,7 @@ class _ActionEditorDialogState extends State<_ActionEditorDialog> {
   late TextEditingController _pathController;
   late String _selectedIcon;
   late ActionDisplayMode _selectedDisplayMode;
+  late bool _enabled;
 
   @override
   void initState() {
@@ -337,6 +357,7 @@ class _ActionEditorDialogState extends State<_ActionEditorDialog> {
     _pathController = TextEditingController(text: widget.existing?.scriptPath ?? '');
     _selectedIcon = widget.existing?.iconName ?? 'terminal';
     _selectedDisplayMode = widget.existing?.displayMode ?? ActionDisplayMode.iconAndText;
+    _enabled = widget.existing?.enabled ?? true;
   }
 
   @override
@@ -449,6 +470,22 @@ class _ActionEditorDialogState extends State<_ActionEditorDialog> {
                 textStyle: WidgetStatePropertyAll(TextStyle(fontSize: 12)),
               ),
             ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Enabled',
+                    style: TextStyle(fontSize: 12, color: cs.onSurface.withOpacity(0.7)),
+                  ),
+                ),
+                Switch(
+                  value: _enabled,
+                  onChanged: (v) => setState(() => _enabled = v),
+                  activeColor: cs.primary,
+                ),
+              ],
+            ),
           ],
         ),
       ),
@@ -464,8 +501,20 @@ class _ActionEditorDialogState extends State<_ActionEditorDialog> {
             if (name.isEmpty || path.isEmpty) return;
             
             final action = widget.existing != null
-                ? widget.existing!.copyWith(name: name, scriptPath: path, iconName: _selectedIcon, displayMode: _selectedDisplayMode)
-                : SelectionAction.create(name: name, scriptPath: path, iconName: _selectedIcon, displayMode: _selectedDisplayMode);
+                ? widget.existing!.copyWith(
+                    name: name,
+                    scriptPath: path,
+                    iconName: _selectedIcon,
+                    displayMode: _selectedDisplayMode,
+                    enabled: _enabled,
+                  )
+                : SelectionAction.create(
+                    name: name,
+                    scriptPath: path,
+                    iconName: _selectedIcon,
+                    displayMode: _selectedDisplayMode,
+                    enabled: _enabled,
+                  );
             Navigator.of(context).pop(action);
           },
           child: Text(isEditing ? 'Save' : 'Add'),
