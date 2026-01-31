@@ -54,7 +54,13 @@ class _DesktopHomePageState extends State<DesktopHomePage> {
           if (mounted) setState(() => _tabIndex = 3);
           break;
         case HotkeyAction.closeWindow:
-          try { await windowManager.close(); } catch (_) {}
+          try {
+            if (defaultTargetPlatform == TargetPlatform.macOS) {
+              await windowManager.hide();
+            } else {
+              await windowManager.close();
+            }
+          } catch (_) {}
           break;
         case HotkeyAction.toggleAppVisibility:
           try {
