@@ -661,7 +661,13 @@ class _SideDrawerState extends State<SideDrawer> with TickerProviderStateMixin {
     final currentAssistantId = ap.currentAssistantId;
     final conversations = chatService
         .getAllConversations()
-        .where((c) => c.assistantId == currentAssistantId || c.assistantId == null)
+        .where((c) {
+          final assistantId = c.assistantId;
+          if (assistantId != null && !ap.isAssistantEnabled(assistantId)) {
+            return false;
+          }
+          return assistantId == currentAssistantId || assistantId == null;
+        })
         .toList();
     // Use last-activity time (updatedAt) for ordering and grouping
     final all = conversations
@@ -2023,7 +2029,7 @@ extension on _SideDrawerState {
     final isDark2 = Theme.of(context).brightness == Brightness.dark;
     final textBase2 = isDark2 ? Colors.white : Colors.black;
 
-    List<Assistant> assistants = ap2.assistants;
+    List<Assistant> assistants = ap2.enabledAssistants;
     // Apply search filter when:
     // - Desktop tab mode (inlineMode == false), OR
     // - Desktop assistants-only mode (left sidebar when topics are on right)

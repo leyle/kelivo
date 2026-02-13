@@ -113,6 +113,7 @@ class _AssistantCard extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final enabledCount = context.watch<AssistantProvider>().enabledAssistants.length;
 
     final baseBg = isDark ? Colors.white10 : Colors.white.withOpacity(0.96);
     final content = _TactileCard(
@@ -128,50 +129,54 @@ class _AssistantCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(14),
             border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withOpacity(isDark ? 0.12 : 0.08), width: 0.8),
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _AssistantAvatar(item: item, size: 44),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  item.name,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+          child: Opacity(
+            opacity: item.isEnabled ? 1.0 : 0.72,
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _AssistantAvatar(item: item, size: 44),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    item.name,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                                  ),
                                 ),
-                              ),
-                              if (!item.deletable)
-                                _TagPill(text: l10n.assistantSettingsDefaultTag, color: cs.primary),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            (item.systemPrompt.trim().isEmpty
-                                ? l10n.assistantSettingsNoPromptPlaceholder
-                                : item.systemPrompt),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(fontSize: 13, color: cs.onSurface.withOpacity(0.7), height: 1.25),
-                          ),
-                        ],
+                                if (!item.deletable)
+                                  _TagPill(text: l10n.assistantSettingsDefaultTag, color: cs.primary),
+                                _AssistantEnableToggleButton(item: item),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              (item.systemPrompt.trim().isEmpty
+                                  ? l10n.assistantSettingsNoPromptPlaceholder
+                                  : item.systemPrompt),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(fontSize: 13, color: cs.onSurface.withOpacity(0.7), height: 1.25),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         );
@@ -236,7 +241,7 @@ class _AssistantCard extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 4),
             onPressed: (_) async {
               final count = context.read<AssistantProvider>().assistants.length;
-              if (count <= 1) {
+              if (count <= 1 || (item.isEnabled && enabledCount <= 1)) {
                 showAppSnackBar(
                   context,
                   message: l10n.assistantSettingsAtLeastOneAssistantRequired,
@@ -671,6 +676,48 @@ class _TagPill extends StatelessWidget {
       child: Text(
         text,
         style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w700),
+      ),
+    );
+  }
+}
+
+class _AssistantEnableToggleButton extends StatelessWidget {
+  const _AssistantEnableToggleButton({required this.item});
+  final Assistant item;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final enabled = item.isEnabled;
+    final fg = enabled ? Colors.green : Colors.orange;
+    final label = enabled
+        ? l10n.providersPageEnabledStatus
+        : l10n.providersPageDisabledStatus;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () async {
+        final ok = await context
+            .read<AssistantProvider>()
+            .setAssistantEnabled(item.id, !enabled);
+        if (!context.mounted || ok) return;
+        showAppSnackBar(
+          context,
+          message: l10n.assistantSettingsAtLeastOneAssistantRequired,
+          type: NotificationType.warning,
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(left: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        decoration: BoxDecoration(
+          color: fg.withOpacity(0.12),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: fg.withOpacity(0.35)),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(fontSize: 11, color: fg, fontWeight: FontWeight.w700),
+        ),
       ),
     );
   }

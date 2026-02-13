@@ -14,7 +14,8 @@ import '../../utils/app_directories.dart';
 class AssistantProvider extends ChangeNotifier {
   static const String _assistantsKey = 'assistants_v1';
   static const String _currentAssistantKey = 'current_assistant_id_v1';
-  static const String _lastConversationPerAssistantKey = 'last_conversation_per_assistant_v1';
+  static const String _lastConversationPerAssistantKey =
+      'last_conversation_per_assistant_v1';
 
   final List<Assistant> _assistants = <Assistant>[];
   String? _currentAssistantId;
@@ -24,12 +25,66 @@ class AssistantProvider extends ChangeNotifier {
   final Map<String, String> _lastConversationPerAssistant = <String, String>{};
 
   List<Assistant> get assistants => List.unmodifiable(_assistants);
-  String? get currentAssistantId => _currentAssistantId;
+  List<Assistant> get enabledAssistants =>
+      List.unmodifiable(_assistants.where((a) => a.isEnabled));
+  String? get currentAssistantId {
+    final current = _currentAssistantId;
+    if (current != null &&
+        _assistants.any((a) => a.id == current && a.isEnabled)) {
+      return current;
+    }
+    for (final a in _assistants) {
+      if (a.isEnabled) return a.id;
+    }
+    if (_assistants.isNotEmpty) return _assistants.first.id;
+    return null;
+  }
+
   Assistant? get currentAssistant {
-    final idx = _assistants.indexWhere((a) => a.id == _currentAssistantId);
+    final curId = currentAssistantId;
+    final idx = _assistants.indexWhere((a) => a.id == curId);
     if (idx != -1) return _assistants[idx];
+    for (final a in _assistants) {
+      if (a.isEnabled) return a;
+    }
     if (_assistants.isNotEmpty) return _assistants.first;
     return null;
+  }
+
+  bool isAssistantEnabled(String? id) {
+    if (id == null) return true;
+    final idx = _assistants.indexWhere((a) => a.id == id);
+    if (idx == -1) return false;
+    return _assistants[idx].isEnabled;
+  }
+
+  String? _firstEnabledAssistantId() {
+    for (final a in _assistants) {
+      if (a.isEnabled) return a.id;
+    }
+    return _assistants.isNotEmpty ? _assistants.first.id : null;
+  }
+
+  Future<void> _persistCurrentAssistantSelection() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (_currentAssistantId != null) {
+      await prefs.setString(_currentAssistantKey, _currentAssistantId!);
+    } else {
+      await prefs.remove(_currentAssistantKey);
+    }
+  }
+
+  Future<void> _ensureCurrentAssistantEnabled({bool persist = true}) async {
+    final cur = _currentAssistantId;
+    String? next = cur;
+    if (cur == null || !_assistants.any((a) => a.id == cur && a.isEnabled)) {
+      next = _firstEnabledAssistantId();
+    }
+    if (next == _currentAssistantId) return;
+    _currentAssistantId = next;
+    if (persist) {
+      await _persistCurrentAssistantSelection();
+    }
   }
 
   AssistantProvider() {
@@ -49,16 +104,24 @@ class AssistantProvider extends ChangeNotifier {
         final a = _assistants[i];
         String? av = a.avatar;
         String? bg = a.background;
-        if (av != null && av.isNotEmpty && (av.startsWith('/') || av.contains(':')) && !av.startsWith('http')) {
+        if (av != null &&
+            av.isNotEmpty &&
+            (av.startsWith('/') || av.contains(':')) &&
+            !av.startsWith('http')) {
           final fixed = SandboxPathResolver.fix(av);
           if (fixed != av) {
-            av = fixed; changed = true;
+            av = fixed;
+            changed = true;
           }
         }
-        if (bg != null && bg.isNotEmpty && (bg.startsWith('/') || bg.contains(':')) && !bg.startsWith('http')) {
+        if (bg != null &&
+            bg.isNotEmpty &&
+            (bg.startsWith('/') || bg.contains(':')) &&
+            !bg.startsWith('http')) {
           final fixedBg = SandboxPathResolver.fix(bg);
           if (fixedBg != bg) {
-            bg = fixedBg; changed = true;
+            bg = fixedBg;
+            changed = true;
           }
         }
         if (changed) {
@@ -66,7 +129,9 @@ class AssistantProvider extends ChangeNotifier {
         }
       }
       if (changed) {
-        try { await _persist(); } catch (_) {}
+        try {
+          await _persist();
+        } catch (_) {}
       }
     }
     // Do not create defaults here because localization is not available.
@@ -78,6 +143,7 @@ class AssistantProvider extends ChangeNotifier {
     } else {
       _currentAssistantId = null;
     }
+    await _ensureCurrentAssistantEnabled();
     // Restore last conversation per assistant map
     final lastConvoRaw = prefs.getString(_lastConversationPerAssistantKey);
     if (lastConvoRaw != null && lastConvoRaw.isNotEmpty) {
@@ -94,14 +160,14 @@ class AssistantProvider extends ChangeNotifier {
   }
 
   Assistant _defaultAssistant(AppLocalizations l10n) => Assistant(
-        id: const Uuid().v4(),
-        name: l10n.assistantProviderDefaultAssistantName,
-        systemPrompt: '',
-        deletable: false,
-        thinkingBudget: null,
-        temperature: 0.6,
-        topP: null,
-      );
+    id: const Uuid().v4(),
+    name: l10n.assistantProviderDefaultAssistantName,
+    systemPrompt: '',
+    deletable: false,
+    thinkingBudget: null,
+    temperature: 0.6,
+    topP: null,
+  );
 
   // Ensure localized default assistants exist; call this after localization is ready.
   Future<void> ensureDefaults(dynamic context) async {
@@ -110,27 +176,28 @@ class AssistantProvider extends ChangeNotifier {
     // 1) 默认助手
     _assistants.add(_defaultAssistant(l10n));
     // 2) 示例助手（带提示词模板）
-    _assistants.add(Assistant(
-      id: const Uuid().v4(),
-      name: l10n.assistantProviderSampleAssistantName,
-      systemPrompt: l10n.assistantProviderSampleAssistantSystemPrompt(
-        '{model_name}',
-        '{cur_datetime}',
-        '"{locale}"',
-        '{timezone}',
-        '{device_info}',
-        '{system_version}',
+    _assistants.add(
+      Assistant(
+        id: const Uuid().v4(),
+        name: l10n.assistantProviderSampleAssistantName,
+        systemPrompt: l10n.assistantProviderSampleAssistantSystemPrompt(
+          '{model_name}',
+          '{cur_datetime}',
+          '"{locale}"',
+          '{timezone}',
+          '{device_info}',
+          '{system_version}',
+        ),
+        deletable: false,
+        temperature: 0.6,
+        topP: null,
       ),
-      deletable: false,
-      temperature: 0.6,
-      topP: null,
-    ));
+    );
     await _persist();
     // Set current assistant if not set
     if (_currentAssistantId == null && _assistants.isNotEmpty) {
       _currentAssistantId = _assistants.first.id;
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_currentAssistantKey, _currentAssistantId!);
+      await _persistCurrentAssistantSelection();
     }
     notifyListeners();
   }
@@ -152,7 +219,11 @@ class AssistantProvider extends ChangeNotifier {
     return candidate;
   }
 
-  Future<String?> _duplicateLocalFile(String? rawPath, {required bool isAvatar, required String newId}) async {
+  Future<String?> _duplicateLocalFile(
+    String? rawPath, {
+    required bool isAvatar,
+    required String newId,
+  }) async {
     final raw = (rawPath ?? '').trim();
     if (raw.isEmpty) return rawPath;
     if (raw.startsWith('http') || raw.startsWith('data:')) return rawPath;
@@ -161,7 +232,9 @@ class AssistantProvider extends ChangeNotifier {
     if (!await src.exists()) return rawPath;
 
     try {
-      final dir = isAvatar ? await AppDirectories.getAvatarsDirectory() : await AppDirectories.getImagesDirectory();
+      final dir = isAvatar
+          ? await AppDirectories.getAvatarsDirectory()
+          : await AppDirectories.getImagesDirectory();
       if (!await dir.exists()) {
         await dir.create(recursive: true);
       }
@@ -174,7 +247,9 @@ class AssistantProvider extends ChangeNotifier {
         ext = 'jpg';
       }
       final prefix = isAvatar ? 'assistant' : 'background';
-      final dest = File('${dir.path}/${prefix}_${newId}_${DateTime.now().millisecondsSinceEpoch}.$ext');
+      final dest = File(
+        '${dir.path}/${prefix}_${newId}_${DateTime.now().millisecondsSinceEpoch}.$ext',
+      );
       await src.copy(dest.path);
       return dest.path;
     } catch (_) {
@@ -184,22 +259,49 @@ class AssistantProvider extends ChangeNotifier {
 
   Future<void> _persist() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString( _assistantsKey, Assistant.encodeList(_assistants));
+    await prefs.setString(_assistantsKey, Assistant.encodeList(_assistants));
   }
 
   Future<void> setCurrentAssistant(String id) async {
+    if (!_assistants.any((a) => a.id == id && a.isEnabled)) {
+      await _ensureCurrentAssistantEnabled();
+      return;
+    }
     if (_currentAssistantId == id) return;
     _currentAssistantId = id;
     notifyListeners();
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_currentAssistantKey, id);
+    await _persistCurrentAssistantSelection();
+  }
+
+  Future<bool> setAssistantEnabled(String id, bool enabled) async {
+    final idx = _assistants.indexWhere((a) => a.id == id);
+    if (idx == -1) return false;
+    final current = _assistants[idx];
+    if (current.isEnabled == enabled) return true;
+    if (!enabled) {
+      final enabledCount = _assistants.where((a) => a.isEnabled).length;
+      if (enabledCount <= 1) return false;
+    }
+
+    _assistants[idx] = current.copyWith(isEnabled: enabled);
+    await _ensureCurrentAssistantEnabled(persist: false);
+    await _persist();
+    await _persistCurrentAssistantSelection();
+    notifyListeners();
+    return true;
   }
 
   /// Save the last opened conversation for an assistant.
-  Future<void> setLastConversation(String assistantId, String conversationId) async {
+  Future<void> setLastConversation(
+    String assistantId,
+    String conversationId,
+  ) async {
     _lastConversationPerAssistant[assistantId] = conversationId;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_lastConversationPerAssistantKey, jsonEncode(_lastConversationPerAssistant));
+    await prefs.setString(
+      _lastConversationPerAssistantKey,
+      jsonEncode(_lastConversationPerAssistant),
+    );
   }
 
   /// Get the last opened conversation for an assistant.
@@ -221,7 +323,10 @@ class AssistantProvider extends ChangeNotifier {
       _lastConversationPerAssistant.remove(key);
     }
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_lastConversationPerAssistantKey, jsonEncode(_lastConversationPerAssistant));
+    await prefs.setString(
+      _lastConversationPerAssistantKey,
+      jsonEncode(_lastConversationPerAssistant),
+    );
   }
 
   Assistant? getById(String id) {
@@ -240,20 +345,18 @@ class AssistantProvider extends ChangeNotifier {
     }
     if (a == null) return const <Map<String, String>>[];
     return [
-      for (final m in a.presetMessages)
-        {
-          'role': m.role,
-          'content': m.content,
-        }
+      for (final m in a.presetMessages) {'role': m.role, 'content': m.content},
     ];
   }
 
   Future<String> addAssistant({String? name, dynamic context}) async {
     final a = Assistant(
       id: const Uuid().v4(),
-      name: (name ?? (context != null
-          ? AppLocalizations.of(context)!.assistantProviderNewAssistantName
-          : 'New Assistant')),
+      name:
+          (name ??
+          (context != null
+              ? AppLocalizations.of(context)!.assistantProviderNewAssistantName
+              : 'New Assistant')),
       temperature: 0.6,
       topP: null,
     );
@@ -263,14 +366,25 @@ class AssistantProvider extends ChangeNotifier {
     return a.id;
   }
 
-  Future<String?> duplicateAssistant(String id, {AppLocalizations? l10n}) async {
+  Future<String?> duplicateAssistant(
+    String id, {
+    AppLocalizations? l10n,
+  }) async {
     final idx = _assistants.indexWhere((a) => a.id == id);
     if (idx == -1) return null;
     final source = _assistants[idx];
     final newId = const Uuid().v4();
 
-    final avatarCopy = await _duplicateLocalFile(source.avatar, isAvatar: true, newId: newId);
-    final backgroundCopy = await _duplicateLocalFile(source.background, isAvatar: false, newId: newId);
+    final avatarCopy = await _duplicateLocalFile(
+      source.avatar,
+      isAvatar: true,
+      newId: newId,
+    );
+    final backgroundCopy = await _duplicateLocalFile(
+      source.background,
+      isAvatar: false,
+      newId: newId,
+    );
 
     final copy = source.copyWith(
       id: newId,
@@ -279,8 +393,12 @@ class AssistantProvider extends ChangeNotifier {
       background: backgroundCopy,
       deletable: true,
       mcpServerIds: List<String>.of(source.mcpServerIds),
-      customHeaders: source.customHeaders.map((e) => Map<String, String>.from(e)).toList(),
-      customBody: source.customBody.map((e) => Map<String, String>.from(e)).toList(),
+      customHeaders: source.customHeaders
+          .map((e) => Map<String, String>.from(e))
+          .toList(),
+      customBody: source.customBody
+          .map((e) => Map<String, String>.from(e))
+          .toList(),
       presetMessages: source.presetMessages
           .map((m) => PresetMessage(role: m.role, content: m.content))
           .toList(),
@@ -318,9 +436,15 @@ class AssistantProvider extends ChangeNotifier {
       final raw = (updated.avatar ?? '').trim();
       final prevRaw = (prev.avatar ?? '').trim();
       final changed = raw != prevRaw;
-      final isLocalPath = raw.isNotEmpty && (raw.startsWith('/') || raw.contains(':')) && !raw.startsWith('http');
+      final isLocalPath =
+          raw.isNotEmpty &&
+          (raw.startsWith('/') || raw.contains(':')) &&
+          !raw.startsWith('http');
       // Skip if it's already under our avatars folder
-      if (changed && isLocalPath && !raw.contains('/avatars/') && !raw.contains('\\avatars\\')) {
+      if (changed &&
+          isLocalPath &&
+          !raw.contains('/avatars/') &&
+          !raw.contains('\\avatars\\')) {
         final fixedInput = SandboxPathResolver.fix(raw);
         final src = File(fixedInput);
         if (await src.exists()) {
@@ -336,12 +460,15 @@ class AssistantProvider extends ChangeNotifier {
           } else {
             ext = 'jpg';
           }
-          final filename = 'assistant_${updated.id}_${DateTime.now().millisecondsSinceEpoch}.$ext';
+          final filename =
+              'assistant_${updated.id}_${DateTime.now().millisecondsSinceEpoch}.$ext';
           final dest = File('${avatarsDir.path}/$filename');
           await src.copy(dest.path);
 
           // Optionally remove old stored avatar if it lives in our avatars folder
-          if (prevRaw.isNotEmpty && (prevRaw.contains('/avatars/') || prevRaw.contains('\\avatars\\'))) {
+          if (prevRaw.isNotEmpty &&
+              (prevRaw.contains('/avatars/') ||
+                  prevRaw.contains('\\avatars\\'))) {
             try {
               final old = File(prevRaw);
               if (await old.exists() && old.path != dest.path) {
@@ -356,15 +483,23 @@ class AssistantProvider extends ChangeNotifier {
 
       // Prefetch URL avatar to allow offline display later
       if (changed && raw.startsWith('http')) {
-        try { await AvatarCache.getPath(raw); } catch (_) {}
+        try {
+          await AvatarCache.getPath(raw);
+        } catch (_) {}
       }
 
       // Handle background persistence similar to avatar, but under images/
       final bgRaw = (updated.background ?? '').trim();
       final prevBgRaw = (prev.background ?? '').trim();
       final bgChanged = bgRaw != prevBgRaw;
-      final bgIsLocal = bgRaw.isNotEmpty && (bgRaw.startsWith('/') || bgRaw.contains(':')) && !bgRaw.startsWith('http');
-      if (bgChanged && bgIsLocal && !bgRaw.contains('/images/') && !bgRaw.contains('\\images\\')) {
+      final bgIsLocal =
+          bgRaw.isNotEmpty &&
+          (bgRaw.startsWith('/') || bgRaw.contains(':')) &&
+          !bgRaw.startsWith('http');
+      if (bgChanged &&
+          bgIsLocal &&
+          !bgRaw.contains('/images/') &&
+          !bgRaw.contains('\\images\\')) {
         final fixedBg = SandboxPathResolver.fix(bgRaw);
         final srcBg = File(fixedBg);
         if (await srcBg.exists()) {
@@ -380,12 +515,15 @@ class AssistantProvider extends ChangeNotifier {
           } else {
             ext = 'jpg';
           }
-          final filename = 'background_${updated.id}_${DateTime.now().millisecondsSinceEpoch}.$ext';
+          final filename =
+              'background_${updated.id}_${DateTime.now().millisecondsSinceEpoch}.$ext';
           final destBg = File('${imagesDir.path}/$filename');
           await srcBg.copy(destBg.path);
 
           // Clean old stored background if it lived in images/
-          if (prevBgRaw.isNotEmpty && (prevBgRaw.contains('/images/') || prevBgRaw.contains('\\images\\'))) {
+          if (prevBgRaw.isNotEmpty &&
+              (prevBgRaw.contains('/images/') ||
+                  prevBgRaw.contains('\\images\\'))) {
             try {
               final oldBg = File(prevBgRaw);
               if (await oldBg.exists() && oldBg.path != destBg.path) {
@@ -437,17 +575,17 @@ class AssistantProvider extends ChangeNotifier {
     // Do not allow deleting the last remaining assistant
     if (_assistants.length <= 1) return false;
     final removingCurrent = _assistants[idx].id == _currentAssistantId;
+    final removingEnabled = _assistants[idx].isEnabled;
+    if (removingEnabled && _assistants.where((a) => a.isEnabled).length <= 1) {
+      return false;
+    }
     _assistants.removeAt(idx);
     if (removingCurrent) {
-      _currentAssistantId = _assistants.isNotEmpty ? _assistants.first.id : null;
+      _currentAssistantId = null;
     }
+    await _ensureCurrentAssistantEnabled(persist: false);
     await _persist();
-    final prefs = await SharedPreferences.getInstance();
-    if (_currentAssistantId != null) {
-      await prefs.setString(_currentAssistantKey, _currentAssistantId!);
-    } else {
-      await prefs.remove(_currentAssistantKey);
-    }
+    await _persistCurrentAssistantSelection();
     notifyListeners();
     return true;
   }
@@ -456,13 +594,13 @@ class AssistantProvider extends ChangeNotifier {
     if (oldIndex == newIndex) return;
     if (oldIndex < 0 || oldIndex >= _assistants.length) return;
     if (newIndex < 0 || newIndex >= _assistants.length) return;
-    
+
     final assistant = _assistants.removeAt(oldIndex);
     _assistants.insert(newIndex, assistant);
-    
+
     // Notify listeners immediately for smooth UI update
     notifyListeners();
-    
+
     // Then persist the changes
     await _persist();
   }
@@ -488,7 +626,9 @@ class AssistantProvider extends ChangeNotifier {
     if (newIndex < 0 || newIndex >= subsetIndices.length) return;
 
     // Extract subset in current order
-    final subset = subsetIndices.map((i) => _assistants[i]).toList(growable: true);
+    final subset = subsetIndices
+        .map((i) => _assistants[i])
+        .toList(growable: true);
     final moved = subset.removeAt(oldIndex);
     subset.insert(newIndex, moved);
 

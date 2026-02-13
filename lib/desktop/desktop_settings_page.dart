@@ -659,6 +659,59 @@ class _CopyAssistantIconState extends State<_CopyAssistantIcon> {
   }
 }
 
+class _AssistantEnablePillDesktop extends StatefulWidget {
+  const _AssistantEnablePillDesktop({required this.item});
+  final Assistant item;
+  @override
+  State<_AssistantEnablePillDesktop> createState() =>
+      _AssistantEnablePillDesktopState();
+}
+
+class _AssistantEnablePillDesktopState extends State<_AssistantEnablePillDesktop> {
+  bool _hover = false;
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final enabled = widget.item.isEnabled;
+    final fg = enabled ? Colors.green : Colors.orange;
+    final label = enabled
+        ? l10n.providersPageEnabledStatus
+        : l10n.providersPageDisabledStatus;
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () async {
+          final ok = await context
+              .read<AssistantProvider>()
+              .setAssistantEnabled(widget.item.id, !enabled);
+          if (!context.mounted || ok) return;
+          showAppSnackBar(
+            context,
+            message: l10n.assistantSettingsAtLeastOneAssistantRequired,
+            type: NotificationType.warning,
+          );
+        },
+        child: Container(
+          margin: const EdgeInsets.only(left: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          decoration: BoxDecoration(
+            color: fg.withOpacity(_hover ? 0.22 : 0.12),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: fg.withOpacity(0.35)),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(fontSize: 11, color: fg, fontWeight: FontWeight.w700),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 Future<bool?> _confirmDeleteDesktop(BuildContext context) async {
   final l10n = AppLocalizations.of(context)!;
   final cs = Theme.of(context).colorScheme;
@@ -838,6 +891,7 @@ class _DesktopAssistantCardState extends State<_DesktopAssistantCard> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final enabledCount = context.watch<AssistantProvider>().enabledAssistants.length;
     final baseBg = isDark ? Colors.white10 : Colors.white.withOpacity(0.96);
     final borderColor = _hover ? cs.primary.withOpacity(isDark ? 0.35 : 0.45) : cs.outlineVariant.withOpacity(isDark ? 0.12 : 0.08);
     return MouseRegion(
@@ -853,95 +907,99 @@ class _DesktopAssistantCardState extends State<_DesktopAssistantCard> {
             borderRadius: BorderRadius.circular(18),
             border: Border.all(color: borderColor, width: 1.0),
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                _AssistantAvatarDesktop(item: widget.item, size: 48),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              widget.item.name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-                            ),
-                          ),
-                          if (!widget.item.deletable)
-                            Container(
-                              margin: const EdgeInsets.only(left: 8),
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: cs.primary.withOpacity(0.12),
-                                borderRadius: BorderRadius.circular(999),
-                                border: Border.all(color: cs.primary.withOpacity(0.35)),
-                              ),
+          child: Opacity(
+            opacity: widget.item.isEnabled ? 1.0 : 0.72,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  _AssistantAvatarDesktop(item: widget.item, size: 48),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
                               child: Text(
-                                AppLocalizations.of(context)!.assistantSettingsDefaultTag,
-                                style: TextStyle(fontSize: 11, color: cs.primary, fontWeight: FontWeight.w700),
+                                widget.item.name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                               ),
                             ),
-                          _CopyAssistantIcon(
-                            onCopy: () async {
-                              final l10n = AppLocalizations.of(context)!;
-                              final newId = await context.read<AssistantProvider>().duplicateAssistant(widget.item.id, l10n: l10n);
-                              if (!mounted) return;
-                              if (newId != null) {
-                                showAppSnackBar(
-                                  context,
-                                  message: l10n.assistantSettingsCopySuccess,
-                                  type: NotificationType.success,
-                                );
-                              }
-                            },
-                          ),
-                          _DeleteAssistantIcon(
-                            onConfirm: () async {
-                              final l10n = AppLocalizations.of(context)!;
-                              final count = context.read<AssistantProvider>().assistants.length;
-                              if (count <= 1) {
-                                showAppSnackBar(
-                                  context,
-                                  message: l10n.assistantSettingsAtLeastOneAssistantRequired,
-                                  type: NotificationType.warning,
-                                );
-                                return;
-                              }
-                              final ok = await _confirmDeleteDesktop(context);
-                              if (ok == true) {
-                                final success = await context.read<AssistantProvider>().deleteAssistant(widget.item.id);
-                                if (success != true) {
+                            if (!widget.item.deletable)
+                              Container(
+                                margin: const EdgeInsets.only(left: 8),
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: cs.primary.withOpacity(0.12),
+                                  borderRadius: BorderRadius.circular(999),
+                                  border: Border.all(color: cs.primary.withOpacity(0.35)),
+                                ),
+                                child: Text(
+                                  AppLocalizations.of(context)!.assistantSettingsDefaultTag,
+                                  style: TextStyle(fontSize: 11, color: cs.primary, fontWeight: FontWeight.w700),
+                                ),
+                              ),
+                            _AssistantEnablePillDesktop(item: widget.item),
+                            _CopyAssistantIcon(
+                              onCopy: () async {
+                                final l10n = AppLocalizations.of(context)!;
+                                final newId = await context.read<AssistantProvider>().duplicateAssistant(widget.item.id, l10n: l10n);
+                                if (!mounted) return;
+                                if (newId != null) {
+                                  showAppSnackBar(
+                                    context,
+                                    message: l10n.assistantSettingsCopySuccess,
+                                    type: NotificationType.success,
+                                  );
+                                }
+                              },
+                            ),
+                            _DeleteAssistantIcon(
+                              onConfirm: () async {
+                                final l10n = AppLocalizations.of(context)!;
+                                final count = context.read<AssistantProvider>().assistants.length;
+                                if (count <= 1 || (widget.item.isEnabled && enabledCount <= 1)) {
                                   showAppSnackBar(
                                     context,
                                     message: l10n.assistantSettingsAtLeastOneAssistantRequired,
                                     type: NotificationType.warning,
                                   );
+                                  return;
                                 }
-                              }
-                            },
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        (widget.item.systemPrompt.trim().isEmpty
-                            ? AppLocalizations.of(context)!.assistantSettingsNoPromptPlaceholder
-                            : widget.item.systemPrompt),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: 13, color: cs.onSurface.withOpacity(0.7), height: 1.25),
-                      ),
-                    ],
+                                final ok = await _confirmDeleteDesktop(context);
+                                if (ok == true) {
+                                  final success = await context.read<AssistantProvider>().deleteAssistant(widget.item.id);
+                                  if (success != true) {
+                                    showAppSnackBar(
+                                      context,
+                                      message: l10n.assistantSettingsAtLeastOneAssistantRequired,
+                                      type: NotificationType.warning,
+                                    );
+                                  }
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          (widget.item.systemPrompt.trim().isEmpty
+                              ? AppLocalizations.of(context)!.assistantSettingsNoPromptPlaceholder
+                              : widget.item.systemPrompt),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(fontSize: 13, color: cs.onSurface.withOpacity(0.7), height: 1.25),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

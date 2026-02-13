@@ -452,14 +452,18 @@ class HomePageController extends ChangeNotifier {
   Future<void> initChat() async {
     await _chatService.init();
     final prefs = _context.read<SettingsProvider>();
+    final ap = _context.read<AssistantProvider>();
     if (prefs.newChatOnLaunch) {
       await _createNewConversation();
     } else {
-      final conversations = _chatService.getAllConversations();
+      final conversations = _chatService.getAllConversations().where((c) {
+        final assistantId = c.assistantId;
+        return assistantId == null || ap.isAssistantEnabled(assistantId);
+      }).toList();
       if (conversations.isNotEmpty) {
         final recent = conversations.first;
         if ((recent.assistantId ?? '').isNotEmpty) {
-          try { await _context.read<AssistantProvider>().setCurrentAssistant(recent.assistantId!); } catch (_) {}
+          try { await ap.setCurrentAssistant(recent.assistantId!); } catch (_) {}
         }
         _chatService.setCurrentConversation(recent.id);
         _chatController.setCurrentConversation(recent);
