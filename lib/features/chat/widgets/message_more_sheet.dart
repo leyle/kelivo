@@ -24,9 +24,7 @@ import 'dart:convert';
 enum MessageMoreAction { edit, fork, delete, share }
 
 Future<MessageMoreAction?> showMessageMoreSheet(BuildContext context, ChatMessage message) async {
-  final isDesktop = defaultTargetPlatform == TargetPlatform.macOS ||
-      defaultTargetPlatform == TargetPlatform.windows ||
-      defaultTargetPlatform == TargetPlatform.linux;
+  final isDesktop = defaultTargetPlatform == TargetPlatform.macOS;
   if (!isDesktop) {
     final cs = Theme.of(context).colorScheme;
     return showModalBottomSheet<MessageMoreAction?>(

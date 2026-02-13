@@ -1,5 +1,4 @@
-import 'package:flutter/foundation.dart'
-    show kIsWeb, defaultTargetPlatform, TargetPlatform;
+import 'dart:io' show Platform;
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -28,11 +27,7 @@ class DesktopTrayController with TrayListener, WindowListener {
     required bool showTray,
     required bool minimizeToTrayOnClose,
   }) async {
-    if (kIsWeb) return;
-    final isDesktop = defaultTargetPlatform == TargetPlatform.windows ||
-        defaultTargetPlatform == TargetPlatform.macOS ||
-        defaultTargetPlatform == TargetPlatform.linux;
-    if (!isDesktop) return;
+    if (!Platform.isMacOS) return;
     _isDesktop = true;
 
     if (!_initialized) {
@@ -81,40 +76,27 @@ class DesktopTrayController with TrayListener, WindowListener {
   Future<void> _ensureTrayIconAndMenu(AppLocalizations l10n) async {
     if (!_isDesktop) return;
 
-    // Use platform-specific tray icons (mirrors Gopeed's approach):
-    // - Windows: multi-size ICO for crisp scaling
-    // - macOS: template PNG so the system can adapt to light/dark menu bar
-    // - Linux/others: regular PNG asset
-    final platform = defaultTargetPlatform;
     try {
-      if (platform == TargetPlatform.windows) {
-        await trayManager.setIcon('assets/app_icon.ico');
-      } else if (platform == TargetPlatform.macOS) {
-        await trayManager.setIcon('assets/icon_mac.png', isTemplate: true);
-      } else {
-        await trayManager.setIcon('assets/icons/kelivo.png');
-      }
+      await trayManager.setIcon('assets/icon_mac.png', isTemplate: true);
     } catch (_) {}
 
-    // Some Linux environments do not support tooltip; keep the call
-    // consistent with Gopeed and skip it there.
-    if (platform != TargetPlatform.linux) {
-      try {
-        await trayManager.setToolTip('Kelivo');
-      } catch (_) {}
-    }
     try {
-      final menu = Menu(items: [
-        MenuItem(
-          label: l10n.desktopTrayMenuShowWindow,
-          onClick: (_) async => _showWindow(),
-        ),
-        MenuItem.separator(),
-        MenuItem(
-          label: l10n.desktopTrayMenuExit,
-          onClick: (_) async => _exitApp(),
-        ),
-      ]);
+      await trayManager.setToolTip('Kelivo');
+    } catch (_) {}
+    try {
+      final menu = Menu(
+        items: [
+          MenuItem(
+            label: l10n.desktopTrayMenuShowWindow,
+            onClick: (_) async => _showWindow(),
+          ),
+          MenuItem.separator(),
+          MenuItem(
+            label: l10n.desktopTrayMenuExit,
+            onClick: (_) async => _exitApp(),
+          ),
+        ],
+      );
       await trayManager.setContextMenu(menu);
     } catch (_) {}
   }
@@ -130,22 +112,9 @@ class DesktopTrayController with TrayListener, WindowListener {
   Future<void> _exitApp() async {
     if (!_isDesktop) return;
     try {
-      // On Windows we may have `preventClose` enabled to support
-      // "close to tray". Temporarily disable it and send a normal
-      // close so the window can exit immediately without being
-      // intercepted by the minimize‑to‑tray logic.
-      if (defaultTargetPlatform == TargetPlatform.windows) {
-        try {
-          await windowManager.setPreventClose(false);
-        } catch (_) {}
-        try {
-          await windowManager.close();
-          return;
-        } catch (_) {}
-      }
-
-      // Other desktop platforms (and Windows fallback): destroy the
-      // window so the process exits cleanly.
+      try {
+        await windowManager.setPreventClose(false);
+      } catch (_) {}
       await windowManager.destroy();
     } catch (_) {}
   }
@@ -161,27 +130,18 @@ class DesktopTrayController with TrayListener, WindowListener {
 
   @override
   void onTrayIconRightMouseDown() async {
-    // Right‑click: 弹出托盘菜单。
-    // 使用内部标记防止在一次交互周期内重复弹出，
-    // 否则在某些 Windows 环境下会看到第二个偏移的菜单。
     if (_contextMenuOpen) {
       return;
     }
     _contextMenuOpen = true;
     try {
-      // Windows 需要在调用 TrackPopupMenu 前把窗口置为前台，
-      // 否则点击其他地方时菜单可能不会自动关闭。
       await trayManager.popUpContextMenu(bringAppToFront: true);
     } catch (_) {}
-    // 无论是点击菜单项还是点击其他地方关闭菜单，
-    // popUpContextMenu 都会在菜单关闭后返回，这里统一重置标记。
     _contextMenuOpen = false;
   }
 
   @override
   void onTrayMenuItemClick(MenuItem menuItem) {
-    // 任一菜单项被点击视为一次菜单交互结束，
-    // 额外保险地解除防抖标记（即使 Future 尚未完成）。
     _contextMenuOpen = false;
   }
 

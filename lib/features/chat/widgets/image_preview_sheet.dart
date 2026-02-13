@@ -18,7 +18,7 @@ import 'dart:ui' as ui;
 
 Future<void> showImagePreviewSheet(BuildContext context, {required File file}) async {
   // On desktop platforms, show a custom dialog instead of bottom sheet
-  if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+  if (Platform.isMacOS) {
     await showDialog<void>(
       context: context,
       barrierDismissible: true,

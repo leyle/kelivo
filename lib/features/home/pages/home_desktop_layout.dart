@@ -86,9 +86,7 @@ class HomeDesktopScaffold extends StatelessWidget {
   static const Curve _sidebarAnimCurve = Curves.easeOutCubic;
 
   bool get _isDesktop =>
-      defaultTargetPlatform == TargetPlatform.macOS ||
-      defaultTargetPlatform == TargetPlatform.windows ||
-      defaultTargetPlatform == TargetPlatform.linux;
+      defaultTargetPlatform == TargetPlatform.macOS;
 
   @override
   Widget build(BuildContext context) {

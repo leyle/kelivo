@@ -213,9 +213,7 @@ class _SelectableWithActionsState extends State<SelectableWithActions> {
   Offset? _lastTapPosition;
 
   bool get _isDesktop =>
-      defaultTargetPlatform == TargetPlatform.macOS ||
-      defaultTargetPlatform == TargetPlatform.windows ||
-      defaultTargetPlatform == TargetPlatform.linux;
+      defaultTargetPlatform == TargetPlatform.macOS;
 
   @override
   void dispose() {

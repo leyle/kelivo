@@ -4,7 +4,6 @@ import 'package:gpt_markdown/gpt_markdown.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:gpt_markdown/custom_widgets/markdown_config.dart'
     show GptMarkdownConfig;
-import 'package:flutter_highlight/flutter_highlight.dart';
 import 'package:flutter_highlight/themes/github.dart';
 import 'package:flutter_highlight/themes/atom-one-dark-reasonable.dart';
 import 'package:highlight/highlight.dart' show highlight, Node;
@@ -16,7 +15,6 @@ import 'dart:convert';
 import 'dart:ui' as ui;
 import '../../utils/sandbox_path_resolver.dart';
 import '../../features/chat/pages/image_viewer_page.dart';
-import '../../features/chat/pages/html_preview_page.dart';
 import 'snackbar.dart';
 import 'mermaid_bridge.dart';
 import 'export_capture_scope.dart';
@@ -355,8 +353,7 @@ class MarkdownWithCodeHighlight extends StatelessWidget {
         }
 
         // Desktop platform detection (for selection + layout)
-        final bool isDesktop =
-            Platform.isMacOS || Platform.isWindows || Platform.isLinux;
+        final bool isDesktop = Platform.isMacOS;
 
         // Common cell builder
         Widget cell(
@@ -1048,12 +1045,10 @@ class _CollapsibleCodeBlockState extends State<_CollapsibleCodeBlock> {
                 _manuallyToggled = true;
                 _expanded = !_expanded;
               }),
-              splashColor: Platform.isIOS ? Colors.transparent : null,
-              highlightColor: Platform.isIOS ? Colors.transparent : null,
-              hoverColor: Platform.isIOS ? Colors.transparent : null,
-              overlayColor: Platform.isIOS
-                  ? const MaterialStatePropertyAll(Colors.transparent)
-                  : null,
+              splashColor: null,
+              highlightColor: null,
+              hoverColor: null,
+              overlayColor: null,
               child: Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12,
@@ -1086,60 +1081,18 @@ class _CollapsibleCodeBlockState extends State<_CollapsibleCodeBlock> {
                     if (_isHtml(widget.language))
                       InkWell(
                         onTap: () async {
-                          final l10n = AppLocalizations.of(context)!;
-                          if (Platform.isAndroid || Platform.isIOS) {
-                            // Mobile: navigate to preview page
-                            Navigator.of(context).push(
-                              PageRouteBuilder(
-                                pageBuilder: (_, __, ___) =>
-                                    HtmlPreviewPage(html: widget.code),
-                                transitionDuration: const Duration(
-                                  milliseconds: 300,
-                                ),
-                                reverseTransitionDuration: const Duration(
-                                  milliseconds: 240,
-                                ),
-                                transitionsBuilder:
-                                    (context, anim, sec, child) {
-                                      final curved = CurvedAnimation(
-                                        parent: anim,
-                                        curve: Curves.easeOutCubic,
-                                        reverseCurve: Curves.easeInCubic,
-                                      );
-                                      return FadeTransition(
-                                        opacity: curved,
-                                        child: child,
-                                      );
-                                    },
-                              ),
-                            );
-                          } else if (Platform.isLinux) {
-                            // Linux: show not supported
-                            showAppSnackBar(
+                          try {
+                            // ignore: use_build_context_synchronously
+                            await showHtmlPreviewDesktopDialog(
                               context,
-                              message: l10n.htmlPreviewNotSupportedOnLinux,
-                              type: NotificationType.warning,
+                              html: widget.code,
                             );
-                          } else {
-                            // Desktop (macOS/Windows): open dialog
-                            try {
-                              // Defer import to avoid cycle
-                              // ignore: use_build_context_synchronously
-                              await showHtmlPreviewDesktopDialog(
-                                context,
-                                html: widget.code,
-                              );
-                            } catch (_) {}
-                          }
+                          } catch (_) {}
                         },
-                        splashColor: Platform.isIOS ? Colors.transparent : null,
-                        highlightColor: Platform.isIOS
-                            ? Colors.transparent
-                            : null,
-                        hoverColor: Platform.isIOS ? Colors.transparent : null,
-                        overlayColor: Platform.isIOS
-                            ? const MaterialStatePropertyAll(Colors.transparent)
-                            : null,
+                        splashColor: null,
+                        highlightColor: null,
+                        hoverColor: null,
+                        overlayColor: null,
                         borderRadius: BorderRadius.circular(6),
                         child: Padding(
                           padding: const EdgeInsets.symmetric(
@@ -1184,14 +1137,10 @@ class _CollapsibleCodeBlockState extends State<_CollapsibleCodeBlock> {
                           );
                         }
                       },
-                      splashColor: Platform.isIOS ? Colors.transparent : null,
-                      highlightColor: Platform.isIOS
-                          ? Colors.transparent
-                          : null,
-                      hoverColor: Platform.isIOS ? Colors.transparent : null,
-                      overlayColor: Platform.isIOS
-                          ? const MaterialStatePropertyAll(Colors.transparent)
-                          : null,
+                      splashColor: null,
+                      highlightColor: null,
+                      hoverColor: null,
+                      overlayColor: null,
                       borderRadius: BorderRadius.circular(6),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
@@ -1257,10 +1206,7 @@ class _CollapsibleCodeBlockState extends State<_CollapsibleCodeBlock> {
                     child: () {
                       // Desktop: enable word wrap, allow selection, no height limit, no scroll
                       // Mobile: horizontal scroll by default, or word wrap if setting enabled
-                      final bool isDesktop =
-                          Platform.isMacOS ||
-                          Platform.isWindows ||
-                          Platform.isLinux;
+                      final bool isDesktop = Platform.isMacOS;
 
                       if (isDesktop) {
                         // Desktop: auto wrap, selectable, no height limit, no scroll
@@ -1348,14 +1294,14 @@ class _CollapsibleCodeBlockState extends State<_CollapsibleCodeBlock> {
                         int lineStart = 0;
                         for (int i = 0; i < end; i++) {
                           final cu = code.codeUnitAt(i);
-                          if (cu == 0x0A /* \n */ || cu == 0x0D /* \r */) {
+                          if (cu == 0x0A /* \n */ || cu == 0x0D /* \r */ ) {
                             if (preview.length < 2) {
                               preview.add(code.substring(lineStart, i));
                             }
                             totalLines++;
                             if (cu == 0x0D /* \r */ &&
                                 i + 1 < end &&
-                                code.codeUnitAt(i + 1) == 0x0A /* \n */) {
+                                code.codeUnitAt(i + 1) == 0x0A /* \n */ ) {
                               i++;
                             }
                             lineStart = i + 1;
@@ -1366,8 +1312,10 @@ class _CollapsibleCodeBlockState extends State<_CollapsibleCodeBlock> {
                         }
                       }
 
-                      final hiddenLines =
-                          (totalLines - preview.length).clamp(0, 999999);
+                      final hiddenLines = (totalLines - preview.length).clamp(
+                        0,
+                        999999,
+                      );
 
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1416,12 +1364,12 @@ class _CollapsibleCodeBlockState extends State<_CollapsibleCodeBlock> {
     int lines = 1;
     for (int i = 0; i < end; i++) {
       final cu = code.codeUnitAt(i);
-      if (cu == 0x0A /* \n */) {
+      if (cu == 0x0A /* \n */ ) {
         lines++;
         if (lines > threshold) return true;
         continue;
       }
-      if (cu == 0x0D /* \r */) {
+      if (cu == 0x0D /* \r */ ) {
         lines++;
         if (lines > threshold) return true;
         if (i + 1 < end && code.codeUnitAt(i + 1) == 0x0A) i++;
@@ -1434,7 +1382,7 @@ class _CollapsibleCodeBlockState extends State<_CollapsibleCodeBlock> {
     int end = s.length;
     while (end > 0) {
       final ch = s.codeUnitAt(end - 1);
-      if (ch == 0x0A /* \n */ || ch == 0x0D /* \r */) {
+      if (ch == 0x0A /* \n */ || ch == 0x0D /* \r */ ) {
         end--;
         continue;
       }
@@ -1572,12 +1520,10 @@ class _MermaidBlockState extends State<_MermaidBlock> {
             surfaceTintColor: Colors.transparent,
             child: InkWell(
               onTap: () => setState(() => _expanded = !_expanded),
-              splashColor: Platform.isIOS ? Colors.transparent : null,
-              highlightColor: Platform.isIOS ? Colors.transparent : null,
-              hoverColor: Platform.isIOS ? Colors.transparent : null,
-              overlayColor: Platform.isIOS
-                  ? const MaterialStatePropertyAll(Colors.transparent)
-                  : null,
+              splashColor: null,
+              highlightColor: null,
+              hoverColor: null,
+              overlayColor: null,
               child: Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12,
@@ -1624,14 +1570,10 @@ class _MermaidBlockState extends State<_MermaidBlock> {
                             );
                           }
                         },
-                        splashColor: Platform.isIOS ? Colors.transparent : null,
-                        highlightColor: Platform.isIOS
-                            ? Colors.transparent
-                            : null,
-                        hoverColor: Platform.isIOS ? Colors.transparent : null,
-                        overlayColor: Platform.isIOS
-                            ? const MaterialStatePropertyAll(Colors.transparent)
-                            : null,
+                        splashColor: null,
+                        highlightColor: null,
+                        hoverColor: null,
+                        overlayColor: null,
                         borderRadius: BorderRadius.circular(6),
                         child: Padding(
                           padding: const EdgeInsets.symmetric(
@@ -1673,30 +1615,12 @@ class _MermaidBlockState extends State<_MermaidBlock> {
                                 message: l10n.mermaidExportFailed,
                                 type: NotificationType.error,
                               );
-                            } else if (Platform.isAndroid || Platform.isIOS) {
-                              showAppSnackBar(
-                                context,
-                                message: AppLocalizations.of(
-                                  context,
-                                )!.imageViewerPageSaveSuccess,
-                                type: NotificationType.success,
-                              );
                             }
                           },
-                          splashColor: Platform.isIOS
-                              ? Colors.transparent
-                              : null,
-                          highlightColor: Platform.isIOS
-                              ? Colors.transparent
-                              : null,
-                          hoverColor: Platform.isIOS
-                              ? Colors.transparent
-                              : null,
-                          overlayColor: Platform.isIOS
-                              ? const MaterialStatePropertyAll(
-                                  Colors.transparent,
-                                )
-                              : null,
+                          splashColor: null,
+                          highlightColor: null,
+                          hoverColor: null,
+                          overlayColor: null,
                           borderRadius: BorderRadius.circular(6),
                           child: Padding(
                             padding: const EdgeInsets.all(6),
@@ -1751,10 +1675,7 @@ class _MermaidBlockState extends State<_MermaidBlock> {
                         ] else ...[
                           // Fallback: show raw code and a preview button (opens browser)
                           () {
-                            final bool isDesktop =
-                                Platform.isMacOS ||
-                                Platform.isWindows ||
-                                Platform.isLinux;
+                            final bool isDesktop = Platform.isMacOS;
                             if (!isDesktop) {
                               return SingleChildScrollView(
                                 scrollDirection: Axis.horizontal,
@@ -1958,7 +1879,7 @@ class FencedCodeBlockMd extends BlockMd {
   // - supports both ``` and ~~~
   String get expString =>
       (r"[ \t]*(([`~])\2{2,})[ \t]*([^\n]*?)\n"
-          r"(?:(?:([\s\S]*?)^[ \t]*\1\2*[ \t]*)|([\s\S]*))");
+      r"(?:(?:([\s\S]*?)^[ \t]*\1\2*[ \t]*)|([\s\S]*))");
 
   @override
   Widget build(BuildContext context, String text, GptMarkdownConfig config) {
@@ -2349,10 +2270,8 @@ class ModernBlockQuote extends InlineMd {
   bool get inline => false;
 
   @override
-  RegExp get exp => RegExp(
-    r"^[ \t]*>[^\n]*(?:\n[ \t]*>[^\n]*)*",
-    multiLine: true,
-  );
+  RegExp get exp =>
+      RegExp(r"^[ \t]*>[^\n]*(?:\n[ \t]*>[^\n]*)*", multiLine: true);
 
   @override
   InlineSpan span(BuildContext context, String text, GptMarkdownConfig config) {

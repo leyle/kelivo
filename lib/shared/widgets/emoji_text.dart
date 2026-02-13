@@ -1,4 +1,5 @@
-import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:characters/characters.dart';
 
@@ -28,10 +29,7 @@ class EmojiText extends StatelessWidget {
     // Ensure we render at most one grapheme (ZWJ sequences remain intact)
     final String glyph = text.characters.take(1).toString();
 
-    // Optional platform-specific scaling for Windows to reduce line jitter
-    final bool isWindows = !kIsWeb && defaultTargetPlatform == TargetPlatform.windows;
-    const double winScale = 0.9;
-    final double scaleFactor = isWindows ? winScale : 1.0;
+    final double scaleFactor = 1.0;
     double fs = fontSize * scaleFactor;
 
     // Compute effective height from figmaLineHeight or explicit lineHeight
@@ -62,8 +60,9 @@ class EmojiText extends StatelessWidget {
       fontSize: fs,
       height: effectiveHeight,
       // Encourage even leading distribution for better visual centering
-      leadingDistribution:
-          optimizeEmojiAlign ? TextLeadingDistribution.even : null,
+      leadingDistribution: optimizeEmojiAlign
+          ? TextLeadingDistribution.even
+          : null,
       fontFamilyFallback: fallback,
       decoration: TextDecoration.none,
     );
@@ -74,21 +73,13 @@ class EmojiText extends StatelessWidget {
       if (nudge != null) {
         dx = nudge!.dx;
         dy = nudge!.dy;
-      } else if (defaultTargetPlatform == TargetPlatform.iOS) {
-        // iOS
-        dx = fs * 0.04; // ~5% right
-        dy = fs * -0.075; // ~1.2% up
       } else if (defaultTargetPlatform == TargetPlatform.macOS) {
         // macOS
         dx = fs * 0.08; // ~3.5% right
         dy = fs * -0.008; // ~0.8% up
-      } else if (isWindows) {
-        // Windows (Segoe UI Emoji)
-        dx = fs * 0.015; // slight right
-        dy = 0;
       } else {
-        // Linux/others (Noto, etc.)
-        dx = fs * 0.012; // tiny right
+        // Default fallback
+        dx = fs * 0.08;
         dy = 0;
       }
     }
@@ -112,4 +103,3 @@ class EmojiText extends StatelessWidget {
     );
   }
 }
-

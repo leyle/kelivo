@@ -57,14 +57,19 @@ class McpToolConfig {
     this.schema,
   });
 
-  McpToolConfig copyWith({bool? enabled, String? name, String? description, List<McpParamSpec>? params, Map<String, dynamic>? schema}) =>
-      McpToolConfig(
-        enabled: enabled ?? this.enabled,
-        name: name ?? this.name,
-        description: description ?? this.description,
-        params: params ?? this.params,
-        schema: schema ?? this.schema,
-      );
+  McpToolConfig copyWith({
+    bool? enabled,
+    String? name,
+    String? description,
+    List<McpParamSpec>? params,
+    Map<String, dynamic>? schema,
+  }) => McpToolConfig(
+    enabled: enabled ?? this.enabled,
+    name: name ?? this.name,
+    description: description ?? this.description,
+    params: params ?? this.params,
+    schema: schema ?? this.schema,
+  );
 
   Map<String, dynamic> toJson() => {
     'enabled': enabled,
@@ -78,9 +83,12 @@ class McpToolConfig {
     enabled: json['enabled'] as bool? ?? true,
     name: json['name'] as String? ?? '',
     description: json['description'] as String?,
-    params: (json['params'] as List?)
-        ?.map((e) => McpParamSpec.fromJson((e as Map).cast<String, dynamic>()))
-        .toList() ??
+    params:
+        (json['params'] as List?)
+            ?.map(
+              (e) => McpParamSpec.fromJson((e as Map).cast<String, dynamic>()),
+            )
+            .toList() ??
         const [],
     schema: (json['schema'] is Map)
         ? (json['schema'] as Map).cast<String, dynamic>()
@@ -130,43 +138,56 @@ class McpServerConfig {
     Map<String, String>? env,
     String? workingDirectory,
     bool clearWorkingDirectory = false,
-  }) =>
-      McpServerConfig(
-        id: id ?? this.id,
-        enabled: enabled ?? this.enabled,
-        name: name ?? this.name,
-        transport: transport ?? this.transport,
-        url: url ?? this.url,
-        tools: tools ?? this.tools,
-        headers: headers ?? this.headers,
-        command: command ?? this.command,
-        args: args ?? this.args,
-        env: env ?? this.env,
-        workingDirectory: clearWorkingDirectory ? null : (workingDirectory ?? this.workingDirectory),
-      );
+  }) => McpServerConfig(
+    id: id ?? this.id,
+    enabled: enabled ?? this.enabled,
+    name: name ?? this.name,
+    transport: transport ?? this.transport,
+    url: url ?? this.url,
+    tools: tools ?? this.tools,
+    headers: headers ?? this.headers,
+    command: command ?? this.command,
+    args: args ?? this.args,
+    env: env ?? this.env,
+    workingDirectory: clearWorkingDirectory
+        ? null
+        : (workingDirectory ?? this.workingDirectory),
+  );
 
   Map<String, dynamic> toJson() => {
     'id': id,
     'enabled': enabled,
     'name': name,
     'transport': transport.name,
-    if (transport != McpTransportType.stdio && transport != McpTransportType.inmemory) 'url': url,
+    if (transport != McpTransportType.stdio &&
+        transport != McpTransportType.inmemory)
+      'url': url,
     'tools': tools.map((e) => e.toJson()).toList(),
-    if (transport != McpTransportType.stdio && transport != McpTransportType.inmemory) 'headers': headers,
+    if (transport != McpTransportType.stdio &&
+        transport != McpTransportType.inmemory)
+      'headers': headers,
     if (transport == McpTransportType.stdio) 'command': command,
     if (transport == McpTransportType.stdio) 'args': args,
     if (transport == McpTransportType.stdio) 'env': env,
-    if (transport == McpTransportType.stdio && workingDirectory != null) 'workingDirectory': workingDirectory,
+    if (transport == McpTransportType.stdio && workingDirectory != null)
+      'workingDirectory': workingDirectory,
   };
 
   factory McpServerConfig.fromJson(Map<String, dynamic> json) {
     final tRaw = (json['transport'] as String?) ?? '';
     final t = tRaw == 'http'
         ? McpTransportType.http
-        : (tRaw == 'stdio' ? McpTransportType.stdio : (tRaw == 'inmemory' ? McpTransportType.inmemory : McpTransportType.sse));
-    final tools = (json['tools'] as List?)
-        ?.map((e) => McpToolConfig.fromJson((e as Map).cast<String, dynamic>()))
-        .toList() ??
+        : (tRaw == 'stdio'
+              ? McpTransportType.stdio
+              : (tRaw == 'inmemory'
+                    ? McpTransportType.inmemory
+                    : McpTransportType.sse));
+    final tools =
+        (json['tools'] as List?)
+            ?.map(
+              (e) => McpToolConfig.fromJson((e as Map).cast<String, dynamic>()),
+            )
+            .toList() ??
         const <McpToolConfig>[];
     if (t == McpTransportType.stdio) {
       final argsAny = json['args'];
@@ -178,8 +199,12 @@ class McpServerConfig {
         transport: McpTransportType.stdio,
         tools: tools,
         command: (json['command'] as String?)?.trim(),
-        args: argsAny is List ? argsAny.map((e) => e.toString()).toList() : const <String>[],
-        env: envAny is Map ? envAny.map((k, v) => MapEntry(k.toString(), v.toString())) : const <String, String>{},
+        args: argsAny is List
+            ? argsAny.map((e) => e.toString()).toList()
+            : const <String>[],
+        env: envAny is Map
+            ? envAny.map((k, v) => MapEntry(k.toString(), v.toString()))
+            : const <String, String>{},
         workingDirectory: (json['workingDirectory'] as String?)?.trim(),
       );
     } else if (t == McpTransportType.inmemory) {
@@ -198,7 +223,11 @@ class McpServerConfig {
         transport: t,
         url: json['url'] as String? ?? '',
         tools: tools,
-        headers: ((json['headers'] as Map?)?.map((k, v) => MapEntry(k.toString(), v.toString()))) ?? const {},
+        headers:
+            ((json['headers'] as Map?)?.map(
+              (k, v) => MapEntry(k.toString(), v.toString()),
+            )) ??
+            const {},
       );
     }
   }
@@ -226,9 +255,11 @@ class McpProvider extends ChangeNotifier {
   McpStatus statusFor(String id) => _status[id] ?? McpStatus.idle;
   String? errorFor(String id) => _errors[id];
   bool get hasAnyEnabled => _servers.any((s) => s.enabled);
-  bool isConnected(String id) => _clients.containsKey(id) && statusFor(id) == McpStatus.connected;
-  List<McpServerConfig> get connectedServers =>
-      _servers.where((s) => statusFor(s.id) == McpStatus.connected).toList(growable: false);
+  bool isConnected(String id) =>
+      _clients.containsKey(id) && statusFor(id) == McpStatus.connected;
+  List<McpServerConfig> get connectedServers => _servers
+      .where((s) => statusFor(s.id) == McpStatus.connected)
+      .toList(growable: false);
   Duration get requestTimeout => _requestTimeout;
   int get requestTimeoutSeconds => _requestTimeout.inSeconds;
 
@@ -242,7 +273,10 @@ class McpProvider extends ChangeNotifier {
     if (raw != null && raw.isNotEmpty) {
       try {
         final list = (jsonDecode(raw) as List)
-            .map((e) => McpServerConfig.fromJson((e as Map).cast<String, dynamic>()))
+            .map(
+              (e) =>
+                  McpServerConfig.fromJson((e as Map).cast<String, dynamic>()),
+            )
             .toList();
         _servers = list;
       } catch (_) {}
@@ -264,7 +298,12 @@ class McpProvider extends ChangeNotifier {
   }
 
   void _ensureBuiltinFetchServerPresent() {
-    final exists = _servers.any((s) => s.transport == McpTransportType.inmemory || s.name == '@kelivo/fetch' || s.id == 'kelivo_fetch');
+    final exists = _servers.any(
+      (s) =>
+          s.transport == McpTransportType.inmemory ||
+          s.name == '@kelivo/fetch' ||
+          s.id == 'kelivo_fetch',
+    );
     if (exists) return;
     final cfg = McpServerConfig(
       id: 'kelivo_fetch',
@@ -278,7 +317,10 @@ class McpProvider extends ChangeNotifier {
 
   Future<void> _persist() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_prefsKey, jsonEncode(_servers.map((e) => e.toJson()).toList()));
+    await prefs.setString(
+      _prefsKey,
+      jsonEncode(_servers.map((e) => e.toJson()).toList()),
+    );
     await prefs.setInt(_prefsTimeoutKey, _requestTimeout.inMilliseconds);
   }
 
@@ -312,27 +354,43 @@ class McpProvider extends ChangeNotifier {
           if (s.transport != McpTransportType.stdio || isDesktop)
             s.id: {
               'name': s.name,
-              if (s.transport == McpTransportType.http) 'type': 'streamableHttp',
+              if (s.transport == McpTransportType.http)
+                'type': 'streamableHttp',
               if (s.transport == McpTransportType.sse) 'type': 'sse',
               if (s.transport == McpTransportType.inmemory) 'type': 'inmemory',
               'description': '',
               'isActive': s.enabled,
-              if (s.transport != McpTransportType.stdio && s.transport != McpTransportType.inmemory) 'baseUrl': s.url,
-              if (s.transport != McpTransportType.stdio && s.transport != McpTransportType.inmemory && s.headers.isNotEmpty) 'headers': s.headers,
+              if (s.transport != McpTransportType.stdio &&
+                  s.transport != McpTransportType.inmemory)
+                'baseUrl': s.url,
+              if (s.transport != McpTransportType.stdio &&
+                  s.transport != McpTransportType.inmemory &&
+                  s.headers.isNotEmpty)
+                'headers': s.headers,
               // For stdio, include an optional type for compatibility
               if (s.transport == McpTransportType.stdio) 'type': 'stdio',
               // Include command/args/env
-              if (s.transport == McpTransportType.stdio && (s.command ?? '').isNotEmpty) 'command': s.command,
-              if (s.transport == McpTransportType.stdio && s.args.isNotEmpty) 'args': s.args,
-              if (s.transport == McpTransportType.stdio && s.env.isNotEmpty) 'env': s.env,
+              if (s.transport == McpTransportType.stdio &&
+                  (s.command ?? '').isNotEmpty)
+                'command': s.command,
+              if (s.transport == McpTransportType.stdio && s.args.isNotEmpty)
+                'args': s.args,
+              if (s.transport == McpTransportType.stdio && s.env.isNotEmpty)
+                'env': s.env,
               if (s.transport == McpTransportType.stdio)
                 ...() {
-                  final reg = s.env['NPM_CONFIG_REGISTRY'] ?? s.env['npm_config_registry'];
-                  return reg != null && reg.isNotEmpty ? {'registryUrl': reg} : <String, dynamic>{};
+                  final reg =
+                      s.env['NPM_CONFIG_REGISTRY'] ??
+                      s.env['npm_config_registry'];
+                  return reg != null && reg.isNotEmpty
+                      ? {'registryUrl': reg}
+                      : <String, dynamic>{};
                 }(),
-              if (s.transport == McpTransportType.stdio && (s.workingDirectory ?? '').isNotEmpty) 'workingDirectory': s.workingDirectory,
-            }
-      }
+              if (s.transport == McpTransportType.stdio &&
+                  (s.workingDirectory ?? '').isNotEmpty)
+                'workingDirectory': s.workingDirectory,
+            },
+      },
     };
     return const JsonEncoder.withIndent('  ').convert(map);
   }
@@ -373,7 +431,11 @@ class McpProvider extends ChangeNotifier {
             builtinEnabled = (cfg['isActive'] as bool?) ?? true;
             return;
           }
-          final hasStdioShape = cfg.containsKey('command') || cfg.containsKey('args') || cfg.containsKey('env') || (cfg['type']?.toString().toLowerCase() == 'stdio');
+          final hasStdioShape =
+              cfg.containsKey('command') ||
+              cfg.containsKey('args') ||
+              cfg.containsKey('env') ||
+              (cfg['type']?.toString().toLowerCase() == 'stdio');
           if (hasStdioShape) {
             if (!isDesktop) {
               // Mobile: skip stdio entries entirely
@@ -390,57 +452,72 @@ class McpProvider extends ChangeNotifier {
             final envAny = cfg['env'];
             final wd = (cfg['workingDirectory'] as String?)?.trim();
             final registryUrl = (cfg['registryUrl'] as String?)?.trim();
-            Map<String, String> env = envAny is Map ? envAny.map((k, v) => MapEntry(k.toString(), v.toString())) : const <String, String>{};
+            Map<String, String> env = envAny is Map
+                ? envAny.map((k, v) => MapEntry(k.toString(), v.toString()))
+                : const <String, String>{};
             if ((registryUrl != null) && registryUrl.isNotEmpty) {
-              if (!env.containsKey('NPM_CONFIG_REGISTRY') && !env.containsKey('npm_config_registry')) {
+              if (!env.containsKey('NPM_CONFIG_REGISTRY') &&
+                  !env.containsKey('npm_config_registry')) {
                 env = {...env, 'NPM_CONFIG_REGISTRY': registryUrl};
               }
             }
-            next.add(McpServerConfig(
-              id: id,
-              enabled: enabled,
-              name: (name == null || name.isEmpty) ? id : name,
-              transport: McpTransportType.stdio,
-              command: cmd,
-              args: argsAny is List ? argsAny.map((e) => e.toString()).toList() : const <String>[],
-              env: env,
-              workingDirectory: (wd != null && wd.isNotEmpty) ? wd : null,
-            ));
+            next.add(
+              McpServerConfig(
+                id: id,
+                enabled: enabled,
+                name: (name == null || name.isEmpty) ? id : name,
+                transport: McpTransportType.stdio,
+                command: cmd,
+                args: argsAny is List
+                    ? argsAny.map((e) => e.toString()).toList()
+                    : const <String>[],
+                env: env,
+                workingDirectory: (wd != null && wd.isNotEmpty) ? wd : null,
+              ),
+            );
             return;
           }
 
           // SSE/HTTP branch using legacy fields
           final typeRaw = (cfg['type'] ?? '').toString().toLowerCase();
-          final transport = (typeRaw.contains('http')) ? McpTransportType.http : McpTransportType.sse;
+          final transport = (typeRaw.contains('http'))
+              ? McpTransportType.http
+              : McpTransportType.sse;
           final enabled = (cfg['isActive'] as bool?) ?? true;
           final name = (cfg['name'] as String?)?.trim();
           final url = (cfg['baseUrl'] as String?)?.trim();
           final headersAny = cfg['headers'];
           Map<String, String> headers = const {};
           if (headersAny is Map) {
-            headers = headersAny.map((k, v) => MapEntry(k.toString(), v.toString()));
+            headers = headersAny.map(
+              (k, v) => MapEntry(k.toString(), v.toString()),
+            );
           }
           if ((url ?? '').isEmpty) {
             // Skip invalid entries with empty URL
             return;
           }
-          next.add(McpServerConfig(
-            id: id,
-            enabled: enabled,
-            name: (name == null || name.isEmpty) ? id : name,
-            transport: transport,
-            url: url!,
-            headers: headers,
-          ));
+          next.add(
+            McpServerConfig(
+              id: id,
+              enabled: enabled,
+              name: (name == null || name.isEmpty) ? id : name,
+              transport: transport,
+              url: url!,
+              headers: headers,
+            ),
+          );
         });
         if (builtinSeen) {
           // Append single built-in server with fixed id/name
-          next.add(McpServerConfig(
-            id: 'kelivo_fetch',
-            enabled: builtinEnabled,
-            name: '@kelivo/fetch',
-            transport: McpTransportType.inmemory,
-          ));
+          next.add(
+            McpServerConfig(
+              id: 'kelivo_fetch',
+              enabled: builtinEnabled,
+              name: '@kelivo/fetch',
+              transport: McpTransportType.inmemory,
+            ),
+          );
         }
       } else if (data is List) {
         // Attempt to parse internal list format. Be tolerant to transport string variants.
@@ -457,7 +534,10 @@ class McpProvider extends ChangeNotifier {
           }
           try {
             final s = McpServerConfig.fromJson(m);
-            if (s.transport != McpTransportType.stdio && s.transport != McpTransportType.inmemory && s.url.trim().isEmpty) continue;
+            if (s.transport != McpTransportType.stdio &&
+                s.transport != McpTransportType.inmemory &&
+                s.url.trim().isEmpty)
+              continue;
             next.add(s);
           } catch (_) {}
         }
@@ -477,7 +557,10 @@ class McpProvider extends ChangeNotifier {
             }
             try {
               final s = McpServerConfig.fromJson(m);
-              if (s.transport != McpTransportType.stdio && s.transport != McpTransportType.inmemory && s.url.trim().isEmpty) continue;
+              if (s.transport != McpTransportType.stdio &&
+                  s.transport != McpTransportType.inmemory &&
+                  s.url.trim().isEmpty)
+                continue;
               next.add(s);
             } catch (_) {}
           }
@@ -493,7 +576,9 @@ class McpProvider extends ChangeNotifier {
 
     // Disconnect all current
     for (final s in _servers) {
-      try { await disconnect(s.id); } catch (_) {}
+      try {
+        await disconnect(s.id);
+      } catch (_) {}
     }
 
     // Replace and reset statuses
@@ -543,7 +628,9 @@ class McpProvider extends ChangeNotifier {
       command: command?.trim(),
       args: args,
       env: env,
-      workingDirectory: (workingDirectory?.trim().isNotEmpty ?? false) ? workingDirectory!.trim() : null,
+      workingDirectory: (workingDirectory?.trim().isNotEmpty ?? false)
+          ? workingDirectory!.trim()
+          : null,
     );
     _servers = [..._servers, cfg];
     _status[id] = McpStatus.idle;
@@ -588,18 +675,27 @@ class McpProvider extends ChangeNotifier {
     await _persist();
   }
 
-  Future<void> setToolEnabled(String serverId, String toolName, bool enabled) async {
+  Future<void> setToolEnabled(
+    String serverId,
+    String toolName,
+    bool enabled,
+  ) async {
     final idx = _servers.indexWhere((e) => e.id == serverId);
     if (idx < 0) return;
     final server = _servers[idx];
-    final tools = server.tools.map((t) => t.name == toolName ? t.copyWith(enabled: enabled) : t).toList();
+    final tools = server.tools
+        .map((t) => t.name == toolName ? t.copyWith(enabled: enabled) : t)
+        .toList();
     _servers[idx] = server.copyWith(tools: tools);
     await _persist();
     notifyListeners();
   }
 
   Future<void> connect(String id) async {
-    final server = _servers.firstWhere((e) => e.id == id, orElse: () => throw StateError('Server not found'));
+    final server = _servers.firstWhere(
+      (e) => e.id == id,
+      orElse: () => throw StateError('Server not found'),
+    );
     // If already connected, try a ping by listing tools quickly; else return
     if (_clients.containsKey(id)) {
       // Already connected; update status just in case
@@ -709,7 +805,10 @@ class McpProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> updateRequestTimeout(Duration duration, {bool reconnectActive = true}) async {
+  Future<void> updateRequestTimeout(
+    Duration duration, {
+    bool reconnectActive = true,
+  }) async {
     if (duration.inMilliseconds <= 0) return;
     if (duration == _requestTimeout) return;
     _requestTimeout = duration;
@@ -761,7 +860,10 @@ class McpProvider extends ChangeNotifier {
     }
   }
 
-  void _startHeartbeat(String id, {Duration interval = const Duration(seconds: 12)}) {
+  void _startHeartbeat(
+    String id, {
+    Duration interval = const Duration(seconds: 12),
+  }) {
     _stopHeartbeat(id);
     _heartbeats[id] = Timer.periodic(interval, (t) async {
       // Heartbeat only when we think we're connected
@@ -804,7 +906,11 @@ class McpProvider extends ChangeNotifier {
     return null;
   }
 
-  Map<String, dynamic> _normalizeArgsForTool(String serverId, String toolName, Map<String, dynamic> args) {
+  Map<String, dynamic> _normalizeArgsForTool(
+    String serverId,
+    String toolName,
+    Map<String, dynamic> args,
+  ) {
     try {
       final cfg = _toolConfig(serverId, toolName);
       final schema = cfg?.schema;
@@ -819,12 +925,17 @@ class McpProvider extends ChangeNotifier {
     }
   }
 
-  Map<String, dynamic> _normalizeSpecialCases(String toolName, Map<String, dynamic> args) {
+  Map<String, dynamic> _normalizeSpecialCases(
+    String toolName,
+    Map<String, dynamic> args,
+  ) {
     try {
       if (toolName == 'firecrawl_search') {
         // sources: ["web"] -> [{"type":"web"}]
         final rawSources = args['sources'];
-        if (rawSources is List && rawSources.isNotEmpty && rawSources.every((e) => e is String)) {
+        if (rawSources is List &&
+            rawSources.isNotEmpty &&
+            rawSources.every((e) => e is String)) {
           args['sources'] = rawSources.map((e) => {'type': e}).toList();
         }
         // Provide pragmatic defaults for commonly required fields if absent
@@ -832,9 +943,13 @@ class McpProvider extends ChangeNotifier {
         args.putIfAbsent('filter', () => '0');
         args.putIfAbsent('location', () => 'us');
         // If tbs/filter are present but empty, coerce to '0'
-        if ((args['tbs'] is String) && (args['tbs'] as String).isEmpty) args['tbs'] = '0';
-        if ((args['filter'] is String) && (args['filter'] as String).isEmpty) args['filter'] = '0';
-        if ((args['location'] is String) && (args['location'] as String).toLowerCase() == 'global') args['location'] = 'us';
+        if ((args['tbs'] is String) && (args['tbs'] as String).isEmpty)
+          args['tbs'] = '0';
+        if ((args['filter'] is String) && (args['filter'] as String).isEmpty)
+          args['filter'] = '0';
+        if ((args['location'] is String) &&
+            (args['location'] as String).toLowerCase() == 'global')
+          args['location'] = 'us';
         final so = (args['scrapeOptions'] is Map)
             ? (args['scrapeOptions'] as Map).cast<String, dynamic>()
             : <String, dynamic>{};
@@ -871,7 +986,11 @@ class McpProvider extends ChangeNotifier {
     return args;
   }
 
-  dynamic _normalizeBySchema(dynamic value, Map<String, dynamic> schema, {String? propertyName}) {
+  dynamic _normalizeBySchema(
+    dynamic value,
+    Map<String, dynamic> schema, {
+    String? propertyName,
+  }) {
     try {
       // Handle anyOf/oneOf by choosing first matching branch; if value is null, attempt defaults
       final List<Map<String, dynamic>> unions = _schemaUnions(schema);
@@ -879,36 +998,59 @@ class McpProvider extends ChangeNotifier {
         // Heuristic only for certain fields (e.g., sources) — DO NOT apply globally.
         if (value is String && propertyName == 'sources') {
           final objBranch = unions.firstWhere(
-              (m) => _schemaTypes(m).contains('object') && ((m['properties'] as Map?)?.containsKey('type') ?? false),
-              orElse: () => const {});
+            (m) =>
+                _schemaTypes(m).contains('object') &&
+                ((m['properties'] as Map?)?.containsKey('type') ?? false),
+            orElse: () => const {},
+          );
           if (objBranch.isNotEmpty) {
-            return _normalizeBySchema({'type': value}, objBranch, propertyName: propertyName);
+            return _normalizeBySchema(
+              {'type': value},
+              objBranch,
+              propertyName: propertyName,
+            );
           }
         }
         for (final branch in unions) {
           try {
-            return _normalizeBySchema(value, branch, propertyName: propertyName);
+            return _normalizeBySchema(
+              value,
+              branch,
+              propertyName: propertyName,
+            );
           } catch (_) {
             // try next branch
           }
         }
         // fallthrough to first branch
-        return _normalizeBySchema(value, unions.first, propertyName: propertyName);
+        return _normalizeBySchema(
+          value,
+          unions.first,
+          propertyName: propertyName,
+        );
       }
 
       final declaredTypes = _schemaTypes(schema);
       if (declaredTypes.contains('object')) {
-        final props = (schema['properties'] as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
-        final req = (schema['required'] as List?)?.map((e) => e.toString()).toSet() ?? const <String>{};
+        final props =
+            (schema['properties'] as Map?)?.cast<String, dynamic>() ??
+            const <String, dynamic>{};
+        final req =
+            (schema['required'] as List?)?.map((e) => e.toString()).toSet() ??
+            const <String>{};
         final out = <String, dynamic>{};
-        final input = (value is Map) ? (value as Map).cast<String, dynamic>() : const <String, dynamic>{};
+        final input = (value is Map)
+            ? (value as Map).cast<String, dynamic>()
+            : const <String, dynamic>{};
         // copy passthrough unknowns
         input.forEach((k, v) {
           if (!props.containsKey(k)) out[k] = v;
         });
         for (final entry in props.entries) {
           final key = entry.key;
-          final propSchema = (entry.value is Map) ? (entry.value as Map).cast<String, dynamic>() : const <String, dynamic>{};
+          final propSchema = (entry.value is Map)
+              ? (entry.value as Map).cast<String, dynamic>()
+              : const <String, dynamic>{};
           dynamic v = input.containsKey(key) ? input[key] : null;
           if (v == null) {
             if (propSchema.containsKey('default')) {
@@ -917,7 +1059,10 @@ class McpProvider extends ChangeNotifier {
               final enumVals = _schemaEnum(propSchema);
               if (enumVals.isNotEmpty) {
                 v = enumVals.first;
-              } else if (key == 'waitFor' && _schemaTypes(propSchema).any((t) => t == 'number' || t == 'integer')) {
+              } else if (key == 'waitFor' &&
+                  _schemaTypes(
+                    propSchema,
+                  ).any((t) => t == 'number' || t == 'integer')) {
                 v = 0; // pragmatic default often acceptable for waitFor
               }
             }
@@ -934,15 +1079,21 @@ class McpProvider extends ChangeNotifier {
       }
 
       if (declaredTypes.contains('array')) {
-        final items = (schema['items'] as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
+        final items =
+            (schema['items'] as Map?)?.cast<String, dynamic>() ??
+            const <String, dynamic>{};
         final list = (value is List) ? value : [value];
         final out = [];
         for (final item in list) {
           dynamic iv = item;
           // Heuristic only for sources array, not for other arrays like formats
           final itemTypes = _schemaTypes(items);
-          if (propertyName == 'sources' && item is String && itemTypes.contains('object')) {
-            final itemProps = (items['properties'] as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
+          if (propertyName == 'sources' &&
+              item is String &&
+              itemTypes.contains('object')) {
+            final itemProps =
+                (items['properties'] as Map?)?.cast<String, dynamic>() ??
+                const <String, dynamic>{};
             if (itemProps.containsKey('type')) {
               iv = {'type': item};
             }
@@ -1005,10 +1156,14 @@ class McpProvider extends ChangeNotifier {
     final anyOf = schema['anyOf'];
     final oneOf = schema['oneOf'];
     if (anyOf is List) {
-      out.addAll(anyOf.whereType<Map>().map((e) => (e as Map).cast<String, dynamic>()));
+      out.addAll(
+        anyOf.whereType<Map>().map((e) => (e as Map).cast<String, dynamic>()),
+      );
     }
     if (oneOf is List) {
-      out.addAll(oneOf.whereType<Map>().map((e) => (e as Map).cast<String, dynamic>()));
+      out.addAll(
+        oneOf.whereType<Map>().map((e) => (e as Map).cast<String, dynamic>()),
+      );
     }
     return out;
   }
@@ -1052,11 +1207,16 @@ class McpProvider extends ChangeNotifier {
             final Map<String, dynamic> js = (schema is Map<String, dynamic>)
                 ? schema
                 : (schema is Object && schema.toString().isNotEmpty)
-                    ? (schema as dynamic).toJson?.call() as Map<String, dynamic>? ?? {}
-                    : {};
+                ? (schema as dynamic).toJson?.call() as Map<String, dynamic>? ??
+                      {}
+                : {};
             schemaJson = js;
-            final props = (js['properties'] as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
-            final req = (js['required'] as List?)?.map((e) => e.toString()).toSet() ?? const <String>{};
+            final props =
+                (js['properties'] as Map?)?.cast<String, dynamic>() ??
+                const <String, dynamic>{};
+            final req =
+                (js['required'] as List?)?.map((e) => e.toString()).toSet() ??
+                const <String>{};
             props.forEach((key, val) {
               String? ty;
               dynamic defVal;
@@ -1070,18 +1230,27 @@ class McpProvider extends ChangeNotifier {
                 }
                 defVal = v['default'];
               } catch (_) {}
-              params.add(McpParamSpec(name: key, required: req.contains(key), type: ty, defaultValue: defVal));
+              params.add(
+                McpParamSpec(
+                  name: key,
+                  required: req.contains(key),
+                  type: ty,
+                  defaultValue: defVal,
+                ),
+              );
             });
           }
         } catch (_) {}
 
-        merged.add(McpToolConfig(
-          enabled: prior?.enabled ?? true,
-          name: t.name,
-          description: t.description,
-          params: params,
-          schema: schemaJson,
-        ));
+        merged.add(
+          McpToolConfig(
+            enabled: prior?.enabled ?? true,
+            name: t.name,
+            description: t.description,
+            params: params,
+            schema: schemaJson,
+          ),
+        );
       }
 
       _servers[idx] = _servers[idx].copyWith(tools: merged);
@@ -1103,7 +1272,11 @@ class McpProvider extends ChangeNotifier {
     await _reconnectWithBackoff(id, maxAttempts: 3);
   }
 
-  Future<mcp.CallToolResult?> callTool(String serverId, String toolName, Map<String, dynamic> args) async {
+  Future<mcp.CallToolResult?> callTool(
+    String serverId,
+    String toolName,
+    Map<String, dynamic> args,
+  ) async {
     try {
       await ensureConnected(serverId);
       var client = _clients[serverId];
@@ -1199,8 +1372,6 @@ class McpProvider extends ChangeNotifier {
     }
   }
 
-
-
   String _briefContent(dynamic c) {
     try {
       // Try known fields
@@ -1237,7 +1408,12 @@ class McpProvider extends ChangeNotifier {
   String _maskIfSensitive(String key, String value) {
     try {
       final lk = key.toLowerCase();
-      final sensitive = lk.contains('authorization') || lk.contains('token') || lk.contains('api-key') || lk.endsWith('key') || lk == 'cookie';
+      final sensitive =
+          lk.contains('authorization') ||
+          lk.contains('token') ||
+          lk.contains('api-key') ||
+          lk.endsWith('key') ||
+          lk == 'cookie';
       if (!sensitive) return value;
       final v = value.trim();
       if (v.isEmpty) return value;
@@ -1270,9 +1446,6 @@ class McpProvider extends ChangeNotifier {
   }
 
   bool _isDesktopPlatform() {
-    if (kIsWeb) return false;
-    return defaultTargetPlatform == TargetPlatform.windows ||
-        defaultTargetPlatform == TargetPlatform.linux ||
-        defaultTargetPlatform == TargetPlatform.macOS;
+    return defaultTargetPlatform == TargetPlatform.macOS;
   }
 }

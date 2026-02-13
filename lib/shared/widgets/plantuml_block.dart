@@ -7,7 +7,6 @@ import '../../icons/lucide_adapter.dart';
 import 'package:Kelivo/l10n/app_localizations.dart';
 import 'snackbar.dart';
 import 'export_capture_scope.dart';
-import 'dart:io';
 
 class PlantUMLBlock extends StatefulWidget {
   final String code;
@@ -77,12 +76,10 @@ class _PlantUMLBlockState extends State<PlantUMLBlock> {
             surfaceTintColor: Colors.transparent,
             child: InkWell(
               onTap: () => setState(() => _expanded = !_expanded),
-              splashColor: Platform.isIOS ? Colors.transparent : null,
-              highlightColor: Platform.isIOS ? Colors.transparent : null,
-              hoverColor: Platform.isIOS ? Colors.transparent : null,
-              overlayColor: Platform.isIOS
-                  ? const MaterialStatePropertyAll(Colors.transparent)
-                  : null,
+              splashColor: null,
+              highlightColor: null,
+              hoverColor: null,
+              overlayColor: null,
               child: Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12,
@@ -128,14 +125,10 @@ class _PlantUMLBlockState extends State<PlantUMLBlock> {
                             );
                           }
                         },
-                        splashColor: Platform.isIOS ? Colors.transparent : null,
-                        highlightColor: Platform.isIOS
-                            ? Colors.transparent
-                            : null,
-                        hoverColor: Platform.isIOS ? Colors.transparent : null,
-                        overlayColor: Platform.isIOS
-                            ? const MaterialStatePropertyAll(Colors.transparent)
-                            : null,
+                        splashColor: null,
+                        highlightColor: null,
+                        hoverColor: null,
+                        overlayColor: null,
                         borderRadius: BorderRadius.circular(6),
                         child: Padding(
                           padding: const EdgeInsets.symmetric(
@@ -185,14 +178,10 @@ class _PlantUMLBlockState extends State<PlantUMLBlock> {
                             );
                           }
                         },
-                        splashColor: Platform.isIOS ? Colors.transparent : null,
-                        highlightColor: Platform.isIOS
-                            ? Colors.transparent
-                            : null,
-                        hoverColor: Platform.isIOS ? Colors.transparent : null,
-                        overlayColor: Platform.isIOS
-                            ? const MaterialStatePropertyAll(Colors.transparent)
-                            : null,
+                        splashColor: null,
+                        highlightColor: null,
+                        hoverColor: null,
+                        overlayColor: null,
                         borderRadius: BorderRadius.circular(6),
                         child: Padding(
                           padding: const EdgeInsets.all(6),

@@ -51,7 +51,7 @@ class _ImageViewerPageState extends State<ImageViewerPage> with TickerProviderSt
 
   final Map<String, _SampledImage> _samples = <String, _SampledImage>{};
 
-  bool get _isDesktop => Platform.isWindows || Platform.isLinux || Platform.isMacOS;
+  bool get _isDesktop => Platform.isMacOS;
 
   @override
   void initState() {

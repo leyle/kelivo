@@ -1,0 +1,95 @@
+name: Build macOS
+
+env:
+  FLUTTER_VERSION: "3.38.4"
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish_release:
+        description: "Publish to GitHub Release"
+        required: false
+        default: false
+        type: boolean
+      release_tag:
+        description: "Release tag (e.g. v1.0.0)"
+        required: false
+        default: ""
+        type: string
+      prerelease:
+        description: "Mark as pre-release"
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  macos:
+    name: Build macOS
+    runs-on: macos-latest
+    permissions: write-all
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Inject fallback secret
+        shell: bash
+        run: |
+          mkdir -p lib/secrets
+          cat > lib/secrets/fallback.dart <<'EOF'
+          const String siliconflowFallbackKey = '${{ secrets.SILICONFLOW_KEY }}';
+          EOF
+
+      - name: Resolve version
+        shell: bash
+        run: |
+          VERSION=$(grep 'version:' pubspec.yaml | sed 's/version: //' | tr -d ' ')
+          if [ "${{ github.event.inputs.publish_release }}" != "true" ]; then
+            SHORT_SHA=$(git rev-parse --short HEAD)
+            VERSION="${VERSION}_${SHORT_SHA}"
+          fi
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "VERSION=$VERSION"
+
+      - name: Build macOS app
+        run: flutter build macos --release
+
+      - name: Create DMG
+        shell: bash
+        run: |
+          brew install create-dmg
+          create-dmg \
+            --volname "Kelivo" \
+            --window-pos 200 120 \
+            --window-size 800 400 \
+            --icon-size 100 \
+            --app-drop-link 600 185 \
+            "Kelivo_macos_${VERSION}.dmg" \
+            "build/macos/Build/Products/Release/kelivo.app" || true
+          if [ ! -f "Kelivo_macos_${VERSION}.dmg" ]; then
+            hdiutil create -volname Kelivo -srcfolder build/macos/Build/Products/Release/kelivo.app -ov -format UDZO "Kelivo_macos_${VERSION}.dmg"
+          fi
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macOS-DMG
+          path: Kelivo_macos_*.dmg
+
+      - name: Publish release
+        if: ${{ github.event.inputs.publish_release == 'true' && github.event.inputs.release_tag != '' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.release_tag }}
+          name: ${{ github.event.inputs.release_tag }}
+          prerelease: ${{ github.event.inputs.prerelease }}
+          files: Kelivo_macos_*.dmg

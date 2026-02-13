@@ -36,10 +36,10 @@
 
 ## ✨ 功能特性
 
-- 🎨 **现代化设计** - Material You 设计语言，支持动态主题色(Android12+)
+- 🎨 **现代化设计** - 面向桌面体验优化，专注 macOS 交互细节
 - 🌙 **深色模式** - 完美适配深色主题，保护您的眼睛
 - 🌍 **多语言支持** - 支持中文和英文界面
-- 🖥️ **多平台支持** - 移动端与桌面端均支持（Android/iOS/Harmony、Windows/macOS/Linux）
+- 🍎 **专注 macOS** - 当前版本仅保留并维护 macOS 平台
 - 🔄 **多供应商支持** - 支持 OpenAI、Google Gemini、Anthropic 等主流 AI 供应商
 - 🤖 **自定义助手** - 创建和管理个性化 AI 助手
 - 🖼️ **多模态输入** - 支持图片、文本文档、PDF、Word 文档等多种格式
@@ -53,16 +53,10 @@
 - 💾 **数据备份** - 支持聊天记录备份和恢复
 - 🌐 **自定义请求** - 支持自定义 HTTP 请求头和请求体
 - 🔡 **自定义字体** - 支持自定义字体（系统字体 / Google Fonts）
-- ⚙️ **Android 后台生成对话** - 可在后台持续生成消息（可在设置中开启）。
 
 ## 📱 平台支持
 
-- ✅ Android
-- ✅ iOS
-- ✅ Harmony ([kelivo-ohos](https://github.com/Chevey339/kelivo-ohos))
-- ✅ Windows
 - ✅ macOS
-- ✅ Linux
 
 ## 🤝 贡献指南
 

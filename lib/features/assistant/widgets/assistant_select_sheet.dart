@@ -1,7 +1,7 @@
 import 'dart:io' show File;
 
 import 'package:flutter/foundation.dart'
-    show defaultTargetPlatform, TargetPlatform, kIsWeb;
+    show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:characters/characters.dart';
@@ -23,10 +23,7 @@ Future<String?> showAssistantMoveSelector(
   BuildContext context, {
   String? excludeAssistantId,
 }) async {
-  final isDesktop =
-      defaultTargetPlatform == TargetPlatform.macOS ||
-      defaultTargetPlatform == TargetPlatform.windows ||
-      defaultTargetPlatform == TargetPlatform.linux;
+  final isDesktop = defaultTargetPlatform == TargetPlatform.macOS;
   final ap = context.read<AssistantProvider>();
   final List<Assistant> assistants = excludeAssistantId == null
       ? List.of(ap.enabledAssistants)
@@ -225,7 +222,7 @@ Widget _assistantAvatar(BuildContext context, Assistant a, {double size = 28}) {
           );
         },
       );
-    } else if (!kIsWeb && (av.startsWith('/') || av.contains(':'))) {
+    } else if (av.startsWith('/') || av.contains(':')) {
       final fixed = SandboxPathResolver.fix(av);
       final f = File(fixed);
       if (f.existsSync()) {

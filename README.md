@@ -36,10 +36,10 @@ Thanks to [siliconflow.cn](https://siliconflow.cn) for providing free models in 
 
 ## ✨ Features
 
-- 🎨 **Modern Design** - Material You design language with dynamic color theming support (Android 12+).
+- 🎨 **Modern Design** - Clean desktop-first design with polished macOS interactions.
 - 🌙 **Dark Mode** - Perfectly adapted dark theme to protect your eyes.
 - 🌍 **Multi-language Support** - Supports both English and Chinese interfaces.
-- 🖥️ **Multi-platform Support** - Mobile (Android/iOS/Harmony) and Desktop (Windows/macOS/Linux).
+- 🍎 **macOS Focused** - Built and maintained specifically for macOS.
 - 🔄 **Multi-provider Support** - Supports major AI providers like OpenAI, Google Gemini, Anthropic, etc.
 - 🤖 **Custom Assistants** - Create and manage personalized AI assistants.
 - 🖼️ **Multimodal Input** - Supports various formats including images, text documents, PDFs, Word documents, etc.
@@ -53,16 +53,10 @@ Thanks to [siliconflow.cn](https://siliconflow.cn) for providing free models in 
 - 💾 **Data Backup** - Supports chat history backup and restoration.
 - 🌐 **Custom Requests** - Supports custom HTTP request headers and bodies.
 - 🔡 **Custom Fonts** - Bring your own fonts (system fonts / Google Fonts).
-- ⚙️ **Android Background Generation** - Keep chat generation running in the background (optional setting).
 
 ## 📱 Platform Support
 
-- ✅ Android
-- ✅ iOS
-- ✅ Harmony ([kelivo-ohos](https://github.com/Chevey339/kelivo-ohos))
-- ✅ Windows
 - ✅ macOS
-- ✅ Linux
 
 ## 🤝 Contribution Guide
 

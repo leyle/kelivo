@@ -187,7 +187,7 @@ Future<ModelSelection?> showModelSelector(BuildContext context, {String? limitPr
   try {
   // Desktop platforms use a custom dialog, mobile keeps the bottom sheet UX.
   final platform = defaultTargetPlatform;
-  if (platform == TargetPlatform.macOS || platform == TargetPlatform.windows || platform == TargetPlatform.linux) {
+  if (platform == TargetPlatform.macOS) {
     return await _showDesktopModelSelector(context, limitProviderKey: limitProviderKey);
   }
   final cs = Theme.of(context).colorScheme;

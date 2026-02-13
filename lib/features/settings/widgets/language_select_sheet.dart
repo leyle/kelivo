@@ -65,9 +65,7 @@ String _displayNameFor(AppLocalizations l10n, String languageCode) {
 }
 
 Future<LanguageOption?> showLanguageSelector(BuildContext context) async {
-  final isDesktop = defaultTargetPlatform == TargetPlatform.macOS ||
-      defaultTargetPlatform == TargetPlatform.windows ||
-      defaultTargetPlatform == TargetPlatform.linux;
+  final isDesktop = defaultTargetPlatform == TargetPlatform.macOS;
   if (!isDesktop) {
     final cs = Theme.of(context).colorScheme;
     return showModalBottomSheet<LanguageOption>(

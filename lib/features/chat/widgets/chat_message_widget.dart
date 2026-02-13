@@ -571,15 +571,12 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
 
     if (userProvider.avatarType == 'emoji' &&
         userProvider.avatarValue != null) {
-      final bool isIOS = defaultTargetPlatform == TargetPlatform.iOS;
       final double fs = 18;
-      final Offset? nudge = isIOS ? Offset(fs * 0.065, fs * -0.05) : null;
       avatarContent = Center(
         child: EmojiText(
           userProvider.avatarValue!,
           fontSize: fs,
           optimizeEmojiAlign: true,
-          nudge: nudge,
         ),
       );
     } else if (userProvider.avatarType == 'url' &&
@@ -722,18 +719,12 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
           // Message content (context menu: long-press on mobile, right-click on desktop)
           GestureDetector(
             onLongPressStart: (_) {
-              final isDesktop =
-                  defaultTargetPlatform == TargetPlatform.macOS ||
-                  defaultTargetPlatform == TargetPlatform.windows ||
-                  defaultTargetPlatform == TargetPlatform.linux;
+              final isDesktop = defaultTargetPlatform == TargetPlatform.macOS;
               if (isDesktop) return; // Desktop uses right-click menu
               _showUserContextMenu();
             },
             onSecondaryTapDown: (details) {
-              final isDesktop =
-                  defaultTargetPlatform == TargetPlatform.macOS ||
-                  defaultTargetPlatform == TargetPlatform.windows ||
-                  defaultTargetPlatform == TargetPlatform.linux;
+              final isDesktop = defaultTargetPlatform == TargetPlatform.macOS;
               if (!isDesktop) return; // Mobile keeps long-press
               _showUserContextMenuAt(details.globalPosition);
             },
@@ -753,9 +744,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                       Builder(
                         builder: (context) {
                           final bool isDesktop =
-                              defaultTargetPlatform == TargetPlatform.macOS ||
-                              defaultTargetPlatform == TargetPlatform.windows ||
-                              defaultTargetPlatform == TargetPlatform.linux;
+                              defaultTargetPlatform == TargetPlatform.macOS;
                           final double baseUser = isDesktop ? 14.0 : 15.5;
 
                           Widget content;
@@ -1047,11 +1036,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                             key: _moreBtnKey1,
                             onTapDown: (d) {
                               final isDesktop =
-                                  defaultTargetPlatform ==
-                                      TargetPlatform.macOS ||
-                                  defaultTargetPlatform ==
-                                      TargetPlatform.windows ||
-                                  defaultTargetPlatform == TargetPlatform.linux;
+                                  defaultTargetPlatform == TargetPlatform.macOS;
                               if (isDesktop) {
                                 try {
                                   DesktopMenuAnchor.setPosition(
@@ -1062,11 +1047,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                             },
                             onTap: () {
                               final isDesktop =
-                                  defaultTargetPlatform ==
-                                      TargetPlatform.macOS ||
-                                  defaultTargetPlatform ==
-                                      TargetPlatform.windows ||
-                                  defaultTargetPlatform == TargetPlatform.linux;
+                                  defaultTargetPlatform == TargetPlatform.macOS;
                               if (isDesktop) {
                                 _setAnchorFromKey(_moreBtnKey1);
                               }
@@ -1263,10 +1244,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
     final l10n = AppLocalizations.of(context)!;
     final settings = context.watch<SettingsProvider>();
     final assistant = _assistantForMessage();
-    final bool isDesktop =
-        defaultTargetPlatform == TargetPlatform.macOS ||
-        defaultTargetPlatform == TargetPlatform.windows ||
-        defaultTargetPlatform == TargetPlatform.linux;
+    final bool isDesktop = defaultTargetPlatform == TargetPlatform.macOS;
     final modelId = widget.message.modelId?.trim();
     final providerName = _resolveProviderDisplayName(settings);
     final modelName = (modelId != null && modelId.isNotEmpty)
@@ -1574,10 +1552,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                         Builder(
                           builder: (context) {
                             final bool isDesktop =
-                                defaultTargetPlatform == TargetPlatform.macOS ||
-                                defaultTargetPlatform ==
-                                    TargetPlatform.windows ||
-                                defaultTargetPlatform == TargetPlatform.linux;
+                                defaultTargetPlatform == TargetPlatform.macOS;
                             final double baseAssistant = isDesktop
                                 ? 14.0
                                 : 15.7;
@@ -1694,12 +1669,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                                               builder: (context) {
                                                 final bool isDesktop =
                                                     defaultTargetPlatform ==
-                                                        TargetPlatform.macOS ||
-                                                    defaultTargetPlatform ==
-                                                        TargetPlatform
-                                                            .windows ||
-                                                    defaultTargetPlatform ==
-                                                        TargetPlatform.linux;
+                                                    TargetPlatform.macOS;
                                                 return Text(
                                                   l10n.chatMessageWidgetTranslating,
                                                   style: TextStyle(
@@ -1732,12 +1702,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                                               builder: (context) {
                                                 final bool isDesktop =
                                                     defaultTargetPlatform ==
-                                                        TargetPlatform.macOS ||
-                                                    defaultTargetPlatform ==
-                                                        TargetPlatform
-                                                            .windows ||
-                                                    defaultTargetPlatform ==
-                                                        TargetPlatform.linux;
+                                                    TargetPlatform.macOS;
                                                 final double baseTranslation =
                                                     isDesktop ? 14.0 : 15.5;
                                                 return DefaultTextStyle.merge(
@@ -1886,11 +1851,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                               onTapDown: (d) {
                                 final isDesktop =
                                     defaultTargetPlatform ==
-                                        TargetPlatform.macOS ||
-                                    defaultTargetPlatform ==
-                                        TargetPlatform.windows ||
-                                    defaultTargetPlatform ==
-                                        TargetPlatform.linux;
+                                    TargetPlatform.macOS;
                                 if (isDesktop) {
                                   try {
                                     DesktopMenuAnchor.setPosition(
@@ -1902,11 +1863,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                               onTap: () {
                                 final isDesktop =
                                     defaultTargetPlatform ==
-                                        TargetPlatform.macOS ||
-                                    defaultTargetPlatform ==
-                                        TargetPlatform.windows ||
-                                    defaultTargetPlatform ==
-                                        TargetPlatform.linux;
+                                    TargetPlatform.macOS;
                                 if (isDesktop) {
                                   _setAnchorFromKey(_translateBtnKey2);
                                 }
@@ -1932,11 +1889,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                               onTapDown: (d) {
                                 final isDesktop =
                                     defaultTargetPlatform ==
-                                        TargetPlatform.macOS ||
-                                    defaultTargetPlatform ==
-                                        TargetPlatform.windows ||
-                                    defaultTargetPlatform ==
-                                        TargetPlatform.linux;
+                                    TargetPlatform.macOS;
                                 if (isDesktop) {
                                   try {
                                     DesktopMenuAnchor.setPosition(
@@ -1948,11 +1901,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                               onTap: () {
                                 final isDesktop =
                                     defaultTargetPlatform ==
-                                        TargetPlatform.macOS ||
-                                    defaultTargetPlatform ==
-                                        TargetPlatform.windows ||
-                                    defaultTargetPlatform ==
-                                        TargetPlatform.linux;
+                                    TargetPlatform.macOS;
                                 if (isDesktop) {
                                   _setAnchorFromKey(_moreBtnKey2);
                                 }
@@ -2053,10 +2002,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   void _showCitationsSheet(List<Map<String, dynamic>> items) {
     final cs = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
-    final bool isDesktop =
-        defaultTargetPlatform == TargetPlatform.macOS ||
-        defaultTargetPlatform == TargetPlatform.windows ||
-        defaultTargetPlatform == TargetPlatform.linux;
+    final bool isDesktop = defaultTargetPlatform == TargetPlatform.macOS;
 
     if (isDesktop) {
       showDialog<void>(
@@ -2256,9 +2202,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
         return _assistantInitial(cs);
       }
       // treat as emoji or single char label
-      final bool isIOS = defaultTargetPlatform == TargetPlatform.iOS;
       final double fs = 18;
-      final Offset? nudge = isIOS ? Offset(fs * 0.065, fs * -0.05) : null;
       return Container(
         width: 32,
         height: 32,
@@ -2271,7 +2215,6 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
           av.characters.take(1).toString(),
           fontSize: fs,
           optimizeEmojiAlign: true,
-          nudge: nudge,
         ),
       );
     }
@@ -2702,10 +2645,7 @@ class _ToolCallItem extends StatelessWidget {
         ? part.content!
         : l10n.chatMessageWidgetNoResultYet;
 
-    final bool isDesktop =
-        defaultTargetPlatform == TargetPlatform.macOS ||
-        defaultTargetPlatform == TargetPlatform.windows ||
-        defaultTargetPlatform == TargetPlatform.linux;
+    final bool isDesktop = defaultTargetPlatform == TargetPlatform.macOS;
 
     if (isDesktop) {
       showDialog<void>(

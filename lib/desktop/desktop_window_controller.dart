@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -18,49 +17,21 @@ class DesktopWindowController with WindowListener {
   static const _debounceDuration = Duration(milliseconds: 400);
 
   Future<void> initializeAndShow({String? title}) async {
-    if (kIsWeb) return;
-    if (!(defaultTargetPlatform == TargetPlatform.windows ||
-        defaultTargetPlatform == TargetPlatform.macOS ||
-        defaultTargetPlatform == TargetPlatform.linux)) {
-      return;
-    }
-
     await windowManager.ensureInitialized();
 
-    // Windows custom title bar is handled in main (TitleBarStyle.hidden)
-
-    final initialSize = await _sizeMgr.getInitialSize();
-    const minSize = Size(WindowSizeManager.minWindowWidth, WindowSizeManager.minWindowHeight);
-    const maxSize = Size(WindowSizeManager.maxWindowWidth, WindowSizeManager.maxWindowHeight);
-
-    final isMac = defaultTargetPlatform == TargetPlatform.macOS;
     final options = WindowOptions(
       // On macOS, let Cocoa autosave restore the last frame to avoid jumps.
-      size: isMac ? null : initialSize,
+      size: null,
       // Avoid imposing min/max on macOS to prevent subtle size corrections.
-      minimumSize: isMac ? null : minSize,
-      maximumSize: isMac ? null : maxSize,
+      minimumSize: null,
+      maximumSize: null,
       title: title,
     );
-
-    final savedPos = await _sizeMgr.getPosition();
-    final wasMax = await _sizeMgr.getWindowMaximized();
 
     await windowManager.waitUntilReadyToShow(options, () async {
       // Show first, then restore position to avoid macOS jump/flicker.
       await windowManager.show();
       await windowManager.focus();
-      // On macOS rely on native autosave. Do not set position from Dart.
-      final shouldRestorePos = savedPos != null && !isMac;
-      if (shouldRestorePos) {
-        try { await windowManager.setPosition(savedPos); } catch (_) {}
-      }
-      // Only auto-restore maximize on Windows; macOS restore may cause jump.
-      try {
-        if (defaultTargetPlatform == TargetPlatform.windows && wasMax) {
-          await windowManager.maximize();
-        }
-      } catch (_) {}
     });
 
     _attachListeners();

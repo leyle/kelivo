@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart'
-    show defaultTargetPlatform, TargetPlatform;
-import '../shared/responsive/breakpoints.dart';
 import 'desktop_nav_rail.dart';
 import 'desktop_chat_page.dart';
-import 'window_title_bar.dart';
 import 'desktop_settings_page.dart';
 import 'desktop_translate_page.dart';
 import '../features/settings/pages/storage_space_page.dart';
@@ -55,11 +51,7 @@ class _DesktopHomePageState extends State<DesktopHomePage> {
           break;
         case HotkeyAction.closeWindow:
           try {
-            if (defaultTargetPlatform == TargetPlatform.macOS) {
-              await windowManager.hide();
-            } else {
-              await windowManager.close();
-            }
+            await windowManager.hide();
           } catch (_) {}
           break;
         case HotkeyAction.toggleAppVisibility:
@@ -94,10 +86,12 @@ class _DesktopHomePageState extends State<DesktopHomePage> {
           if (_tabIndex == 0) ChatActionBus.instance.fire(ChatAction.newTopic);
           break;
         case HotkeyAction.switchModel:
-          if (_tabIndex == 0) ChatActionBus.instance.fire(ChatAction.switchModel);
+          if (_tabIndex == 0)
+            ChatActionBus.instance.fire(ChatAction.switchModel);
           break;
         case HotkeyAction.searchInChat:
-          if (_tabIndex == 0) ChatActionBus.instance.fire(ChatAction.openMessageSearch);
+          if (_tabIndex == 0)
+            ChatActionBus.instance.fire(ChatAction.openMessageSearch);
           break;
         case HotkeyAction.toggleLeftPanelAssistants:
           if (_tabIndex == 0)
@@ -119,8 +113,6 @@ class _DesktopHomePageState extends State<DesktopHomePage> {
     // Ensure a reasonable min size to avoid overflow on aggressive resize.
     const minWidth = 960.0;
     const minHeight = 640.0;
-
-    final isWindows = defaultTargetPlatform == TargetPlatform.windows;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -157,37 +149,23 @@ class _DesktopHomePageState extends State<DesktopHomePage> {
                   const DesktopChatPage(),
                   // Translate page remains mounted
                   const DesktopTranslatePage(key: ValueKey('translate_page')),
-                  _storageVisited ? const StorageSpacePage(key: ValueKey('storage_space_page'), embedded: true) : const SizedBox.shrink(),
-                  DesktopSettingsPage(key: const ValueKey('settings_page'), initialProviderKey: widget.initialProviderKey),
+                  _storageVisited
+                      ? const StorageSpacePage(
+                          key: ValueKey('storage_space_page'),
+                          embedded: true,
+                        )
+                      : const SizedBox.shrink(),
+                  DesktopSettingsPage(
+                    key: const ValueKey('settings_page'),
+                    initialProviderKey: widget.initialProviderKey,
+                  ),
                 ],
               ),
             ),
           ],
         );
 
-        // Wrap with Windows custom title bar when on Windows platform.
-        final content = isWindows
-            ? Column(
-                children: [
-                  WindowTitleBar(
-                    leftChildren: [
-                      SizedBox(width: DesktopNavRail.width / 2 - 8 - 6 - 12),
-                      const _TitleBarLeading(),
-                    ],
-                  ),
-                  Expanded(
-                    child: Stack(
-                      children: [
-                        body,
-                        // Inject the lazily-built settings page into the IndexedStack when needed
-                        // to pass initialProviderKey without dropping chat state.
-                        if (_tabIndex == 3) const SizedBox.shrink(),
-                      ],
-                    ),
-                  ),
-                ],
-              )
-            : body;
+        final content = body;
 
         // if (!needsWidthPad && !needsHeightPad) return content;
 
@@ -215,40 +193,5 @@ class _DesktopHomePageState extends State<DesktopHomePage> {
       _hotkeySub?.cancel();
     } catch (_) {}
     super.dispose();
-  }
-}
-
-// No extra router/shim; we import DesktopSettingsPage directly above.
-
-class _TitleBarLeading extends StatelessWidget {
-  const _TitleBarLeading({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // App icon
-        Image.asset(
-          'assets/icons/kelivo.png',
-          width: 16,
-          height: 16,
-          filterQuality: FilterQuality.medium,
-        ),
-        const SizedBox(width: 8),
-        // App name
-        Text(
-          'Kelivo',
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: cs.onSurface.withOpacity(0.8),
-            // Avoid accidental underline when not under a Material ancestor in edge cases
-            decoration: TextDecoration.none,
-          ),
-        ),
-      ],
-    );
   }
 }

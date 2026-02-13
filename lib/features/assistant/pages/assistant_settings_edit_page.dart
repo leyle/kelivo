@@ -14,7 +14,6 @@ import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:characters/characters.dart';
 import '../../../shared/widgets/emoji_text.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 import '../../../desktop/desktop_context_menu.dart';
 import 'package:file_picker/file_picker.dart';
@@ -211,10 +210,10 @@ class _AssistantSettingsEditPageState extends State<AssistantSettingsEditPage>
           preferredSize: const Size.fromHeight(52),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(12, 2, 12, 8),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _SegTabBar(
+            child: Row(
+              children: [
+                Expanded(
+                  child: _SegTabBar(
                     controller: _tabController,
                     tabs: [
                       l10n.assistantEditPageBasicTab,
@@ -266,7 +265,7 @@ class _MemoryTab extends StatelessWidget {
     final controller = TextEditingController(text: initial);
     // Desktop: custom dialog; Mobile: keep bottom sheet
     final platform = Theme.of(context).platform;
-    final isDesktop = platform == TargetPlatform.macOS || platform == TargetPlatform.linux || platform == TargetPlatform.windows;
+    final isDesktop = platform == TargetPlatform.macOS;
     if (isDesktop) {
       await showDialog<void>(
         context: context,
@@ -274,8 +273,13 @@ class _MemoryTab extends StatelessWidget {
         builder: (ctx) {
           return Dialog(
             backgroundColor: cs.surface,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            insetPadding: const EdgeInsets.symmetric(
+              horizontal: 24,
+              vertical: 24,
+            ),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 560),
               child: Column(
@@ -288,9 +292,19 @@ class _MemoryTab extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       child: Row(
                         children: [
-                          Expanded(child: Text(l10n.assistantEditMemoryDialogTitle, style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700))),
+                          Expanded(
+                            child: Text(
+                              l10n.assistantEditMemoryDialogTitle,
+                              style: const TextStyle(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
                           IconButton(
-                            tooltip: MaterialLocalizations.of(ctx).closeButtonTooltip,
+                            tooltip: MaterialLocalizations.of(
+                              ctx,
+                            ).closeButtonTooltip,
                             icon: const Icon(Lucide.X, size: 18),
                             color: cs.onSurface,
                             onPressed: () => Navigator.of(ctx).maybePop(),
@@ -311,9 +325,22 @@ class _MemoryTab extends StatelessWidget {
                           decoration: InputDecoration(
                             hintText: l10n.assistantEditMemoryDialogHint,
                             filled: true,
-                            fillColor: Theme.of(ctx).brightness == Brightness.dark ? Colors.white10 : const Color(0xFFF7F7F9),
-                            border: OutlineInputBorder(borderSide: BorderSide(color: cs.outlineVariant.withOpacity(0.2)), borderRadius: BorderRadius.circular(10)),
-                            focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: cs.primary.withOpacity(0.5)), borderRadius: BorderRadius.circular(10)),
+                            fillColor:
+                                Theme.of(ctx).brightness == Brightness.dark
+                                ? Colors.white10
+                                : const Color(0xFFF7F7F9),
+                            border: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                color: cs.outlineVariant.withOpacity(0.2),
+                              ),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                color: cs.primary.withOpacity(0.5),
+                              ),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
                           ),
                           autofocus: true,
                           onSubmitted: (_) async {
@@ -321,7 +348,10 @@ class _MemoryTab extends StatelessWidget {
                             if (text.isEmpty) return;
                             final mp = context.read<MemoryProvider>();
                             if (id == null) {
-                              await mp.add(assistantId: assistantId, content: text);
+                              await mp.add(
+                                assistantId: assistantId,
+                                content: text,
+                              );
                             } else {
                               await mp.update(id: id, content: text);
                             }
@@ -332,7 +362,13 @@ class _MemoryTab extends StatelessWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
-                            _IosButton(label: l10n.assistantEditEmojiDialogCancel, onTap: () => Navigator.of(ctx).pop(), filled: false, neutral: true, dense: true),
+                            _IosButton(
+                              label: l10n.assistantEditEmojiDialogCancel,
+                              onTap: () => Navigator.of(ctx).pop(),
+                              filled: false,
+                              neutral: true,
+                              dense: true,
+                            ),
                             const SizedBox(width: 8),
                             _IosButton(
                               label: l10n.assistantEditEmojiDialogSave,
@@ -341,7 +377,10 @@ class _MemoryTab extends StatelessWidget {
                                 if (text.isEmpty) return;
                                 final mp = context.read<MemoryProvider>();
                                 if (id == null) {
-                                  await mp.add(assistantId: assistantId, content: text);
+                                  await mp.add(
+                                    assistantId: assistantId,
+                                    content: text,
+                                  );
                                 } else {
                                   await mp.update(id: id, content: text);
                                 }
@@ -388,7 +427,10 @@ class _MemoryTab extends StatelessWidget {
                     Expanded(
                       child: Text(
                         l10n.assistantEditMemoryDialogTitle,
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   ],
@@ -401,13 +443,19 @@ class _MemoryTab extends StatelessWidget {
                   decoration: InputDecoration(
                     hintText: l10n.assistantEditMemoryDialogHint,
                     filled: true,
-                    fillColor: Theme.of(ctx).brightness == Brightness.dark ? Colors.white10 : const Color(0xFFF7F7F9),
+                    fillColor: Theme.of(ctx).brightness == Brightness.dark
+                        ? Colors.white10
+                        : const Color(0xFFF7F7F9),
                     border: OutlineInputBorder(
-                      borderSide: BorderSide(color: cs.outlineVariant.withOpacity(0.2)),
+                      borderSide: BorderSide(
+                        color: cs.outlineVariant.withOpacity(0.2),
+                      ),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: cs.primary.withOpacity(0.5)),
+                      borderSide: BorderSide(
+                        color: cs.primary.withOpacity(0.5),
+                      ),
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
@@ -434,7 +482,10 @@ class _MemoryTab extends StatelessWidget {
                           if (text.isEmpty) return;
                           final mp = context.read<MemoryProvider>();
                           if (id == null) {
-                            await mp.add(assistantId: assistantId, content: text);
+                            await mp.add(
+                              assistantId: assistantId,
+                              content: text,
+                            );
                           } else {
                             await mp.update(id: id, content: text);
                           }
@@ -463,26 +514,33 @@ class _MemoryTab extends StatelessWidget {
     final a = ap.getById(assistantId)!;
     final mp = context.watch<MemoryProvider>();
     // Ensure provider loads persisted memories once
-    try { WidgetsBinding.instance.addPostFrameCallback((_) { mp.initialize(); }); } catch (_) {}
+    try {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        mp.initialize();
+      });
+    } catch (_) {}
     final memories = mp.getForAssistant(assistantId);
 
     // Align the section card visuals with the basic settings page iOS-style list cards
-    Widget sectionCard({required Widget child, EdgeInsets padding = const EdgeInsets.symmetric(vertical: 6)}) => Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Container(
-            decoration: BoxDecoration(
-              // Match Settings page: Light uses translucent white; Dark uses subtle white10
-              color: isDark ? Colors.white10 : Colors.white.withOpacity(0.96),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: cs.outlineVariant.withOpacity(isDark ? 0.08 : 0.06),
-                width: 0.6,
-              ),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: Padding(padding: padding, child: child),
+    Widget sectionCard({
+      required Widget child,
+      EdgeInsets padding = const EdgeInsets.symmetric(vertical: 6),
+    }) => Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Container(
+        decoration: BoxDecoration(
+          // Match Settings page: Light uses translucent white; Dark uses subtle white10
+          color: isDark ? Colors.white10 : Colors.white.withOpacity(0.96),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: cs.outlineVariant.withOpacity(isDark ? 0.08 : 0.06),
+            width: 0.6,
           ),
-        );
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Padding(padding: padding, child: child),
+      ),
+    );
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(0, 8, 0, 16),
@@ -497,7 +555,9 @@ class _MemoryTab extends StatelessWidget {
                 label: l10n.assistantEditMemorySwitchTitle,
                 value: a.enableMemory,
                 onChanged: (v) async {
-                  await context.read<AssistantProvider>().updateAssistant(a.copyWith(enableMemory: v));
+                  await context.read<AssistantProvider>().updateAssistant(
+                    a.copyWith(enableMemory: v),
+                  );
                 },
               ),
               _iosDivider(context),
@@ -507,7 +567,9 @@ class _MemoryTab extends StatelessWidget {
                 label: l10n.assistantEditRecentChatsSwitchTitle,
                 value: a.enableRecentChatsReference,
                 onChanged: (v) async {
-                  await context.read<AssistantProvider>().updateAssistant(a.copyWith(enableRecentChatsReference: v));
+                  await context.read<AssistantProvider>().updateAssistant(
+                    a.copyWith(enableRecentChatsReference: v),
+                  );
                 },
               ),
             ],
@@ -522,20 +584,31 @@ class _MemoryTab extends StatelessWidget {
               Expanded(
                 child: Text(
                   l10n.assistantEditManageMemoryTitle,
-                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
               _TactileRow(
                 onTap: () => _showAddEditSheet(context),
                 pressedScale: 0.97,
                 builder: (pressed) {
-                  final color = pressed ? cs.primary.withOpacity(0.7) : cs.primary;
+                  final color = pressed
+                      ? cs.primary.withOpacity(0.7)
+                      : cs.primary;
                   return Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(Lucide.Plus, size: 16, color: color),
                       const SizedBox(width: 4),
-                      Text(l10n.assistantEditAddMemoryButton, style: TextStyle(color: color, fontWeight: FontWeight.w600)),
+                      Text(
+                        l10n.assistantEditAddMemoryButton,
+                        style: TextStyle(
+                          color: color,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ],
                   );
                 },
@@ -549,7 +622,10 @@ class _MemoryTab extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Text(
               l10n.assistantEditMemoryEmpty,
-              style: TextStyle(color: cs.onSurface.withOpacity(0.6), fontSize: 12),
+              style: TextStyle(
+                color: cs.onSurface.withOpacity(0.6),
+                fontSize: 12,
+              ),
             ),
           ),
 
@@ -561,7 +637,10 @@ class _MemoryTab extends StatelessWidget {
               decoration: BoxDecoration(
                 color: isDark ? Colors.white10 : Colors.white.withOpacity(0.96),
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: cs.outlineVariant.withOpacity(isDark ? 0.08 : 0.06), width: 0.6),
+                border: Border.all(
+                  color: cs.outlineVariant.withOpacity(isDark ? 0.08 : 0.06),
+                  width: 0.6,
+                ),
               ),
               child: Padding(
                 padding: const EdgeInsets.all(12),
@@ -581,7 +660,11 @@ class _MemoryTab extends StatelessWidget {
                       icon: Lucide.Pencil,
                       size: 18,
                       color: cs.primary,
-                      onTap: () => _showAddEditSheet(context, id: m.id, initial: m.content),
+                      onTap: () => _showAddEditSheet(
+                        context,
+                        id: m.id,
+                        initial: m.content,
+                      ),
                     ),
                     const SizedBox(width: 6),
                     _TactileIconButton(
@@ -607,7 +690,10 @@ class _MemoryTab extends StatelessWidget {
               Expanded(
                 child: Text(
                   l10n.assistantEditManageSummariesTitle,
-                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ],
@@ -617,14 +703,21 @@ class _MemoryTab extends StatelessWidget {
         Builder(
           builder: (context) {
             final chatService = context.watch<ChatService>();
-            final summaries = chatService.getConversationsWithSummaryForAssistant(assistantId);
+            final summaries = chatService
+                .getConversationsWithSummaryForAssistant(assistantId);
 
             if (summaries.isEmpty) {
               return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 child: Text(
                   l10n.assistantEditSummaryEmpty,
-                  style: TextStyle(color: cs.onSurface.withOpacity(0.6), fontSize: 12),
+                  style: TextStyle(
+                    color: cs.onSurface.withOpacity(0.6),
+                    fontSize: 12,
+                  ),
                 ),
               );
             }
@@ -635,9 +728,16 @@ class _MemoryTab extends StatelessWidget {
                   padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: isDark ? Colors.white10 : Colors.white.withOpacity(0.96),
+                      color: isDark
+                          ? Colors.white10
+                          : Colors.white.withOpacity(0.96),
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: cs.outlineVariant.withOpacity(isDark ? 0.08 : 0.06), width: 0.6),
+                      border: Border.all(
+                        color: cs.outlineVariant.withOpacity(
+                          isDark ? 0.08 : 0.06,
+                        ),
+                        width: 0.6,
+                      ),
                     ),
                     child: Padding(
                       padding: const EdgeInsets.all(12),
@@ -646,7 +746,11 @@ class _MemoryTab extends StatelessWidget {
                         children: [
                           Row(
                             children: [
-                              Icon(Lucide.MessageSquare, size: 14, color: cs.onSurface.withOpacity(0.5)),
+                              Icon(
+                                Lucide.MessageSquare,
+                                size: 14,
+                                color: cs.onSurface.withOpacity(0.5),
+                              ),
                               const SizedBox(width: 6),
                               Expanded(
                                 child: Text(
@@ -679,14 +783,22 @@ class _MemoryTab extends StatelessWidget {
                                 icon: Lucide.Pencil,
                                 size: 18,
                                 color: cs.primary,
-                                onTap: () => _showEditSummarySheet(context, conv, chatService),
+                                onTap: () => _showEditSummarySheet(
+                                  context,
+                                  conv,
+                                  chatService,
+                                ),
                               ),
                               const SizedBox(width: 6),
                               _TactileIconButton(
                                 icon: Lucide.Trash2,
                                 size: 18,
                                 color: cs.error,
-                                onTap: () => _confirmDeleteSummary(context, conv.id, chatService),
+                                onTap: () => _confirmDeleteSummary(
+                                  context,
+                                  conv.id,
+                                  chatService,
+                                ),
                               ),
                             ],
                           ),
@@ -714,9 +826,7 @@ class _MemoryTab extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final controller = TextEditingController(text: conversation.summary ?? '');
     final platform = Theme.of(context).platform;
-    final isDesktop = platform == TargetPlatform.macOS ||
-        platform == TargetPlatform.linux ||
-        platform == TargetPlatform.windows;
+    final isDesktop = platform == TargetPlatform.macOS;
 
     if (isDesktop) {
       await showDialog<void>(
@@ -725,8 +835,13 @@ class _MemoryTab extends StatelessWidget {
         builder: (ctx) {
           return Dialog(
             backgroundColor: cs.surface,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            insetPadding: const EdgeInsets.symmetric(
+              horizontal: 24,
+              vertical: 24,
+            ),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 560),
               child: Column(
@@ -742,11 +857,16 @@ class _MemoryTab extends StatelessWidget {
                           Expanded(
                             child: Text(
                               l10n.assistantEditSummaryDialogTitle,
-                              style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700),
+                              style: const TextStyle(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ),
                           IconButton(
-                            tooltip: MaterialLocalizations.of(ctx).closeButtonTooltip,
+                            tooltip: MaterialLocalizations.of(
+                              ctx,
+                            ).closeButtonTooltip,
                             icon: const Icon(Lucide.X, size: 18),
                             color: cs.onSurface,
                             onPressed: () => Navigator.of(ctx).maybePop(),
@@ -779,15 +899,20 @@ class _MemoryTab extends StatelessWidget {
                           decoration: InputDecoration(
                             hintText: l10n.assistantEditSummaryDialogHint,
                             filled: true,
-                            fillColor: Theme.of(ctx).brightness == Brightness.dark
+                            fillColor:
+                                Theme.of(ctx).brightness == Brightness.dark
                                 ? Colors.white10
                                 : const Color(0xFFF7F7F9),
                             border: OutlineInputBorder(
-                              borderSide: BorderSide(color: cs.outlineVariant.withOpacity(0.2)),
+                              borderSide: BorderSide(
+                                color: cs.outlineVariant.withOpacity(0.2),
+                              ),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             focusedBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: cs.primary.withOpacity(0.5)),
+                              borderSide: BorderSide(
+                                color: cs.primary.withOpacity(0.5),
+                              ),
                               borderRadius: BorderRadius.circular(10),
                             ),
                           ),
@@ -810,7 +935,9 @@ class _MemoryTab extends StatelessWidget {
                               onTap: () async {
                                 final text = controller.text.trim();
                                 if (text.isEmpty) {
-                                  await chatService.clearConversationSummary(conversation.id);
+                                  await chatService.clearConversationSummary(
+                                    conversation.id,
+                                  );
                                 } else {
                                   await chatService.updateConversationSummary(
                                     conversation.id,
@@ -863,7 +990,10 @@ class _MemoryTab extends StatelessWidget {
                     Expanded(
                       child: Text(
                         l10n.assistantEditSummaryDialogTitle,
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   ],
@@ -890,11 +1020,15 @@ class _MemoryTab extends StatelessWidget {
                         ? Colors.white10
                         : const Color(0xFFF7F7F9),
                     border: OutlineInputBorder(
-                      borderSide: BorderSide(color: cs.outlineVariant.withOpacity(0.2)),
+                      borderSide: BorderSide(
+                        color: cs.outlineVariant.withOpacity(0.2),
+                      ),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: cs.primary.withOpacity(0.5)),
+                      borderSide: BorderSide(
+                        color: cs.primary.withOpacity(0.5),
+                      ),
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
@@ -919,7 +1053,9 @@ class _MemoryTab extends StatelessWidget {
                         onTap: () async {
                           final text = controller.text.trim();
                           if (text.isEmpty) {
-                            await chatService.clearConversationSummary(conversation.id);
+                            await chatService.clearConversationSummary(
+                              conversation.id,
+                            );
                           } else {
                             await chatService.updateConversationSummary(
                               conversation.id,
@@ -961,7 +1097,9 @@ class _MemoryTab extends StatelessWidget {
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            style: TextButton.styleFrom(foregroundColor: Theme.of(ctx).colorScheme.error),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(ctx).colorScheme.error,
+            ),
             child: Text(l10n.assistantEditClearButton),
           ),
         ],
@@ -987,7 +1125,12 @@ class _CustomRequestTab extends StatelessWidget {
     final a = ap.getById(assistantId)!;
 
     Widget card({required Widget child}) => Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 20, 8), // Increased right padding
+      padding: const EdgeInsets.fromLTRB(
+        16,
+        8,
+        20,
+        8,
+      ), // Increased right padding
       child: Container(
         decoration: BoxDecoration(
           color: isDark ? Colors.white10 : cs.surface,
@@ -1086,7 +1229,9 @@ class _CustomRequestTab extends StatelessWidget {
                       onTap: addHeader,
                       pressedScale: 0.97,
                       builder: (pressed) {
-                        final color = pressed ? cs.primary.withOpacity(0.7) : cs.primary;
+                        final color = pressed
+                            ? cs.primary.withOpacity(0.7)
+                            : cs.primary;
                         return Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -1094,7 +1239,10 @@ class _CustomRequestTab extends StatelessWidget {
                             const SizedBox(width: 4),
                             Text(
                               l10n.assistantEditCustomHeadersAdd,
-                              style: TextStyle(color: color, fontWeight: FontWeight.w600),
+                              style: TextStyle(
+                                color: color,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ],
                         );
@@ -1148,7 +1296,9 @@ class _CustomRequestTab extends StatelessWidget {
                       onTap: addBody,
                       pressedScale: 0.97,
                       builder: (pressed) {
-                        final color = pressed ? cs.primary.withOpacity(0.7) : cs.primary;
+                        final color = pressed
+                            ? cs.primary.withOpacity(0.7)
+                            : cs.primary;
                         return Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -1156,7 +1306,10 @@ class _CustomRequestTab extends StatelessWidget {
                             const SizedBox(width: 4),
                             Text(
                               l10n.assistantEditCustomBodyAdd,
-                              style: TextStyle(color: color, fontWeight: FontWeight.w600),
+                              style: TextStyle(
+                                color: color,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ],
                         );
@@ -1610,84 +1763,97 @@ class _BasicSettingsTabState extends State<_BasicSettingsTab> {
         // iOS section card with all settings (without Use Assistant Avatar and Stream Output)
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 0),
-          child: _iosSectionCard(children: [
-            // Temperature
-            _iosNavRow(
-              context,
-              icon: Lucide.Thermometer,
-              label: 'Temperature',
-              detailText: a.temperature != null ? a.temperature!.toStringAsFixed(2) : l10n.assistantEditParameterDisabled,
-              onTap: () => _showTemperatureSheet(context, a),
-            ),
-            _iosDivider(context),
-            // Top P
-            _iosNavRow(
-              context,
-              icon: Lucide.Wand2,
-              label: 'Top P',
-              detailText: a.topP != null ? a.topP!.toStringAsFixed(2) : l10n.assistantEditParameterDisabled,
-              onTap: () => _showTopPSheet(context, a),
-            ),
-            _iosDivider(context),
-            // Context messages
-            _iosNavRow(
-              context,
-              icon: Lucide.MessagesSquare,
-              label: l10n.assistantEditContextMessagesTitle,
-              detailText: a.limitContextMessages ? a.contextMessageSize.toString() : l10n.assistantEditParameterDisabled2,
-              onTap: () => _showContextMessagesSheet(context, a),
-            ),
-            _iosDivider(context),
-            // Thinking budget
-            _iosNavRow(
-              context,
-              icon: Lucide.Brain,
-              label: l10n.assistantEditThinkingBudgetTitle,
-              detailText: a.thinkingBudget?.toString() ?? '-',
-              onTap: () async {
-                final currentBudget = a.thinkingBudget;
-                if (currentBudget != null) {
-                  context.read<SettingsProvider>().setThinkingBudget(currentBudget);
-                }
-                await showReasoningBudgetSheet(context);
-                final chosen = context.read<SettingsProvider>().thinkingBudget;
-                await context.read<AssistantProvider>().updateAssistant(
-                  a.copyWith(thinkingBudget: chosen),
-                );
-              },
-            ),
-            _iosDivider(context),
-            // Max tokens
-            _iosNavRow(
-              context,
-              icon: Lucide.Hash,
-              label: l10n.assistantEditMaxTokensTitle,
-              detailText: a.maxTokens?.toString() ?? l10n.assistantEditMaxTokensHint,
-              onTap: () => _showMaxTokensSheet(context, a),
-            ),
-            _iosDivider(context),
-            // Use assistant avatar
-            _iosSwitchRow(
-              context,
-              icon: Lucide.User,
-              label: l10n.assistantEditUseAssistantAvatarTitle,
-              value: a.useAssistantAvatar,
-              onChanged: (v) => context
-                  .read<AssistantProvider>()
-                  .updateAssistant(a.copyWith(useAssistantAvatar: v)),
-            ),
-            _iosDivider(context),
-            // Stream output
-            _iosSwitchRow(
-              context,
-              icon: Lucide.Zap,
-              label: l10n.assistantEditStreamOutputTitle,
-              value: a.streamOutput,
-              onChanged: (v) => context
-                  .read<AssistantProvider>()
-                  .updateAssistant(a.copyWith(streamOutput: v)),
-            ),
-          ]),
+          child: _iosSectionCard(
+            children: [
+              // Temperature
+              _iosNavRow(
+                context,
+                icon: Lucide.Thermometer,
+                label: 'Temperature',
+                detailText: a.temperature != null
+                    ? a.temperature!.toStringAsFixed(2)
+                    : l10n.assistantEditParameterDisabled,
+                onTap: () => _showTemperatureSheet(context, a),
+              ),
+              _iosDivider(context),
+              // Top P
+              _iosNavRow(
+                context,
+                icon: Lucide.Wand2,
+                label: 'Top P',
+                detailText: a.topP != null
+                    ? a.topP!.toStringAsFixed(2)
+                    : l10n.assistantEditParameterDisabled,
+                onTap: () => _showTopPSheet(context, a),
+              ),
+              _iosDivider(context),
+              // Context messages
+              _iosNavRow(
+                context,
+                icon: Lucide.MessagesSquare,
+                label: l10n.assistantEditContextMessagesTitle,
+                detailText: a.limitContextMessages
+                    ? a.contextMessageSize.toString()
+                    : l10n.assistantEditParameterDisabled2,
+                onTap: () => _showContextMessagesSheet(context, a),
+              ),
+              _iosDivider(context),
+              // Thinking budget
+              _iosNavRow(
+                context,
+                icon: Lucide.Brain,
+                label: l10n.assistantEditThinkingBudgetTitle,
+                detailText: a.thinkingBudget?.toString() ?? '-',
+                onTap: () async {
+                  final currentBudget = a.thinkingBudget;
+                  if (currentBudget != null) {
+                    context.read<SettingsProvider>().setThinkingBudget(
+                      currentBudget,
+                    );
+                  }
+                  await showReasoningBudgetSheet(context);
+                  final chosen = context
+                      .read<SettingsProvider>()
+                      .thinkingBudget;
+                  await context.read<AssistantProvider>().updateAssistant(
+                    a.copyWith(thinkingBudget: chosen),
+                  );
+                },
+              ),
+              _iosDivider(context),
+              // Max tokens
+              _iosNavRow(
+                context,
+                icon: Lucide.Hash,
+                label: l10n.assistantEditMaxTokensTitle,
+                detailText:
+                    a.maxTokens?.toString() ?? l10n.assistantEditMaxTokensHint,
+                onTap: () => _showMaxTokensSheet(context, a),
+              ),
+              _iosDivider(context),
+              // Use assistant avatar
+              _iosSwitchRow(
+                context,
+                icon: Lucide.User,
+                label: l10n.assistantEditUseAssistantAvatarTitle,
+                value: a.useAssistantAvatar,
+                onChanged: (v) => context
+                    .read<AssistantProvider>()
+                    .updateAssistant(a.copyWith(useAssistantAvatar: v)),
+              ),
+              _iosDivider(context),
+              // Stream output
+              _iosSwitchRow(
+                context,
+                icon: Lucide.Zap,
+                label: l10n.assistantEditStreamOutputTitle,
+                value: a.streamOutput,
+                onChanged: (v) => context
+                    .read<AssistantProvider>()
+                    .updateAssistant(a.copyWith(streamOutput: v)),
+              ),
+            ],
+          ),
         ),
         const SizedBox(height: 16),
 
@@ -1715,7 +1881,10 @@ class _BasicSettingsTabState extends State<_BasicSettingsTab> {
                         l10n.assistantEditChatModelTitle,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                     if (a.chatModelProvider != null && a.chatModelId != null)
@@ -1726,9 +1895,11 @@ class _BasicSettingsTabState extends State<_BasicSettingsTab> {
                           color: cs.onSurface,
                           size: 20,
                           onTap: () async {
-                            await context.read<AssistantProvider>().updateAssistant(
-                              a.copyWith(clearChatModel: true),
-                            );
+                            await context
+                                .read<AssistantProvider>()
+                                .updateAssistant(
+                                  a.copyWith(clearChatModel: true),
+                                );
                           },
                         ),
                       ),
@@ -1737,7 +1908,10 @@ class _BasicSettingsTabState extends State<_BasicSettingsTab> {
                 const SizedBox(height: 6),
                 Text(
                   l10n.assistantEditChatModelSubtitle,
-                  style: TextStyle(fontSize: 12, color: cs.onSurface.withOpacity(0.7)),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: cs.onSurface.withOpacity(0.7),
+                  ),
                 ),
                 const SizedBox(height: 8),
                 _TactileRow(
@@ -1754,8 +1928,12 @@ class _BasicSettingsTabState extends State<_BasicSettingsTab> {
                   },
                   pressedScale: 0.98,
                   builder: (pressed) {
-                    final bg = isDark ? Colors.white10 : const Color(0xFFF2F3F5);
-                    final overlay = isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.05);
+                    final bg = isDark
+                        ? Colors.white10
+                        : const Color(0xFFF2F3F5);
+                    final overlay = isDark
+                        ? Colors.white.withOpacity(0.06)
+                        : Colors.black.withOpacity(0.05);
                     final pressedBg = Color.alphaBlend(overlay, bg);
                     final l10n = AppLocalizations.of(context)!;
                     final settings = context.read<SettingsProvider>();
@@ -1763,10 +1941,16 @@ class _BasicSettingsTabState extends State<_BasicSettingsTab> {
                     String brandName = display;
                     if (a.chatModelProvider != null && a.chatModelId != null) {
                       try {
-                        final cfg = settings.getProviderConfig(a.chatModelProvider!);
+                        final cfg = settings.getProviderConfig(
+                          a.chatModelProvider!,
+                        );
                         final ov = cfg.modelOverrides[a.chatModelId] as Map?;
-                        brandName = cfg.name.isNotEmpty ? cfg.name : a.chatModelProvider!;
-                        final mdl = (ov != null && (ov['name'] as String?)?.isNotEmpty == true)
+                        brandName = cfg.name.isNotEmpty
+                            ? cfg.name
+                            : a.chatModelProvider!;
+                        final mdl =
+                            (ov != null &&
+                                (ov['name'] as String?)?.isNotEmpty == true)
                             ? (ov['name'] as String)
                             : a.chatModelId!;
                         display = mdl;
@@ -1778,7 +1962,10 @@ class _BasicSettingsTabState extends State<_BasicSettingsTab> {
                     return AnimatedContainer(
                       duration: const Duration(milliseconds: 160),
                       curve: Curves.easeOutCubic,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
                       decoration: BoxDecoration(
                         color: pressed ? pressedBg : bg,
                         borderRadius: BorderRadius.circular(12),
@@ -1792,7 +1979,10 @@ class _BasicSettingsTabState extends State<_BasicSettingsTab> {
                               display,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
                         ],
@@ -1828,7 +2018,10 @@ class _BasicSettingsTabState extends State<_BasicSettingsTab> {
                     Expanded(
                       child: Text(
                         l10n.assistantEditChatBackgroundTitle,
-                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ],
@@ -1836,7 +2029,10 @@ class _BasicSettingsTabState extends State<_BasicSettingsTab> {
                 const SizedBox(height: 6),
                 Text(
                   l10n.assistantEditChatBackgroundDescription,
-                  style: TextStyle(fontSize: 12, color: cs.onSurface.withOpacity(0.7)),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: cs.onSurface.withOpacity(0.7),
+                  ),
                 ),
                 const SizedBox(height: 8),
                 if ((a.background ?? '').isEmpty) ...[
@@ -1845,15 +2041,22 @@ class _BasicSettingsTabState extends State<_BasicSettingsTab> {
                     onTap: () => _pickBackground(context, a),
                     pressedScale: 0.98,
                     builder: (pressed) {
-                      final bg = isDark ? Colors.white10 : const Color(0xFFF2F3F5);
-                      final overlay = isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.05);
+                      final bg = isDark
+                          ? Colors.white10
+                          : const Color(0xFFF2F3F5);
+                      final overlay = isDark
+                          ? Colors.white.withOpacity(0.06)
+                          : Colors.black.withOpacity(0.05);
                       final pressedBg = Color.alphaBlend(overlay, bg);
                       final iconColor = cs.onSurface.withOpacity(0.75);
                       final textColor = cs.onSurface.withOpacity(0.9);
                       return AnimatedContainer(
                         duration: const Duration(milliseconds: 160),
                         curve: Curves.easeOutCubic,
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
                         decoration: BoxDecoration(
                           color: pressed ? pressedBg : bg,
                           borderRadius: BorderRadius.circular(12),
@@ -1865,8 +2068,14 @@ class _BasicSettingsTabState extends State<_BasicSettingsTab> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Padding(
-                              padding: const EdgeInsets.only(left: 2.0), // Material icon spacing
-                              child: Icon(Icons.image, size: 18, color: iconColor),
+                              padding: const EdgeInsets.only(
+                                left: 2.0,
+                              ), // Material icon spacing
+                              child: Icon(
+                                Icons.image,
+                                size: 18,
+                                color: iconColor,
+                              ),
                             ),
                             const SizedBox(width: 8),
                             Text(
@@ -1898,9 +2107,10 @@ class _BasicSettingsTabState extends State<_BasicSettingsTab> {
                         child: _IosButton(
                           label: l10n.assistantEditClearButton,
                           icon: Lucide.X,
-                          onTap: () => context
-                              .read<AssistantProvider>()
-                              .updateAssistant(a.copyWith(clearBackground: true)),
+                          onTap: () =>
+                              context.read<AssistantProvider>().updateAssistant(
+                                a.copyWith(clearBackground: true),
+                              ),
                         ),
                       ),
                     ],
@@ -1941,20 +2151,25 @@ class _BasicSettingsTabState extends State<_BasicSettingsTab> {
                     Expanded(
                       child: Text(
                         l10n.assistantEditChatFontScaleTitle,
-                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                     IosSwitch(
                       value: a.chatFontScale != null,
                       onChanged: (v) async {
                         if (v) {
-                          await context.read<AssistantProvider>().updateAssistant(
-                            a.copyWith(chatFontScale: 1.0),
-                          );
+                          await context
+                              .read<AssistantProvider>()
+                              .updateAssistant(a.copyWith(chatFontScale: 1.0));
                         } else {
-                          await context.read<AssistantProvider>().updateAssistant(
-                            a.copyWith(clearChatFontScale: true),
-                          );
+                          await context
+                              .read<AssistantProvider>()
+                              .updateAssistant(
+                                a.copyWith(clearChatFontScale: true),
+                              );
                         }
                       },
                     ),
@@ -1963,7 +2178,10 @@ class _BasicSettingsTabState extends State<_BasicSettingsTab> {
                 const SizedBox(height: 6),
                 Text(
                   l10n.assistantEditChatFontScaleDescription,
-                  style: TextStyle(fontSize: 12, color: cs.onSurface.withOpacity(0.7)),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: cs.onSurface.withOpacity(0.7),
+                  ),
                 ),
                 if (a.chatFontScale != null) ...[
                   const SizedBox(height: 12),
@@ -1981,7 +2199,9 @@ class _BasicSettingsTabState extends State<_BasicSettingsTab> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: isDark ? Colors.white.withOpacity(0.04) : const Color(0xFFF2F3F5),
+                      color: isDark
+                          ? Colors.white.withOpacity(0.04)
+                          : const Color(0xFFF2F3F5),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
@@ -2028,12 +2248,19 @@ class _BasicSettingsTabState extends State<_BasicSettingsTab> {
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 child: Align(
                   alignment: Alignment.centerLeft,
-                  child: Text(text, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
+                  child: Text(
+                    text,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ),
               ),
             ),
           );
         }
+
         return SafeArea(
           top: false,
           child: ConstrainedBox(
@@ -2056,7 +2283,10 @@ class _BasicSettingsTabState extends State<_BasicSettingsTab> {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    row(l10n.assistantEditAvatarChooseImage, () async => _pickLocalImage(context, a)),
+                    row(
+                      l10n.assistantEditAvatarChooseImage,
+                      () async => _pickLocalImage(context, a),
+                    ),
                     row(l10n.assistantEditAvatarChooseEmoji, () async {
                       final emoji = await _pickEmoji(context);
                       if (emoji != null) {
@@ -2065,8 +2295,14 @@ class _BasicSettingsTabState extends State<_BasicSettingsTab> {
                         );
                       }
                     }),
-                    row(l10n.assistantEditAvatarEnterLink, () async => _inputAvatarUrl(context, a)),
-                    row(l10n.assistantEditAvatarImportQQ, () async => _inputQQAvatar(context, a)),
+                    row(
+                      l10n.assistantEditAvatarEnterLink,
+                      () async => _inputAvatarUrl(context, a),
+                    ),
+                    row(
+                      l10n.assistantEditAvatarImportQQ,
+                      () async => _inputQQAvatar(context, a),
+                    ),
                     row(l10n.assistantEditAvatarReset, () async {
                       await context.read<AssistantProvider>().updateAssistant(
                         a.copyWith(clearAvatar: true),
@@ -2105,88 +2341,110 @@ class _BasicSettingsTabState extends State<_BasicSettingsTab> {
     await showModalBottomSheet(
       context: context,
       backgroundColor: cs.surface,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
       isScrollControlled: false,
       builder: (ctx) {
         return SafeArea(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 18),
-            child: Builder(builder: (context) {
-              final theme = Theme.of(context);
-              final cs = theme.colorScheme;
-              final isDark = theme.brightness == Brightness.dark;
-              final value = context.watch<AssistantProvider>().getById(widget.assistantId)?.temperature ?? 0.6;
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Drag handle
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: cs.onSurface.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Temperature',
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            child: Builder(
+              builder: (context) {
+                final theme = Theme.of(context);
+                final cs = theme.colorScheme;
+                final isDark = theme.brightness == Brightness.dark;
+                final value =
+                    context
+                        .watch<AssistantProvider>()
+                        .getById(widget.assistantId)
+                        ?.temperature ??
+                    0.6;
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Drag handle
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: cs.onSurface.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(999),
                         ),
                       ),
-                      IosSwitch(
-                        value: a.temperature != null,
-                        onChanged: (v) async {
-                          if (v) {
-                            await context.read<AssistantProvider>().updateAssistant(
-                              a.copyWith(temperature: 0.6),
-                            );
-                          } else {
-                            await context.read<AssistantProvider>().updateAssistant(
-                              a.copyWith(clearTemperature: true),
-                            );
-                          }
-                          // Close the bottom sheet after toggle
-                          Navigator.of(ctx).pop();
-                        },
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Temperature',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        IosSwitch(
+                          value: a.temperature != null,
+                          onChanged: (v) async {
+                            if (v) {
+                              await context
+                                  .read<AssistantProvider>()
+                                  .updateAssistant(
+                                    a.copyWith(temperature: 0.6),
+                                  );
+                            } else {
+                              await context
+                                  .read<AssistantProvider>()
+                                  .updateAssistant(
+                                    a.copyWith(clearTemperature: true),
+                                  );
+                            }
+                            // Close the bottom sheet after toggle
+                            Navigator.of(ctx).pop();
+                          },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    if (a.temperature != null) ...[
+                      _SliderTileNew(
+                        value: value.clamp(0.0, 2.0),
+                        min: 0.0,
+                        max: 2.0,
+                        divisions: 20,
+                        label: value.toStringAsFixed(2),
+                        onChanged: (v) => context
+                            .read<AssistantProvider>()
+                            .updateAssistant(a.copyWith(temperature: v)),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        l10n.assistantEditTemperatureDescription,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: cs.onSurface.withOpacity(0.6),
+                        ),
+                      ),
+                    ] else ...[
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Text(
+                          l10n.assistantEditParameterDisabled,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: cs.onSurface.withOpacity(0.6),
+                          ),
+                        ),
                       ),
                     ],
-                  ),
-                  const SizedBox(height: 8),
-                  if (a.temperature != null) ...[
-                    _SliderTileNew(
-                      value: value.clamp(0.0, 2.0),
-                      min: 0.0,
-                      max: 2.0,
-                      divisions: 20,
-                      label: value.toStringAsFixed(2),
-                      onChanged: (v) => context
-                          .read<AssistantProvider>()
-                          .updateAssistant(a.copyWith(temperature: v)),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      l10n.assistantEditTemperatureDescription,
-                      style: TextStyle(fontSize: 12, color: cs.onSurface.withOpacity(0.6)),
-                    ),
-                  ] else ...[
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      child: Text(
-                        l10n.assistantEditParameterDisabled,
-                        style: TextStyle(fontSize: 13, color: cs.onSurface.withOpacity(0.6)),
-                      ),
-                    ),
                   ],
-                ],
-              );
-            }),
+                );
+              },
+            ),
           ),
         );
       },
@@ -2199,189 +2457,244 @@ class _BasicSettingsTabState extends State<_BasicSettingsTab> {
     await showModalBottomSheet(
       context: context,
       backgroundColor: cs.surface,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
       isScrollControlled: false,
       builder: (ctx) {
         return SafeArea(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 18),
-            child: Builder(builder: (context) {
-              final theme = Theme.of(context);
-              final cs = theme.colorScheme;
-              final isDark = theme.brightness == Brightness.dark;
-              final value = context.watch<AssistantProvider>().getById(widget.assistantId)?.topP ?? 1.0;
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Drag handle
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: cs.onSurface.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Top P',
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            child: Builder(
+              builder: (context) {
+                final theme = Theme.of(context);
+                final cs = theme.colorScheme;
+                final isDark = theme.brightness == Brightness.dark;
+                final value =
+                    context
+                        .watch<AssistantProvider>()
+                        .getById(widget.assistantId)
+                        ?.topP ??
+                    1.0;
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Drag handle
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: cs.onSurface.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(999),
                         ),
                       ),
-                      IosSwitch(
-                        value: a.topP != null,
-                        onChanged: (v) async {
-                          if (v) {
-                            await context.read<AssistantProvider>().updateAssistant(
-                              a.copyWith(topP: 1.0),
-                            );
-                          } else {
-                            await context.read<AssistantProvider>().updateAssistant(
-                              a.copyWith(clearTopP: true),
-                            );
-                          }
-                          // Close the bottom sheet after toggle
-                          Navigator.of(ctx).pop();
-                        },
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Top P',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        IosSwitch(
+                          value: a.topP != null,
+                          onChanged: (v) async {
+                            if (v) {
+                              await context
+                                  .read<AssistantProvider>()
+                                  .updateAssistant(a.copyWith(topP: 1.0));
+                            } else {
+                              await context
+                                  .read<AssistantProvider>()
+                                  .updateAssistant(a.copyWith(clearTopP: true));
+                            }
+                            // Close the bottom sheet after toggle
+                            Navigator.of(ctx).pop();
+                          },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    if (a.topP != null) ...[
+                      _SliderTileNew(
+                        value: value.clamp(0.0, 1.0),
+                        min: 0.0,
+                        max: 1.0,
+                        divisions: 20,
+                        label: value.toStringAsFixed(2),
+                        onChanged: (v) => context
+                            .read<AssistantProvider>()
+                            .updateAssistant(a.copyWith(topP: v)),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        l10n.assistantEditTopPDescription,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: cs.onSurface.withOpacity(0.6),
+                        ),
+                      ),
+                    ] else ...[
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Text(
+                          l10n.assistantEditParameterDisabled,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: cs.onSurface.withOpacity(0.6),
+                          ),
+                        ),
                       ),
                     ],
-                  ),
-                  const SizedBox(height: 8),
-                  if (a.topP != null) ...[
-                    _SliderTileNew(
-                      value: value.clamp(0.0, 1.0),
-                      min: 0.0,
-                      max: 1.0,
-                      divisions: 20,
-                      label: value.toStringAsFixed(2),
-                      onChanged: (v) => context
-                          .read<AssistantProvider>()
-                          .updateAssistant(a.copyWith(topP: v)),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      l10n.assistantEditTopPDescription,
-                      style: TextStyle(fontSize: 12, color: cs.onSurface.withOpacity(0.6)),
-                    ),
-                  ] else ...[
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      child: Text(
-                        l10n.assistantEditParameterDisabled,
-                        style: TextStyle(fontSize: 13, color: cs.onSurface.withOpacity(0.6)),
-                      ),
-                    ),
                   ],
-                ],
-              );
-            }),
+                );
+              },
+            ),
           ),
         );
       },
     );
   }
 
-  Future<void> _showContextMessagesSheet(BuildContext context, Assistant a) async {
+  Future<void> _showContextMessagesSheet(
+    BuildContext context,
+    Assistant a,
+  ) async {
     final cs = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
     await showModalBottomSheet(
       context: context,
       backgroundColor: cs.surface,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
       isScrollControlled: false,
       builder: (ctx) {
         return SafeArea(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 18),
-            child: Builder(builder: (context) {
-              final cs = Theme.of(context).colorScheme;
-              final value = _clampContextMessages(
-                context.watch<AssistantProvider>().getById(widget.assistantId)?.contextMessageSize ?? 20,
-              );
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Drag handle
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: cs.onSurface.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          l10n.assistantEditContextMessagesTitle,
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            child: Builder(
+              builder: (context) {
+                final cs = Theme.of(context).colorScheme;
+                final value = _clampContextMessages(
+                  context
+                          .watch<AssistantProvider>()
+                          .getById(widget.assistantId)
+                          ?.contextMessageSize ??
+                      20,
+                );
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Drag handle
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: cs.onSurface.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(999),
                         ),
                       ),
-                      IosSwitch(
-                        value: a.limitContextMessages,
-                        onChanged: (v) async {
-                          final next = v && a.contextMessageSize < _contextMessageMin
-                              ? a.copyWith(limitContextMessages: v, contextMessageSize: _contextMessageMin)
-                              : a.copyWith(limitContextMessages: v);
-                          await context.read<AssistantProvider>().updateAssistant(next);
-                          // Close the bottom sheet after toggle
-                          Navigator.of(ctx).pop();
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            l10n.assistantEditContextMessagesTitle,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        IosSwitch(
+                          value: a.limitContextMessages,
+                          onChanged: (v) async {
+                            final next =
+                                v && a.contextMessageSize < _contextMessageMin
+                                ? a.copyWith(
+                                    limitContextMessages: v,
+                                    contextMessageSize: _contextMessageMin,
+                                  )
+                                : a.copyWith(limitContextMessages: v);
+                            await context
+                                .read<AssistantProvider>()
+                                .updateAssistant(next);
+                            // Close the bottom sheet after toggle
+                            Navigator.of(ctx).pop();
+                          },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    if (a.limitContextMessages) ...[
+                      _SliderTileNew(
+                        value: value.toDouble(),
+                        min: _contextMessageMin.toDouble(),
+                        max: _contextMessageMax.toDouble(),
+                        divisions: _contextMessageMax - _contextMessageMin,
+                        label: value.toString(),
+                        customLabelStops: const <double>[
+                          1.0,
+                          32.0,
+                          64.0,
+                          128.0,
+                          256.0,
+                        ],
+                        onLabelTap: () async {
+                          final chosen = await _showContextMessageInputDialog(
+                            context,
+                            initialValue: value,
+                          );
+                          if (chosen != null) {
+                            await context
+                                .read<AssistantProvider>()
+                                .updateAssistant(
+                                  a.copyWith(contextMessageSize: chosen),
+                                );
+                          }
                         },
+                        onChanged: (v) =>
+                            context.read<AssistantProvider>().updateAssistant(
+                              a.copyWith(
+                                contextMessageSize: _clampContextMessages(v),
+                              ),
+                            ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        l10n.assistantEditContextMessagesDescription,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: cs.onSurface.withOpacity(0.6),
+                        ),
+                      ),
+                    ] else ...[
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Text(
+                          l10n.assistantEditParameterDisabled2,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: cs.onSurface.withOpacity(0.6),
+                          ),
+                        ),
                       ),
                     ],
-                  ),
-                  const SizedBox(height: 8),
-                  if (a.limitContextMessages) ...[
-                    _SliderTileNew(
-                      value: value.toDouble(),
-                      min: _contextMessageMin.toDouble(),
-                      max: _contextMessageMax.toDouble(),
-                      divisions: _contextMessageMax - _contextMessageMin,
-                      label: value.toString(),
-                      customLabelStops: const <double>[1.0, 32.0, 64.0, 128.0, 256.0],
-                      onLabelTap: () async {
-                        final chosen = await _showContextMessageInputDialog(
-                          context,
-                          initialValue: value,
-                        );
-                        if (chosen != null) {
-                          await context.read<AssistantProvider>().updateAssistant(
-                                a.copyWith(contextMessageSize: chosen),
-                              );
-                        }
-                      },
-                      onChanged: (v) => context.read<AssistantProvider>().updateAssistant(
-                        a.copyWith(contextMessageSize: _clampContextMessages(v)),
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      l10n.assistantEditContextMessagesDescription,
-                      style: TextStyle(fontSize: 12, color: cs.onSurface.withOpacity(0.6)),
-                    ),
-                  ] else ...[
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      child: Text(
-                        l10n.assistantEditParameterDisabled2,
-                        style: TextStyle(fontSize: 13, color: cs.onSurface.withOpacity(0.6)),
-                      ),
-                    ),
                   ],
-                ],
-              );
-            }),
+                );
+              },
+            ),
           ),
         );
       },
@@ -2391,12 +2704,16 @@ class _BasicSettingsTabState extends State<_BasicSettingsTab> {
   Future<void> _showMaxTokensSheet(BuildContext context, Assistant a) async {
     final cs = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
-    final controller = TextEditingController(text: a.maxTokens?.toString() ?? '');
+    final controller = TextEditingController(
+      text: a.maxTokens?.toString() ?? '',
+    );
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: cs.surface,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
       builder: (ctx) {
         return SafeArea(
           top: false,
@@ -2416,7 +2733,10 @@ class _BasicSettingsTabState extends State<_BasicSettingsTab> {
                   child: Container(
                     width: 40,
                     height: 4,
-                    decoration: BoxDecoration(color: cs.onSurface.withOpacity(0.2), borderRadius: BorderRadius.circular(999)),
+                    decoration: BoxDecoration(
+                      color: cs.onSurface.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -2433,7 +2753,10 @@ class _BasicSettingsTabState extends State<_BasicSettingsTab> {
                       child: Center(
                         child: Text(
                           l10n.assistantEditMaxTokensTitle,
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ),
@@ -2450,7 +2773,9 @@ class _BasicSettingsTabState extends State<_BasicSettingsTab> {
                       },
                       pressedScale: 0.95,
                       builder: (pressed) {
-                        final color = pressed ? cs.primary.withOpacity(0.7) : cs.primary;
+                        final color = pressed
+                            ? cs.primary.withOpacity(0.7)
+                            : cs.primary;
                         return Text(
                           l10n.assistantSettingsAddSheetSave, // "Save"
                           style: TextStyle(
@@ -2471,14 +2796,37 @@ class _BasicSettingsTabState extends State<_BasicSettingsTab> {
                   decoration: InputDecoration(
                     hintText: l10n.assistantEditMaxTokensHint,
                     filled: true,
-                    fillColor: Theme.of(ctx).brightness == Brightness.dark ? Colors.white10 : const Color(0xFFF2F3F5),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: cs.outlineVariant.withOpacity(0.4))),
-                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: cs.outlineVariant.withOpacity(0.4))),
-                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: cs.primary.withOpacity(0.5))),
+                    fillColor: Theme.of(ctx).brightness == Brightness.dark
+                        ? Colors.white10
+                        : const Color(0xFFF2F3F5),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: cs.outlineVariant.withOpacity(0.4),
+                      ),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: cs.outlineVariant.withOpacity(0.4),
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: cs.primary.withOpacity(0.5),
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 12),
-                Text(l10n.assistantEditMaxTokensDescription, style: TextStyle(color: cs.onSurface.withOpacity(0.6), fontSize: 12)),
+                Text(
+                  l10n.assistantEditMaxTokensDescription,
+                  style: TextStyle(
+                    color: cs.onSurface.withOpacity(0.6),
+                    fontSize: 12,
+                  ),
+                ),
               ],
             ),
           ),
@@ -2598,13 +2946,11 @@ class _SliderTileNew extends StatelessWidget {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
-    final useCustomLabels = customLabelStops != null && customLabelStops!.isNotEmpty;
+    final useCustomLabels =
+        customLabelStops != null && customLabelStops!.isNotEmpty;
     final stops = useCustomLabels
-        ? (customLabelStops!
-            .where((v) => v >= min && v <= max)
-            .toSet()
-            .toList()
-          ..sort())
+        ? (customLabelStops!.where((v) => v >= min && v <= max).toSet().toList()
+            ..sort())
         : const <double>[];
 
     final active = cs.primary;
@@ -2725,7 +3071,9 @@ class _SliderTileNew extends StatelessWidget {
                           child: Stack(
                             fit: StackFit.expand,
                             children: stops.map((v) {
-                              final t = range == 0 ? 0.0 : ((v - min) / range).clamp(0.0, 1.0);
+                              final t = range == 0
+                                  ? 0.0
+                                  : ((v - min) / range).clamp(0.0, 1.0);
                               return Align(
                                 alignment: Alignment(-1 + t * 2, 0),
                                 child: Text(
@@ -2767,12 +3115,16 @@ class _ValuePill extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       onTap: onTap,
-      behavior: onTap != null ? HitTestBehavior.opaque : HitTestBehavior.deferToChild,
+      behavior: onTap != null
+          ? HitTestBehavior.opaque
+          : HitTestBehavior.deferToChild,
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: isDark ? Colors.white10 : cs.primary.withOpacity(0.10),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: cs.primary.withOpacity(isDark ? 0.28 : 0.22)),
+          border: Border.all(
+            color: cs.primary.withOpacity(isDark ? 0.28 : 0.22),
+          ),
           boxShadow: isDark ? [] : AppShadows.soft,
         ),
         child: Padding(
@@ -2945,15 +3297,15 @@ extension _AssistantAvatarActions on _BasicSettingsTabState {
                         shape: BoxShape.circle,
                       ),
                       alignment: Alignment.center,
-                    child: EmojiText(
-                      value.isEmpty
-                          ? '🙂'
-                          : value.characters.take(1).toString(),
-                      fontSize: 40,
-                      optimizeEmojiAlign: true,
-                      nudge: Offset.zero, // picker preview: no extra nudge
+                      child: EmojiText(
+                        value.isEmpty
+                            ? '🙂'
+                            : value.characters.take(1).toString(),
+                        fontSize: 40,
+                        optimizeEmojiAlign: true,
+                        nudge: Offset.zero, // picker preview: no extra nudge
+                      ),
                     ),
-                  ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: controller,
@@ -3015,7 +3367,8 @@ extension _AssistantAvatarActions on _BasicSettingsTabState {
                                 e,
                                 fontSize: 20,
                                 optimizeEmojiAlign: true,
-                                nudge: Offset.zero, // picker grid: no extra nudge
+                                nudge:
+                                    Offset.zero, // picker grid: no extra nudge
                               ),
                             ),
                           );
@@ -3302,10 +3655,6 @@ extension _AssistantAvatarActions on _BasicSettingsTabState {
   }
 
   Future<void> _pickLocalImage(BuildContext context, Assistant a) async {
-    if (kIsWeb) {
-      await _inputAvatarUrl(context, a);
-      return;
-    }
     try {
       final picker = ImagePicker();
       final XFile? file = await picker.pickImage(
@@ -3427,14 +3776,31 @@ class _PromptTabState extends State<_PromptTab> {
         allowMultiple: false,
         withData: true,
         type: FileType.custom,
-        allowedExtensions: const ['txt','md','json','js','html','xml','py','java','kt','dart','ts','tsx','markdown','mdx','yml','yaml'],
+        allowedExtensions: const [
+          'txt',
+          'md',
+          'json',
+          'js',
+          'html',
+          'xml',
+          'py',
+          'java',
+          'kt',
+          'dart',
+          'ts',
+          'tsx',
+          'markdown',
+          'mdx',
+          'yml',
+          'yaml',
+        ],
       );
       if (res == null || res.files.isEmpty) return;
       final picked = res.files.first;
       String? content;
       if (picked.bytes != null && picked.bytes!.isNotEmpty) {
         content = utf8.decode(picked.bytes!, allowMalformed: true);
-      } else if (!kIsWeb && picked.path != null && picked.path!.isNotEmpty) {
+      } else if (picked.path != null && picked.path!.isNotEmpty) {
         content = await File(picked.path!).readAsString();
       }
       if (!mounted) return;
@@ -3447,8 +3813,9 @@ class _PromptTabState extends State<_PromptTab> {
         return;
       }
       _sysCtrl.text = content;
-      _sysCtrl.selection =
-          TextSelection.collapsed(offset: _sysCtrl.text.length);
+      _sysCtrl.selection = TextSelection.collapsed(
+        offset: _sysCtrl.text.length,
+      );
       final ap = context.read<AssistantProvider>();
       final a = ap.getById(widget.assistantId);
       if (a != null) {
@@ -3521,10 +3888,7 @@ class _PromptTabState extends State<_PromptTab> {
 
   Future<void> _openSystemPromptEditor() async {
     final platform = Theme.of(context).platform;
-    final bool isDesktop = kIsWeb ||
-        platform == TargetPlatform.macOS ||
-        platform == TargetPlatform.linux ||
-        platform == TargetPlatform.windows;
+    final bool isDesktop = platform == TargetPlatform.macOS;
     final initial = _sysCtrl.text;
     final String? next = isDesktop
         ? await _showSystemPromptDesktopDialog(initial)
@@ -3646,7 +4010,10 @@ class _PromptTabState extends State<_PromptTab> {
                 Expanded(
                   child: Text(
                     l10n.assistantEditSystemPromptTitle,
-                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
                 IosIconButton(
@@ -3849,7 +4216,7 @@ class _PromptTabState extends State<_PromptTab> {
       final a = ap.getById(widget.assistantId)!;
       final isDark = Theme.of(context).brightness == Brightness.dark;
       final items = a.presetMessages;
-      final isDesktop = Theme.of(context).platform == TargetPlatform.macOS || Theme.of(context).platform == TargetPlatform.linux || Theme.of(context).platform == TargetPlatform.windows;
+      final isDesktop = Theme.of(context).platform == TargetPlatform.macOS;
 
       Widget dragWrapper({required int index, required Widget child}) {
         return isDesktop
@@ -3859,47 +4226,57 @@ class _PromptTabState extends State<_PromptTab> {
 
       Widget headerButtons() {
         Widget makeButtons() => Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                _HoverPillButton(
-                  icon: Lucide.User,
-                  color: cs.primary,
-                  label: l10n.assistantEditPresetAddUser,
-                  onTap: () {
-                    setState(() {
-                      _presetRole = 'user';
-                      _presetCtrl.text = '';
-                      _showPresetInput = true;
-                    });
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      final ctx = _presetHeaderKey.currentContext;
-                      if (ctx != null) {
-                        Scrollable.ensureVisible(ctx, alignment: 0.0, duration: const Duration(milliseconds: 260), curve: Curves.easeOutCubic);
-                      }
-                    });
-                  },
-                ),
-                _HoverPillButton(
-                  icon: Lucide.Bot,
-                  color: cs.secondary,
-                  label: l10n.assistantEditPresetAddAssistant,
-                  onTap: () {
-                    setState(() {
-                      _presetRole = 'assistant';
-                      _presetCtrl.text = '';
-                      _showPresetInput = true;
-                    });
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      final ctx = _presetHeaderKey.currentContext;
-                      if (ctx != null) {
-                        Scrollable.ensureVisible(ctx, alignment: 0.0, duration: const Duration(milliseconds: 260), curve: Curves.easeOutCubic);
-                      }
-                    });
-                  },
-                ),
-              ],
-            );
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            _HoverPillButton(
+              icon: Lucide.User,
+              color: cs.primary,
+              label: l10n.assistantEditPresetAddUser,
+              onTap: () {
+                setState(() {
+                  _presetRole = 'user';
+                  _presetCtrl.text = '';
+                  _showPresetInput = true;
+                });
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  final ctx = _presetHeaderKey.currentContext;
+                  if (ctx != null) {
+                    Scrollable.ensureVisible(
+                      ctx,
+                      alignment: 0.0,
+                      duration: const Duration(milliseconds: 260),
+                      curve: Curves.easeOutCubic,
+                    );
+                  }
+                });
+              },
+            ),
+            _HoverPillButton(
+              icon: Lucide.Bot,
+              color: cs.secondary,
+              label: l10n.assistantEditPresetAddAssistant,
+              onTap: () {
+                setState(() {
+                  _presetRole = 'assistant';
+                  _presetCtrl.text = '';
+                  _showPresetInput = true;
+                });
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  final ctx = _presetHeaderKey.currentContext;
+                  if (ctx != null) {
+                    Scrollable.ensureVisible(
+                      ctx,
+                      alignment: 0.0,
+                      duration: const Duration(milliseconds: 260),
+                      curve: Curves.easeOutCubic,
+                    );
+                  }
+                });
+              },
+            ),
+          ],
+        );
 
         return Container(
           key: _presetHeaderKey,
@@ -3913,7 +4290,10 @@ class _PromptTabState extends State<_PromptTab> {
                   children: [
                     Text(
                       l10n.assistantEditPresetTitle,
-                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     makeButtons(),
@@ -3925,7 +4305,10 @@ class _PromptTabState extends State<_PromptTab> {
                   Expanded(
                     child: Text(
                       l10n.assistantEditPresetTitle,
-                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                   makeButtons(),
@@ -3939,7 +4322,10 @@ class _PromptTabState extends State<_PromptTab> {
       final baseBg = isDark ? Colors.white10 : Colors.white.withOpacity(0.96);
 
       return Container(
-        decoration: BoxDecoration(color: baseBg, borderRadius: BorderRadius.circular(14)),
+        decoration: BoxDecoration(
+          color: baseBg,
+          borderRadius: BorderRadius.circular(14),
+        ),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
           child: Column(
@@ -3949,7 +4335,13 @@ class _PromptTabState extends State<_PromptTab> {
               const SizedBox(height: 10),
 
               if (items.isEmpty)
-                Text(l10n.assistantEditPresetEmpty, style: TextStyle(color: cs.onSurface.withOpacity(0.6), fontSize: 12)),
+                Text(
+                  l10n.assistantEditPresetEmpty,
+                  style: TextStyle(
+                    color: cs.onSurface.withOpacity(0.6),
+                    fontSize: 12,
+                  ),
+                ),
 
               if (items.isNotEmpty)
                 ReorderableListView.builder(
@@ -3960,7 +4352,10 @@ class _PromptTabState extends State<_PromptTab> {
                     // No extra elevation/shadow while dragging; keep rounded clip only
                     return AnimatedBuilder(
                       animation: anim,
-                      builder: (_, __) => ClipRRect(borderRadius: BorderRadius.circular(18), child: child),
+                      builder: (_, __) => ClipRRect(
+                        borderRadius: BorderRadius.circular(18),
+                        child: child,
+                      ),
                     );
                   },
                   itemCount: items.length,
@@ -3969,7 +4364,9 @@ class _PromptTabState extends State<_PromptTab> {
                     final list = List<PresetMessage>.of(a.presetMessages);
                     final item = list.removeAt(oldIndex);
                     list.insert(newIndex, item);
-                    await context.read<AssistantProvider>().updateAssistant(a.copyWith(presetMessages: list));
+                    await context.read<AssistantProvider>().updateAssistant(
+                      a.copyWith(presetMessages: list),
+                    );
                   },
                   itemBuilder: (ctx, i) {
                     final m = items[i];
@@ -3980,7 +4377,9 @@ class _PromptTabState extends State<_PromptTab> {
                       onDelete: () async {
                         final list = List<PresetMessage>.of(a.presetMessages);
                         list.removeWhere((e) => e.id == m.id);
-                        await context.read<AssistantProvider>().updateAssistant(a.copyWith(presetMessages: list));
+                        await context.read<AssistantProvider>().updateAssistant(
+                          a.copyWith(presetMessages: list),
+                        );
                       },
                     );
                     return KeyedSubtree(
@@ -4013,19 +4412,51 @@ class _PromptTabState extends State<_PromptTab> {
                                 minLines: 1,
                                 maxLines: 6,
                                 decoration: InputDecoration(
-                                  hintText: _presetRole == 'assistant' ? l10n.assistantEditPresetInputHintAssistant : l10n.assistantEditPresetInputHintUser,
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: cs.outlineVariant.withOpacity(0.35))),
-                                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: cs.primary.withOpacity(0.5))),
-                                  contentPadding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+                                  hintText: _presetRole == 'assistant'
+                                      ? l10n.assistantEditPresetInputHintAssistant
+                                      : l10n.assistantEditPresetInputHintUser,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color: cs.outlineVariant.withOpacity(
+                                        0.35,
+                                      ),
+                                    ),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color: cs.primary.withOpacity(0.5),
+                                    ),
+                                  ),
+                                  contentPadding: const EdgeInsets.fromLTRB(
+                                    12,
+                                    10,
+                                    12,
+                                    10,
+                                  ),
                                 ),
                                 autofocus: false,
                                 onSubmitted: (_) async {
                                   final text = _presetCtrl.text.trim();
                                   if (text.isEmpty) return;
-                                  final list = List<PresetMessage>.of(a.presetMessages);
-                                  list.add(PresetMessage(role: _presetRole, content: text));
-                                  await context.read<AssistantProvider>().updateAssistant(a.copyWith(presetMessages: list));
+                                  final list = List<PresetMessage>.of(
+                                    a.presetMessages,
+                                  );
+                                  list.add(
+                                    PresetMessage(
+                                      role: _presetRole,
+                                      content: text,
+                                    ),
+                                  );
+                                  await context
+                                      .read<AssistantProvider>()
+                                      .updateAssistant(
+                                        a.copyWith(presetMessages: list),
+                                      );
                                   if (!mounted) return;
                                   setState(() {
                                     _showPresetInput = false;
@@ -4036,9 +4467,48 @@ class _PromptTabState extends State<_PromptTab> {
                               const SizedBox(height: 8),
                               Row(
                                 children: [
-                                  _IosButton(label: l10n.assistantEditEmojiDialogCancel, onTap: () { setState(() { _showPresetInput = false; _presetCtrl.clear(); }); }, filled: false, neutral: true, dense: true),
+                                  _IosButton(
+                                    label: l10n.assistantEditEmojiDialogCancel,
+                                    onTap: () {
+                                      setState(() {
+                                        _showPresetInput = false;
+                                        _presetCtrl.clear();
+                                      });
+                                    },
+                                    filled: false,
+                                    neutral: true,
+                                    dense: true,
+                                  ),
                                   const SizedBox(width: 8),
-                                  _IosButton(label: l10n.assistantEditEmojiDialogSave, onTap: () async { final text = _presetCtrl.text.trim(); if (text.isEmpty) return; final list = List<PresetMessage>.of(a.presetMessages); list.add(PresetMessage(role: _presetRole, content: text)); await context.read<AssistantProvider>().updateAssistant(a.copyWith(presetMessages: list)); if (!mounted) return; setState(() { _showPresetInput = false; _presetCtrl.clear(); }); }, filled: true, neutral: false, dense: true),
+                                  _IosButton(
+                                    label: l10n.assistantEditEmojiDialogSave,
+                                    onTap: () async {
+                                      final text = _presetCtrl.text.trim();
+                                      if (text.isEmpty) return;
+                                      final list = List<PresetMessage>.of(
+                                        a.presetMessages,
+                                      );
+                                      list.add(
+                                        PresetMessage(
+                                          role: _presetRole,
+                                          content: text,
+                                        ),
+                                      );
+                                      await context
+                                          .read<AssistantProvider>()
+                                          .updateAssistant(
+                                            a.copyWith(presetMessages: list),
+                                          );
+                                      if (!mounted) return;
+                                      setState(() {
+                                        _showPresetInput = false;
+                                        _presetCtrl.clear();
+                                      });
+                                    },
+                                    filled: true,
+                                    neutral: false,
+                                    dense: true,
+                                  ),
                                 ],
                               ),
                             ],
@@ -4066,7 +4536,12 @@ class _PromptTabState extends State<_PromptTab> {
 }
 
 class _PresetMessageCard extends StatefulWidget {
-  const _PresetMessageCard({required this.role, required this.content, required this.onEdit, required this.onDelete});
+  const _PresetMessageCard({
+    required this.role,
+    required this.content,
+    required this.onEdit,
+    required this.onDelete,
+  });
   final String role; // 'user' | 'assistant'
   final String content;
   final VoidCallback onEdit;
@@ -4082,28 +4557,45 @@ class _PresetMessageCardState extends State<_PresetMessageCard> {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final baseBg = isDark ? Colors.white10 : Colors.white.withOpacity(0.96);
-    final borderColor = _hover ? cs.primary.withOpacity(isDark ? 0.35 : 0.45) : cs.outlineVariant.withOpacity(isDark ? 0.12 : 0.08);
+    final borderColor = _hover
+        ? cs.primary.withOpacity(isDark ? 0.35 : 0.45)
+        : cs.outlineVariant.withOpacity(isDark ? 0.12 : 0.08);
     final icon = widget.role == 'assistant' ? Lucide.Bot : Lucide.User;
     final badgeColor = widget.role == 'assistant' ? cs.secondary : cs.primary;
 
     final card = Container(
-      decoration: BoxDecoration(color: baseBg, borderRadius: BorderRadius.circular(18), border: Border.all(color: borderColor, width: 1.0)),
+      decoration: BoxDecoration(
+        color: baseBg,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: borderColor, width: 1.0),
+      ),
       padding: const EdgeInsets.all(14),
       constraints: const BoxConstraints(minHeight: 64),
-      child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
-        Icon(icon, size: 18, color: badgeColor),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Text(widget.content, maxLines: 4, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 13.5, color: cs.onSurface.withOpacity(0.9))),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Icon(icon, size: 18, color: badgeColor),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                widget.content,
+                maxLines: 4,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 13.5,
+                  color: cs.onSurface.withOpacity(0.9),
+                ),
+              ),
+            ),
           ),
-        ),
-        const SizedBox(width: 8),
-        _HoverIconButton(icon: Lucide.Settings2, onTap: widget.onEdit),
-        const SizedBox(width: 4),
-        _HoverIconButton(icon: Lucide.Trash2, onTap: widget.onDelete),
-      ]),
+          const SizedBox(width: 8),
+          _HoverIconButton(icon: Lucide.Settings2, onTap: widget.onEdit),
+          const SizedBox(width: 4),
+          _HoverIconButton(icon: Lucide.Trash2, onTap: widget.onDelete),
+        ],
+      ),
     );
 
     return MouseRegion(
@@ -4142,7 +4634,11 @@ class _HoverIconButtonState extends State<_HoverIconButton> {
             color: _hover ? cs.primary.withOpacity(0.10) : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(widget.icon, size: 16, color: _hover ? cs.primary : cs.onSurface.withOpacity(0.9)),
+          child: Icon(
+            widget.icon,
+            size: 16,
+            color: _hover ? cs.primary : cs.onSurface.withOpacity(0.9),
+          ),
         ),
       ),
     );
@@ -4176,12 +4672,16 @@ class _HoverTextButtonState extends State<_HoverTextButton> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final Color textColor =
-        _press ? (widget.color ?? cs.primary).withOpacity(0.8) : (widget.color ?? cs.primary);
-    final EdgeInsets padding =
-        widget.dense ? const EdgeInsets.symmetric(horizontal: 10, vertical: 8) : const EdgeInsets.symmetric(horizontal: 12, vertical: 10);
+    final Color textColor = _press
+        ? (widget.color ?? cs.primary).withOpacity(0.8)
+        : (widget.color ?? cs.primary);
+    final EdgeInsets padding = widget.dense
+        ? const EdgeInsets.symmetric(horizontal: 10, vertical: 8)
+        : const EdgeInsets.symmetric(horizontal: 12, vertical: 10);
     final Color bg = (_hover || _press)
-        ? (isDark ? Colors.white.withOpacity(_press ? 0.12 : 0.08) : Colors.black.withOpacity(_press ? 0.08 : 0.06))
+        ? (isDark
+              ? Colors.white.withOpacity(_press ? 0.12 : 0.08)
+              : Colors.black.withOpacity(_press ? 0.08 : 0.06))
         : Colors.transparent;
 
     return MouseRegion(
@@ -4226,8 +4726,9 @@ class _SystemPromptMobileSheet extends StatefulWidget {
 }
 
 class _SystemPromptMobileSheetState extends State<_SystemPromptMobileSheet> {
-  late final TextEditingController _controller =
-      TextEditingController(text: widget.initial);
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.initial,
+  );
 
   @override
   void dispose() {
@@ -4273,9 +4774,7 @@ class _SystemPromptMobileSheetState extends State<_SystemPromptMobileSheet> {
                 decoration: BoxDecoration(
                   color: isDark ? Colors.white10 : const Color(0xFFF7F7F9),
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: cs.outlineVariant.withOpacity(0.2),
-                  ),
+                  border: Border.all(color: cs.outlineVariant.withOpacity(0.2)),
                 ),
                 child: TextField(
                   controller: _controller,
@@ -4288,8 +4787,7 @@ class _SystemPromptMobileSheetState extends State<_SystemPromptMobileSheet> {
                   decoration: InputDecoration(
                     hintText: l10n.assistantEditSystemPromptHint,
                     border: InputBorder.none,
-                    contentPadding:
-                        const EdgeInsets.fromLTRB(12, 12, 12, 12),
+                    contentPadding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
                   ),
                 ),
               ),
@@ -4312,8 +4810,9 @@ class _SystemPromptDesktopDialog extends StatefulWidget {
 
 class _SystemPromptDesktopDialogState
     extends State<_SystemPromptDesktopDialog> {
-  late final TextEditingController _controller =
-      TextEditingController(text: widget.initial);
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.initial,
+  );
 
   @override
   void dispose() {
@@ -4361,8 +4860,9 @@ class _SystemPromptDesktopDialogState
                           ),
                         ),
                         _HoverTextButton(
-                          label: MaterialLocalizations.of(context)
-                              .closeButtonLabel,
+                          label: MaterialLocalizations.of(
+                            context,
+                          ).closeButtonLabel,
                           color: cs.onSurface,
                           onTap: () => Navigator.of(context).maybePop(),
                           dense: true,
@@ -4400,7 +4900,11 @@ class _SystemPromptDesktopDialogState
                             hintText: l10n.assistantEditSystemPromptHint,
                             border: InputBorder.none,
                             contentPadding: const EdgeInsets.fromLTRB(
-                                14, 14, 14, 14),
+                              14,
+                              14,
+                              14,
+                              14,
+                            ),
                           ),
                         ),
                       ),
@@ -4430,7 +4934,12 @@ class _SystemPromptDesktopDialogState
 }
 
 class _HoverPillButton extends StatefulWidget {
-  const _HoverPillButton({required this.icon, required this.color, required this.label, required this.onTap});
+  const _HoverPillButton({
+    required this.icon,
+    required this.color,
+    required this.label,
+    required this.onTap,
+  });
   final IconData icon;
   final Color color;
   final String label;
@@ -4457,26 +4966,46 @@ class _HoverPillButtonState extends State<_HoverPillButton> {
           duration: const Duration(milliseconds: 120),
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
-            color: widget.color.withOpacity(_press ? 0.18 : _hover ? 0.14 : 0.10),
+            color: widget.color.withOpacity(
+              _press
+                  ? 0.18
+                  : _hover
+                  ? 0.14
+                  : 0.10,
+            ),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Row(mainAxisSize: MainAxisSize.min, children: [
-            Icon(widget.icon, size: 14, color: widget.color),
-            const SizedBox(width: 6),
-            Text(widget.label, style: TextStyle(color: widget.color, fontSize: 12, fontWeight: FontWeight.w700)),
-          ]),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(widget.icon, size: 14, color: widget.color),
+              const SizedBox(width: 6),
+              Text(
+                widget.label,
+                style: TextStyle(
+                  color: widget.color,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-Future<void> _showEditPresetDialog(BuildContext context, Assistant a, PresetMessage m) async {
+Future<void> _showEditPresetDialog(
+  BuildContext context,
+  Assistant a,
+  PresetMessage m,
+) async {
   final l10n = AppLocalizations.of(context)!;
   final cs = Theme.of(context).colorScheme;
   final controller = TextEditingController(text: m.content);
   final platform = Theme.of(context).platform;
-  final isDesktop = platform == TargetPlatform.macOS || platform == TargetPlatform.linux || platform == TargetPlatform.windows;
+  final isDesktop = platform == TargetPlatform.macOS;
   Future<void> save() async {
     final text = controller.text.trim();
     if (text.isEmpty) return;
@@ -4485,8 +5014,11 @@ Future<void> _showEditPresetDialog(BuildContext context, Assistant a, PresetMess
     if (idx != -1) {
       list[idx] = list[idx].copyWith(content: text);
     }
-    await context.read<AssistantProvider>().updateAssistant(a.copyWith(presetMessages: list));
+    await context.read<AssistantProvider>().updateAssistant(
+      a.copyWith(presetMessages: list),
+    );
   }
+
   if (isDesktop) {
     await showDialog<void>(
       context: context,
@@ -4505,7 +5037,15 @@ Future<void> _showEditPresetDialog(BuildContext context, Assistant a, PresetMess
               children: [
                 Row(
                   children: [
-                    Expanded(child: Text(l10n.assistantEditPresetEditDialogTitle, style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700))),
+                    Expanded(
+                      child: Text(
+                        l10n.assistantEditPresetEditDialogTitle,
+                        style: const TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
                     IconButton(
                       tooltip: MaterialLocalizations.of(ctx).closeButtonTooltip,
                       icon: const Icon(Lucide.X, size: 18),
@@ -4520,18 +5060,42 @@ Future<void> _showEditPresetDialog(BuildContext context, Assistant a, PresetMess
                   minLines: 3,
                   maxLines: 8,
                   decoration: InputDecoration(
-                    hintText: m.role == 'assistant' ? l10n.assistantEditPresetInputHintAssistant : l10n.assistantEditPresetInputHintUser,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: cs.primary.withOpacity(0.5))),
+                    hintText: m.role == 'assistant'
+                        ? l10n.assistantEditPresetInputHintAssistant
+                        : l10n.assistantEditPresetInputHintUser,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: cs.primary.withOpacity(0.5),
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 12),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    _IosButton(label: l10n.assistantEditEmojiDialogCancel, onTap: () => Navigator.of(ctx).pop(), filled: false, neutral: true, dense: true),
+                    _IosButton(
+                      label: l10n.assistantEditEmojiDialogCancel,
+                      onTap: () => Navigator.of(ctx).pop(),
+                      filled: false,
+                      neutral: true,
+                      dense: true,
+                    ),
                     const SizedBox(width: 8),
-                    _IosButton(label: l10n.assistantEditEmojiDialogSave, onTap: () async { await save(); if (context.mounted) Navigator.of(ctx).pop(); }, filled: true, neutral: false, dense: true),
+                    _IosButton(
+                      label: l10n.assistantEditEmojiDialogSave,
+                      onTap: () async {
+                        await save();
+                        if (context.mounted) Navigator.of(ctx).pop();
+                      },
+                      filled: true,
+                      neutral: false,
+                      dense: true,
+                    ),
                   ],
                 ),
               ],
@@ -4546,7 +5110,9 @@ Future<void> _showEditPresetDialog(BuildContext context, Assistant a, PresetMess
     context: context,
     isScrollControlled: true,
     backgroundColor: cs.surface,
-    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+    ),
     builder: (ctx) {
       final bottom = MediaQuery.of(ctx).viewInsets.bottom;
       return SafeArea(
@@ -4560,7 +5126,15 @@ Future<void> _showEditPresetDialog(BuildContext context, Assistant a, PresetMess
                 children: [
                   Icon(Lucide.MessageSquare, size: 18, color: cs.primary),
                   const SizedBox(width: 8),
-                  Expanded(child: Text(l10n.assistantEditPresetEditDialogTitle, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700))),
+                  Expanded(
+                    child: Text(
+                      l10n.assistantEditPresetEditDialogTitle,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 12),
@@ -4569,11 +5143,23 @@ Future<void> _showEditPresetDialog(BuildContext context, Assistant a, PresetMess
                 minLines: 1,
                 maxLines: 8,
                 decoration: InputDecoration(
-                  hintText: m.role == 'assistant' ? l10n.assistantEditPresetInputHintAssistant : l10n.assistantEditPresetInputHintUser,
+                  hintText: m.role == 'assistant'
+                      ? l10n.assistantEditPresetInputHintAssistant
+                      : l10n.assistantEditPresetInputHintUser,
                   filled: true,
-                  fillColor: Theme.of(ctx).brightness == Brightness.dark ? Colors.white10 : const Color(0xFFF7F7F9),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: cs.outlineVariant.withOpacity(0.2))),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: cs.primary.withOpacity(0.5))),
+                  fillColor: Theme.of(ctx).brightness == Brightness.dark
+                      ? Colors.white10
+                      : const Color(0xFFF7F7F9),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(
+                      color: cs.outlineVariant.withOpacity(0.2),
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(color: cs.primary.withOpacity(0.5)),
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
@@ -4593,7 +5179,10 @@ Future<void> _showEditPresetDialog(BuildContext context, Assistant a, PresetMess
                     child: _IosButton(
                       label: l10n.assistantEditEmojiDialogSave,
                       icon: Lucide.Check,
-                      onTap: () async { await save(); if (context.mounted) Navigator.of(ctx).pop(); },
+                      onTap: () async {
+                        await save();
+                        if (context.mounted) Navigator.of(ctx).pop();
+                      },
                       filled: true,
                       neutral: false,
                     ),
@@ -4723,8 +5312,8 @@ class _McpTab extends StatelessWidget {
           builder: (pressed) {
             final overlayBg = pressed
                 ? (isDark
-                    ? Color.alphaBlend(Colors.white.withOpacity(0.06), bg)
-                    : Color.alphaBlend(Colors.black.withOpacity(0.05), bg))
+                      ? Color.alphaBlend(Colors.white.withOpacity(0.06), bg)
+                      : Color.alphaBlend(Colors.black.withOpacity(0.05), bg))
                 : bg;
             return Container(
               decoration: BoxDecoration(
@@ -4782,8 +5371,12 @@ class _McpTab extends StatelessWidget {
                               ),
                               tag(
                                 s.transport == McpTransportType.inmemory
-                                    ? AppLocalizations.of(context)!.mcpTransportTagInmemory
-                                    : (s.transport == McpTransportType.sse ? 'SSE' : 'HTTP'),
+                                    ? AppLocalizations.of(
+                                        context,
+                                      )!.mcpTransportTagInmemory
+                                    : (s.transport == McpTransportType.sse
+                                          ? 'SSE'
+                                          : 'HTTP'),
                               ),
                             ],
                           ),
@@ -4828,18 +5421,25 @@ class _QuickPhraseTab extends StatelessWidget {
 
     // Desktop: custom dialog; Mobile: bottom sheet
     final platform = Theme.of(context).platform;
-    final isDesktop = platform == TargetPlatform.macOS || platform == TargetPlatform.linux || platform == TargetPlatform.windows;
+    final isDesktop = platform == TargetPlatform.macOS;
     if (isDesktop) {
       await showDialog<void>(
         context: context,
         barrierDismissible: true,
         builder: (ctx) {
           final titleCtrl = TextEditingController(text: phrase?.title ?? '');
-          final contentCtrl = TextEditingController(text: phrase?.content ?? '');
+          final contentCtrl = TextEditingController(
+            text: phrase?.content ?? '',
+          );
           return Dialog(
             backgroundColor: cs.surface,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            insetPadding: const EdgeInsets.symmetric(
+              horizontal: 24,
+              vertical: 24,
+            ),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 560),
               child: Column(
@@ -4854,12 +5454,19 @@ class _QuickPhraseTab extends StatelessWidget {
                         children: [
                           Expanded(
                             child: Text(
-                              phrase == null ? l10n.quickPhraseAddTitle : l10n.quickPhraseEditTitle,
-                              style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700),
+                              phrase == null
+                                  ? l10n.quickPhraseAddTitle
+                                  : l10n.quickPhraseEditTitle,
+                              style: const TextStyle(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ),
                           IconButton(
-                            tooltip: MaterialLocalizations.of(ctx).closeButtonTooltip,
+                            tooltip: MaterialLocalizations.of(
+                              ctx,
+                            ).closeButtonTooltip,
                             icon: const Icon(Lucide.X, size: 18),
                             color: cs.onSurface,
                             onPressed: () => Navigator.of(ctx).maybePop(),
@@ -4878,9 +5485,22 @@ class _QuickPhraseTab extends StatelessWidget {
                           decoration: InputDecoration(
                             labelText: l10n.quickPhraseTitleLabel,
                             filled: true,
-                            fillColor: Theme.of(ctx).brightness == Brightness.dark ? Colors.white10 : const Color(0xFFF2F3F5),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: cs.outlineVariant.withOpacity(0.4))),
-                            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: cs.primary.withOpacity(0.5))),
+                            fillColor:
+                                Theme.of(ctx).brightness == Brightness.dark
+                                ? Colors.white10
+                                : const Color(0xFFF2F3F5),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: cs.outlineVariant.withOpacity(0.4),
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: cs.primary.withOpacity(0.5),
+                              ),
+                            ),
                           ),
                           autofocus: true,
                         ),
@@ -4892,16 +5512,35 @@ class _QuickPhraseTab extends StatelessWidget {
                             labelText: l10n.quickPhraseContentLabel,
                             alignLabelWithHint: true,
                             filled: true,
-                            fillColor: Theme.of(ctx).brightness == Brightness.dark ? Colors.white10 : const Color(0xFFF2F3F5),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: cs.outlineVariant.withOpacity(0.4))),
-                            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: cs.primary.withOpacity(0.5))),
+                            fillColor:
+                                Theme.of(ctx).brightness == Brightness.dark
+                                ? Colors.white10
+                                : const Color(0xFFF2F3F5),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: cs.outlineVariant.withOpacity(0.4),
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: cs.primary.withOpacity(0.5),
+                              ),
+                            ),
                           ),
                         ),
                         const SizedBox(height: 12),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
-                            _IosButton(label: l10n.quickPhraseCancelButton, onTap: () => Navigator.of(ctx).pop(), filled: false, neutral: true, dense: true),
+                            _IosButton(
+                              label: l10n.quickPhraseCancelButton,
+                              onTap: () => Navigator.of(ctx).pop(),
+                              filled: false,
+                              neutral: true,
+                              dense: true,
+                            ),
                             const SizedBox(width: 8),
                             _IosButton(
                               label: l10n.quickPhraseSaveButton,
@@ -4910,10 +5549,25 @@ class _QuickPhraseTab extends StatelessWidget {
                                 final content = contentCtrl.text.trim();
                                 if (title.isEmpty || content.isEmpty) return;
                                 if (phrase == null) {
-                                  final newPhrase = QuickPhrase(id: const Uuid().v4(), title: title, content: content, isGlobal: false, assistantId: assistantId);
-                                  await context.read<QuickPhraseProvider>().add(newPhrase);
+                                  final newPhrase = QuickPhrase(
+                                    id: const Uuid().v4(),
+                                    title: title,
+                                    content: content,
+                                    isGlobal: false,
+                                    assistantId: assistantId,
+                                  );
+                                  await context.read<QuickPhraseProvider>().add(
+                                    newPhrase,
+                                  );
                                 } else {
-                                  await context.read<QuickPhraseProvider>().update(phrase.copyWith(title: title, content: content));
+                                  await context
+                                      .read<QuickPhraseProvider>()
+                                      .update(
+                                        phrase.copyWith(
+                                          title: title,
+                                          content: content,
+                                        ),
+                                      );
                                 }
                                 if (context.mounted) Navigator.of(ctx).pop();
                               },
@@ -5022,7 +5676,7 @@ class _QuickPhraseTab extends StatelessWidget {
     return Stack(
       children: [
         ReorderableListView.builder(
-        padding: const EdgeInsets.fromLTRB(12, 8, 12, 80),
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 80),
           itemCount: phrases.length,
           buildDefaultDragHandles: false,
           proxyDecorator: (child, index, animation) {
@@ -5030,10 +5684,7 @@ class _QuickPhraseTab extends StatelessWidget {
               animation: animation,
               builder: (context, _) {
                 final t = Curves.easeOut.transform(animation.value);
-                return Transform.scale(
-                  scale: 0.98 + 0.02 * t,
-                  child: child,
-                );
+                return Transform.scale(scale: 0.98 + 0.02 * t, child: child);
               },
             );
           },
@@ -5041,10 +5692,10 @@ class _QuickPhraseTab extends StatelessWidget {
             if (newIndex > oldIndex) newIndex -= 1;
             // Update immediately for smooth drop animation
             context.read<QuickPhraseProvider>().reorderPhrases(
-                  oldIndex: oldIndex,
-                  newIndex: newIndex,
-                  assistantId: assistantId,
-                );
+              oldIndex: oldIndex,
+              newIndex: newIndex,
+              assistantId: assistantId,
+            );
           },
           itemBuilder: (context, index) {
             final phrase = phrases[index];
@@ -5071,7 +5722,9 @@ class _QuickPhraseTab extends StatelessWidget {
                                   ? cs.error.withOpacity(0.22)
                                   : cs.error.withOpacity(0.14),
                               borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: cs.error.withOpacity(0.35)),
+                              border: Border.all(
+                                color: cs.error.withOpacity(0.35),
+                              ),
                             ),
                             padding: const EdgeInsets.symmetric(
                               horizontal: 12,
@@ -5083,7 +5736,11 @@ class _QuickPhraseTab extends StatelessWidget {
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Lucide.Trash2, color: cs.error, size: 18),
+                                  Icon(
+                                    Lucide.Trash2,
+                                    color: cs.error,
+                                    size: 18,
+                                  ),
                                   const SizedBox(width: 6),
                                   Text(
                                     l10n.quickPhraseDeleteButton,
@@ -5104,63 +5761,69 @@ class _QuickPhraseTab extends StatelessWidget {
                       onTap: () => _showAddEditSheet(context, phrase: phrase),
                       pressedScale: 0.98,
                       builder: (pressed) {
-                        final bg = isDark ? Colors.white10 : Colors.white.withOpacity(0.96);
-                        final overlay = isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.05);
+                        final bg = isDark
+                            ? Colors.white10
+                            : Colors.white.withOpacity(0.96);
+                        final overlay = isDark
+                            ? Colors.white.withOpacity(0.06)
+                            : Colors.black.withOpacity(0.05);
                         final pressedBg = Color.alphaBlend(overlay, bg);
                         return Container(
                           decoration: BoxDecoration(
                             color: pressed ? pressedBg : bg,
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(
-                              color: cs.outlineVariant.withOpacity(isDark ? 0.08 : 0.06),
+                              color: cs.outlineVariant.withOpacity(
+                                isDark ? 0.08 : 0.06,
+                              ),
                               width: 0.6,
                             ),
                           ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Lucide.botMessageSquare,
-                                    size: 18,
-                                    color: cs.primary,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      phrase.title,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w600,
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Lucide.botMessageSquare,
+                                      size: 18,
+                                      color: cs.primary,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        phrase.title,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                  Icon(
-                                    Lucide.ChevronRight,
-                                    size: 18,
-                                    color: cs.onSurface.withOpacity(0.4),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                phrase.content,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: cs.onSurface.withOpacity(0.7),
+                                    Icon(
+                                      Lucide.ChevronRight,
+                                      size: 18,
+                                      color: cs.onSurface.withOpacity(0.4),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                            ],
+                                const SizedBox(height: 8),
+                                Text(
+                                  phrase.content,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: cs.onSurface.withOpacity(0.7),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
                         );
                       },
                     ),
@@ -5190,7 +5853,12 @@ class _QuickPhraseTab extends StatelessWidget {
 
 // Local glass circle button for Quick Phrase (icon-only, frosted background)
 class _GlassCircleButtonQP extends StatefulWidget {
-  const _GlassCircleButtonQP({required this.icon, required this.color, required this.onTap, this.size = 48});
+  const _GlassCircleButtonQP({
+    required this.icon,
+    required this.color,
+    required this.onTap,
+    this.size = 48,
+  });
   final IconData icon;
   final Color color;
   final VoidCallback onTap;
@@ -5207,9 +5875,15 @@ class _GlassCircleButtonQPState extends State<_GlassCircleButtonQP> {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
-    final glassBase = isDark ? Colors.black.withOpacity(0.06) : Colors.white.withOpacity(0.06);
-    final overlay = isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.05);
-    final tileColor = _pressed ? Color.alphaBlend(overlay, glassBase) : glassBase;
+    final glassBase = isDark
+        ? Colors.black.withOpacity(0.06)
+        : Colors.white.withOpacity(0.06);
+    final overlay = isDark
+        ? Colors.white.withOpacity(0.06)
+        : Colors.black.withOpacity(0.05);
+    final tileColor = _pressed
+        ? Color.alphaBlend(overlay, glassBase)
+        : glassBase;
     final borderColor = cs.outlineVariant.withOpacity(isDark ? 0.10 : 0.10);
 
     final child = SizedBox(
@@ -5223,7 +5897,10 @@ class _GlassCircleButtonQPState extends State<_GlassCircleButtonQP> {
       onTapDown: (_) => setState(() => _pressed = true),
       onTapUp: (_) => setState(() => _pressed = false),
       onTapCancel: () => setState(() => _pressed = false),
-      onTap: () { Haptics.light(); widget.onTap(); },
+      onTap: () {
+        Haptics.light();
+        widget.onTap();
+      },
       child: AnimatedScale(
         scale: _pressed ? 0.95 : 1.0,
         duration: const Duration(milliseconds: 110),
@@ -5314,7 +5991,10 @@ class _QuickPhraseEditSheetState extends State<_QuickPhraseEditSheet> {
                 widget.phrase == null
                     ? l10n.quickPhraseAddTitle
                     : l10n.quickPhraseEditTitle,
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -5427,8 +6107,10 @@ class _SegTabBar extends StatelessWidget {
     const double gap = 6; // spacing between segments
     const double minSegWidth = 88; // ensure readability; scroll if not enough
     final double pillRadius = 18;
-    final double innerRadius =
-        ((pillRadius - innerPadding).clamp(0.0, pillRadius)).toDouble();
+    final double innerRadius = ((pillRadius - innerPadding).clamp(
+      0.0,
+      pillRadius,
+    )).toDouble();
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -5438,7 +6120,8 @@ class _SegTabBar extends StatelessWidget {
           minSegWidth,
           (innerAvailWidth - gap * (tabs.length - 1)) / tabs.length,
         );
-        final double rowWidth = segWidth * tabs.length + gap * (tabs.length - 1);
+        final double rowWidth =
+            segWidth * tabs.length + gap * (tabs.length - 1);
 
         final Color shellBg = isDark
             ? Colors.white.withOpacity(0.08)
@@ -5462,10 +6145,12 @@ class _SegTabBar extends StatelessWidget {
 
                   // 仅文字在按压时变浅并有渐变
                   final Color baseTextColor = selected
-                      ? cs.primary // 选中文字：主题色
+                      ? cs
+                            .primary // 选中文字：主题色
                       : cs.onSurface.withOpacity(0.82); // 未选中：深灰
                   final Color targetTextColor = pressed
-                      ? Color.lerp(baseTextColor, Colors.white, 0.22) ?? baseTextColor
+                      ? Color.lerp(baseTextColor, Colors.white, 0.22) ??
+                            baseTextColor
                       : baseTextColor;
 
                   return AnimatedContainer(
@@ -5902,27 +6587,29 @@ class _TactileIconButtonState extends State<_TactileIconButton> {
 }
 
 Widget _iosSectionCard({required List<Widget> children}) {
-  return Builder(builder: (context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
-    final Color bg = isDark ? Colors.white10 : Colors.white.withOpacity(0.96);
-    return Container(
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: cs.outlineVariant.withOpacity(isDark ? 0.08 : 0.06),
-          width: 0.6,
+  return Builder(
+    builder: (context) {
+      final theme = Theme.of(context);
+      final cs = theme.colorScheme;
+      final isDark = theme.brightness == Brightness.dark;
+      final Color bg = isDark ? Colors.white10 : Colors.white.withOpacity(0.96);
+      return Container(
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: cs.outlineVariant.withOpacity(isDark ? 0.08 : 0.06),
+            width: 0.6,
+          ),
         ),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6),
-        child: Column(children: children),
-      ),
-    );
-  });
+        clipBehavior: Clip.antiAlias,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Column(children: children),
+        ),
+      );
+    },
+  );
 }
 
 Widget _iosDivider(BuildContext context) {
@@ -6008,7 +6695,9 @@ class _TactileRowState extends State<_TactileRow> {
       onTap: widget.onTap == null
           ? null
           : () {
-              if (widget.haptics && context.read<SettingsProvider>().hapticsOnListItemTap) Haptics.soft();
+              if (widget.haptics &&
+                  context.read<SettingsProvider>().hapticsOnListItemTap)
+                Haptics.soft();
               // Close IME when tapping segmented/tab rows or list items
               FocusManager.instance.primaryFocus?.unfocus();
               widget.onTap!.call();
@@ -6139,18 +6828,20 @@ class _IosButtonState extends State<_IosButton> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // Determine if this is a Material icon (needs more spacing)
-    final isMaterialIcon = widget.icon != null && 
-        (widget.icon == Icons.image || widget.icon.runtimeType.toString().contains('MaterialIcons'));
+    final isMaterialIcon =
+        widget.icon != null &&
+        (widget.icon == Icons.image ||
+            widget.icon.runtimeType.toString().contains('MaterialIcons'));
 
-    final iconColor = widget.filled 
-        ? cs.onPrimary 
+    final iconColor = widget.filled
+        ? cs.onPrimary
         : (widget.neutral ? cs.onSurface.withOpacity(0.75) : cs.primary);
-    
+
     final textColor = widget.filled
         ? cs.onPrimary
         : (widget.neutral ? cs.onSurface.withOpacity(0.9) : cs.primary);
-    
-    final borderColor = widget.neutral 
+
+    final borderColor = widget.neutral
         ? cs.outlineVariant.withOpacity(0.35)
         : cs.primary.withOpacity(0.45);
 
@@ -6173,11 +6864,12 @@ class _IosButtonState extends State<_IosButton> {
                 ? cs.primary
                 : (isDark ? Colors.white10 : const Color(0xFFF2F3F5)),
             borderRadius: BorderRadius.circular(12),
-            border: widget.filled
-                ? null
-                : Border.all(color: borderColor),
+            border: widget.filled ? null : Border.all(color: borderColor),
           ),
-          padding: EdgeInsets.symmetric(vertical: widget.dense ? 8 : 12, horizontal: widget.dense ? 12 : 16),
+          padding: EdgeInsets.symmetric(
+            vertical: widget.dense ? 8 : 12,
+            horizontal: widget.dense ? 12 : 16,
+          ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
@@ -6185,11 +6877,7 @@ class _IosButtonState extends State<_IosButton> {
               if (widget.icon != null) ...[
                 Padding(
                   padding: EdgeInsets.only(left: isMaterialIcon ? 2.0 : 0.0),
-                  child: Icon(
-                    widget.icon,
-                    size: 18,
-                    color: iconColor,
-                  ),
+                  child: Icon(widget.icon, size: 18, color: iconColor),
                 ),
                 const SizedBox(width: 8),
               ],
@@ -6213,7 +6901,10 @@ class _IosButtonState extends State<_IosButton> {
 
 enum _AssistantDesktopMenu { basic, prompts, memory, quick, custom, regex }
 
-Future<void> showAssistantDesktopDialog(BuildContext context, {required String assistantId}) async {
+Future<void> showAssistantDesktopDialog(
+  BuildContext context, {
+  required String assistantId,
+}) async {
   final cs = Theme.of(context).colorScheme;
   await showDialog<void>(
     context: context,
@@ -6236,17 +6927,20 @@ class _DesktopAssistantDialogShell extends StatefulWidget {
   const _DesktopAssistantDialogShell({required this.assistantId});
   final String assistantId;
   @override
-  State<_DesktopAssistantDialogShell> createState() => _DesktopAssistantDialogShellState();
+  State<_DesktopAssistantDialogShell> createState() =>
+      _DesktopAssistantDialogShellState();
 }
 
-class _DesktopAssistantDialogShellState extends State<_DesktopAssistantDialogShell> {
+class _DesktopAssistantDialogShellState
+    extends State<_DesktopAssistantDialogShell> {
   _AssistantDesktopMenu _menu = _AssistantDesktopMenu.basic;
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final a = context.watch<AssistantProvider>().getById(widget.assistantId);
-    final name = a?.name ?? AppLocalizations.of(context)!.assistantEditPageTitle;
+    final name =
+        a?.name ?? AppLocalizations.of(context)!.assistantEditPageTitle;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -6261,7 +6955,10 @@ class _DesktopAssistantDialogShellState extends State<_DesktopAssistantDialogShe
                     name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700),
+                    style: const TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
                 IconButton(
@@ -6274,7 +6971,11 @@ class _DesktopAssistantDialogShellState extends State<_DesktopAssistantDialogShe
             ),
           ),
         ),
-        Divider(height: 1, thickness: 0.5, color: cs.outlineVariant.withOpacity(0.12)),
+        Divider(
+          height: 1,
+          thickness: 0.5,
+          color: cs.outlineVariant.withOpacity(0.12),
+        ),
         Expanded(
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -6283,7 +6984,11 @@ class _DesktopAssistantDialogShellState extends State<_DesktopAssistantDialogShe
                 selected: _menu,
                 onSelect: (m) => setState(() => _menu = m),
               ),
-              VerticalDivider(width: 1, thickness: 0.5, color: cs.outlineVariant.withOpacity(0.12)),
+              VerticalDivider(
+                width: 1,
+                thickness: 0.5,
+                color: cs.outlineVariant.withOpacity(0.12),
+              ),
               Expanded(
                 child: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 200),
@@ -6291,7 +6996,10 @@ class _DesktopAssistantDialogShellState extends State<_DesktopAssistantDialogShe
                   child: () {
                     switch (_menu) {
                       case _AssistantDesktopMenu.basic:
-                        return _DesktopAssistantBasicPane(assistantId: widget.assistantId, key: const ValueKey('basic'));
+                        return _DesktopAssistantBasicPane(
+                          assistantId: widget.assistantId,
+                          key: const ValueKey('basic'),
+                        );
                       case _AssistantDesktopMenu.prompts:
                         return _PromptTab(assistantId: widget.assistantId);
                       case _AssistantDesktopMenu.memory:
@@ -6299,9 +7007,13 @@ class _DesktopAssistantDialogShellState extends State<_DesktopAssistantDialogShe
                       case _AssistantDesktopMenu.quick:
                         return _QuickPhraseTab(assistantId: widget.assistantId);
                       case _AssistantDesktopMenu.custom:
-                        return _CustomRequestTab(assistantId: widget.assistantId);
+                        return _CustomRequestTab(
+                          assistantId: widget.assistantId,
+                        );
                       case _AssistantDesktopMenu.regex:
-                        return AssistantRegexDesktopPane(assistantId: widget.assistantId);
+                        return AssistantRegexDesktopPane(
+                          assistantId: widget.assistantId,
+                        );
                     }
                   }(),
                 ),
@@ -6348,8 +7060,10 @@ class _DesktopAssistantMenuState extends State<_DesktopAssistantMenu> {
           final bg = selected
               ? cs.primary.withOpacity(0.10)
               : (_hover == i
-                  ? (isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.04))
-                  : Colors.transparent);
+                    ? (isDark
+                          ? Colors.white.withOpacity(0.06)
+                          : Colors.black.withOpacity(0.04))
+                    : Colors.transparent);
           final fg = selected ? cs.primary : cs.onSurface.withOpacity(0.9);
           return MouseRegion(
             onEnter: (_) => setState(() => _hover = i),
@@ -6362,14 +7076,22 @@ class _DesktopAssistantMenuState extends State<_DesktopAssistantMenu> {
                 curve: Curves.easeOutCubic,
                 height: 40,
                 padding: const EdgeInsets.symmetric(horizontal: 10),
-                decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(14)),
+                decoration: BoxDecoration(
+                  color: bg,
+                  borderRadius: BorderRadius.circular(14),
+                ),
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
                     items[i].$2,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w400, color: fg, decoration: TextDecoration.none),
+                    style: TextStyle(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w400,
+                      color: fg,
+                      decoration: TextDecoration.none,
+                    ),
                   ),
                 ),
               ),
@@ -6385,10 +7107,12 @@ class _DesktopAssistantBasicPane extends StatefulWidget {
   const _DesktopAssistantBasicPane({required this.assistantId, super.key});
   final String assistantId;
   @override
-  State<_DesktopAssistantBasicPane> createState() => _DesktopAssistantBasicPaneState();
+  State<_DesktopAssistantBasicPane> createState() =>
+      _DesktopAssistantBasicPaneState();
 }
 
-class _DesktopAssistantBasicPaneState extends State<_DesktopAssistantBasicPane> {
+class _DesktopAssistantBasicPaneState
+    extends State<_DesktopAssistantBasicPane> {
   late final TextEditingController _nameCtrl;
   late final TextEditingController _maxTokensCtrl;
   bool _hoverChatModel = false;
@@ -6451,51 +7175,86 @@ class _DesktopAssistantBasicPaneState extends State<_DesktopAssistantBasicPane> 
               behavior: HitTestBehavior.opaque,
               key: _avatarKey,
               onTapDown: (_) => _openAssistantAvatarMenu(context, a),
-              child: Builder(builder: (context) {
-              final av = a.avatar?.trim() ?? '';
-              Widget inner;
-              if (av.isEmpty) {
-                inner = Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(color: cs.primary.withOpacity(0.15), shape: BoxShape.circle),
-                  alignment: Alignment.center,
-                  child: Text(
-                    (a.name.isNotEmpty ? a.name.characters.first : '?'),
-                    style: TextStyle(color: cs.primary, fontWeight: FontWeight.w700, fontSize: 22),
-                  ),
-                );
-              } else if (av.startsWith('http')) {
-                inner = ClipOval(
-                  child: Image.network(av, width: 56, height: 56, fit: BoxFit.cover),
-                );
-              } else if (av.startsWith('/') || av.contains(':')) {
-                final fixed = SandboxPathResolver.fix(av);
-                final f = File(fixed);
-                if (f.existsSync()) {
-                  inner = ClipOval(
-                    child: Image.file(f, width: 56, height: 56, fit: BoxFit.cover),
-                  );
-                } else {
-                  inner = Container(
-                    width: 56,
-                    height: 56,
-                    decoration: BoxDecoration(color: cs.primary.withOpacity(0.15), shape: BoxShape.circle),
-                    alignment: Alignment.center,
-                    child: Text((a.name.isNotEmpty ? a.name.characters.first : '?'), style: TextStyle(color: cs.primary, fontWeight: FontWeight.w700, fontSize: 22)),
-                  );
-                }
-              } else {
-                inner = Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(color: cs.primary.withOpacity(0.15), shape: BoxShape.circle),
-                  alignment: Alignment.center,
-                  child: Text(av.characters.take(1).toString(), style: const TextStyle(fontSize: 26)),
-                );
-              }
-                return inner;
-              }),
+              child: Builder(
+                builder: (context) {
+                  final av = a.avatar?.trim() ?? '';
+                  Widget inner;
+                  if (av.isEmpty) {
+                    inner = Container(
+                      width: 56,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        color: cs.primary.withOpacity(0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        (a.name.isNotEmpty ? a.name.characters.first : '?'),
+                        style: TextStyle(
+                          color: cs.primary,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 22,
+                        ),
+                      ),
+                    );
+                  } else if (av.startsWith('http')) {
+                    inner = ClipOval(
+                      child: Image.network(
+                        av,
+                        width: 56,
+                        height: 56,
+                        fit: BoxFit.cover,
+                      ),
+                    );
+                  } else if (av.startsWith('/') || av.contains(':')) {
+                    final fixed = SandboxPathResolver.fix(av);
+                    final f = File(fixed);
+                    if (f.existsSync()) {
+                      inner = ClipOval(
+                        child: Image.file(
+                          f,
+                          width: 56,
+                          height: 56,
+                          fit: BoxFit.cover,
+                        ),
+                      );
+                    } else {
+                      inner = Container(
+                        width: 56,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          color: cs.primary.withOpacity(0.15),
+                          shape: BoxShape.circle,
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          (a.name.isNotEmpty ? a.name.characters.first : '?'),
+                          style: TextStyle(
+                            color: cs.primary,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 22,
+                          ),
+                        ),
+                      );
+                    }
+                  } else {
+                    inner = Container(
+                      width: 56,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        color: cs.primary.withOpacity(0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        av.characters.take(1).toString(),
+                        style: const TextStyle(fontSize: 26),
+                      ),
+                    );
+                  }
+                  return inner;
+                },
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -6503,7 +7262,9 @@ class _DesktopAssistantBasicPaneState extends State<_DesktopAssistantBasicPane> 
                 onFocusChange: (has) async {
                   if (!has) {
                     final v = _nameCtrl.text.trim();
-                    await context.read<AssistantProvider>().updateAssistant(a.copyWith(name: v));
+                    await context.read<AssistantProvider>().updateAssistant(
+                      a.copyWith(name: v),
+                    );
                   }
                 },
                 child: TextField(
@@ -6513,18 +7274,28 @@ class _DesktopAssistantBasicPaneState extends State<_DesktopAssistantBasicPane> 
                     labelText: l10n.assistantEditAssistantNameLabel,
                     isDense: true,
                     filled: true,
-                    fillColor: isDark ? Colors.white10 : const Color(0xFFF7F7F9),
+                    fillColor: isDark
+                        ? Colors.white10
+                        : const Color(0xFFF7F7F9),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: cs.outlineVariant.withOpacity(0.2)),
+                      borderSide: BorderSide(
+                        color: cs.outlineVariant.withOpacity(0.2),
+                      ),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: cs.primary.withOpacity(0.5)),
+                      borderSide: BorderSide(
+                        color: cs.primary.withOpacity(0.5),
+                      ),
                     ),
                   ),
-                  onSubmitted: (v) => context.read<AssistantProvider>().updateAssistant(a.copyWith(name: v.trim())),
-                  onEditingComplete: () => context.read<AssistantProvider>().updateAssistant(a.copyWith(name: _nameCtrl.text.trim())),
+                  onSubmitted: (v) => context
+                      .read<AssistantProvider>()
+                      .updateAssistant(a.copyWith(name: v.trim())),
+                  onEditingComplete: () => context
+                      .read<AssistantProvider>()
+                      .updateAssistant(a.copyWith(name: _nameCtrl.text.trim())),
                 ),
               ),
             ),
@@ -6540,15 +7311,27 @@ class _DesktopAssistantBasicPaneState extends State<_DesktopAssistantBasicPane> 
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(text, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+            Text(
+              text,
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+            ),
             const SizedBox(width: 6),
             Tooltip(
               message: help,
-              decoration: BoxDecoration(color: cs.surfaceVariant, borderRadius: BorderRadius.circular(8)),
+              decoration: BoxDecoration(
+                color: cs.surfaceVariant,
+                borderRadius: BorderRadius.circular(8),
+              ),
               // Use themed text to respect user-selected fonts
-              textStyle: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurface),
+              textStyle: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: cs.onSurface),
               waitDuration: const Duration(milliseconds: 300),
-              child: Icon(Icons.help_outline, size: 16, color: cs.onSurface.withOpacity(0.7)),
+              child: Icon(
+                Icons.help_outline,
+                size: 16,
+                color: cs.onSurface.withOpacity(0.7),
+              ),
             ),
           ],
         ),
@@ -6556,11 +7339,19 @@ class _DesktopAssistantBasicPaneState extends State<_DesktopAssistantBasicPane> 
     }
 
     Widget sectionDivider() => Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Divider(height: 1, thickness: 0.5, color: cs.outlineVariant.withOpacity(0.12)),
-        );
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Divider(
+        height: 1,
+        thickness: 0.5,
+        color: cs.outlineVariant.withOpacity(0.12),
+      ),
+    );
 
-    Widget headerWithSwitch({required Widget title, required bool value, required ValueChanged<bool> onChanged}) {
+    Widget headerWithSwitch({
+      required Widget title,
+      required bool value,
+      required ValueChanged<bool> onChanged,
+    }) {
       return Row(
         children: [
           Expanded(child: title),
@@ -6569,7 +7360,11 @@ class _DesktopAssistantBasicPaneState extends State<_DesktopAssistantBasicPane> 
       );
     }
 
-    Widget simpleSwitchRow({required String label, required bool value, required ValueChanged<bool> onChanged}) {
+    Widget simpleSwitchRow({
+      required String label,
+      required bool value,
+      required ValueChanged<bool> onChanged,
+    }) {
       return GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () => onChanged(!value),
@@ -6577,7 +7372,16 @@ class _DesktopAssistantBasicPaneState extends State<_DesktopAssistantBasicPane> 
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           child: Row(
             children: [
-              Expanded(child: Text(label, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: cs.onSurface.withOpacity(0.9)))),
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: cs.onSurface.withOpacity(0.9),
+                  ),
+                ),
+              ),
               IosSwitch(value: value, onChanged: onChanged),
             ],
           ),
@@ -6601,13 +7405,20 @@ class _DesktopAssistantBasicPaneState extends State<_DesktopAssistantBasicPane> 
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   headerWithSwitch(
-                    title: labelWithHelp(l10n.assistantEditTemperatureTitle, l10n.assistantEditTemperatureDescription),
+                    title: labelWithHelp(
+                      l10n.assistantEditTemperatureTitle,
+                      l10n.assistantEditTemperatureDescription,
+                    ),
                     value: a.temperature != null,
                     onChanged: (v) async {
                       if (v) {
-                        await context.read<AssistantProvider>().updateAssistant(a.copyWith(temperature: (a.temperature ?? 0.6)));
+                        await context.read<AssistantProvider>().updateAssistant(
+                          a.copyWith(temperature: (a.temperature ?? 0.6)),
+                        );
                       } else {
-                        await context.read<AssistantProvider>().updateAssistant(a.copyWith(clearTemperature: true));
+                        await context.read<AssistantProvider>().updateAssistant(
+                          a.copyWith(clearTemperature: true),
+                        );
                       }
                     },
                   ),
@@ -6621,8 +7432,13 @@ class _DesktopAssistantBasicPaneState extends State<_DesktopAssistantBasicPane> 
                         min: 0.0,
                         max: 2.0,
                         divisions: 40,
-                        label: ((a.temperature ?? 0.6).clamp(0.0, 2.0)).toStringAsFixed(2),
-                        onChanged: (v) => context.read<AssistantProvider>().updateAssistant(a.copyWith(temperature: v)),
+                        label: ((a.temperature ?? 0.6).clamp(
+                          0.0,
+                          2.0,
+                        )).toStringAsFixed(2),
+                        onChanged: (v) => context
+                            .read<AssistantProvider>()
+                            .updateAssistant(a.copyWith(temperature: v)),
                       ),
                     ),
                   ),
@@ -6637,13 +7453,20 @@ class _DesktopAssistantBasicPaneState extends State<_DesktopAssistantBasicPane> 
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   headerWithSwitch(
-                    title: labelWithHelp(l10n.assistantEditTopPTitle, l10n.assistantEditTopPDescription),
+                    title: labelWithHelp(
+                      l10n.assistantEditTopPTitle,
+                      l10n.assistantEditTopPDescription,
+                    ),
                     value: a.topP != null,
                     onChanged: (v) async {
                       if (v) {
-                        await context.read<AssistantProvider>().updateAssistant(a.copyWith(topP: (a.topP ?? 1.0)));
+                        await context.read<AssistantProvider>().updateAssistant(
+                          a.copyWith(topP: (a.topP ?? 1.0)),
+                        );
                       } else {
-                        await context.read<AssistantProvider>().updateAssistant(a.copyWith(clearTopP: true));
+                        await context.read<AssistantProvider>().updateAssistant(
+                          a.copyWith(clearTopP: true),
+                        );
                       }
                     },
                   ),
@@ -6657,8 +7480,13 @@ class _DesktopAssistantBasicPaneState extends State<_DesktopAssistantBasicPane> 
                         min: 0.0,
                         max: 1.0,
                         divisions: 20,
-                        label: ((a.topP ?? 1.0).clamp(0.0, 1.0)).toStringAsFixed(2),
-                        onChanged: (v) => context.read<AssistantProvider>().updateAssistant(a.copyWith(topP: v)),
+                        label: ((a.topP ?? 1.0).clamp(
+                          0.0,
+                          1.0,
+                        )).toStringAsFixed(2),
+                        onChanged: (v) => context
+                            .read<AssistantProvider>()
+                            .updateAssistant(a.copyWith(topP: v)),
                       ),
                     ),
                   ),
@@ -6673,11 +7501,18 @@ class _DesktopAssistantBasicPaneState extends State<_DesktopAssistantBasicPane> 
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   headerWithSwitch(
-                    title: labelWithHelp(l10n.assistantEditContextMessagesTitle, l10n.assistantEditContextMessagesDescription),
+                    title: labelWithHelp(
+                      l10n.assistantEditContextMessagesTitle,
+                      l10n.assistantEditContextMessagesDescription,
+                    ),
                     value: a.limitContextMessages,
                     onChanged: (v) {
-                      final next = v && a.contextMessageSize < _contextMessageMin
-                          ? a.copyWith(limitContextMessages: v, contextMessageSize: _contextMessageMin)
+                      final next =
+                          v && a.contextMessageSize < _contextMessageMin
+                          ? a.copyWith(
+                              limitContextMessages: v,
+                              contextMessageSize: _contextMessageMin,
+                            )
                           : a.copyWith(limitContextMessages: v);
                       context.read<AssistantProvider>().updateAssistant(next);
                     },
@@ -6688,28 +7523,46 @@ class _DesktopAssistantBasicPaneState extends State<_DesktopAssistantBasicPane> 
                     child: Opacity(
                       opacity: a.limitContextMessages ? 1.0 : 0.5,
                       child: _SliderTileNew(
-                        value: _clampContextMessages(a.contextMessageSize).toDouble(),
+                        value: _clampContextMessages(
+                          a.contextMessageSize,
+                        ).toDouble(),
                         min: _contextMessageMin.toDouble(),
                         max: _contextMessageMax.toDouble(),
                         divisions: _contextMessageMax - _contextMessageMin,
-                        label: _clampContextMessages(a.contextMessageSize).toString(),
-                        customLabelStops: const <double>[1.0, 32.0, 64.0, 128.0, 256.0],
+                        label: _clampContextMessages(
+                          a.contextMessageSize,
+                        ).toString(),
+                        customLabelStops: const <double>[
+                          1.0,
+                          32.0,
+                          64.0,
+                          128.0,
+                          256.0,
+                        ],
                         onLabelTap: a.limitContextMessages
                             ? () async {
-                                final chosen = await _showContextMessageInputDialog(
-                                  context,
-                                  initialValue: _clampContextMessages(a.contextMessageSize),
-                                );
+                                final chosen =
+                                    await _showContextMessageInputDialog(
+                                      context,
+                                      initialValue: _clampContextMessages(
+                                        a.contextMessageSize,
+                                      ),
+                                    );
                                 if (chosen != null) {
-                                  await context.read<AssistantProvider>().updateAssistant(
+                                  await context
+                                      .read<AssistantProvider>()
+                                      .updateAssistant(
                                         a.copyWith(contextMessageSize: chosen),
                                       );
                                 }
                               }
                             : null,
-                        onChanged: (v) => context.read<AssistantProvider>().updateAssistant(
-                          a.copyWith(contextMessageSize: _clampContextMessages(v)),
-                        ),
+                        onChanged: (v) =>
+                            context.read<AssistantProvider>().updateAssistant(
+                              a.copyWith(
+                                contextMessageSize: _clampContextMessages(v),
+                              ),
+                            ),
                       ),
                     ),
                   ),
@@ -6723,7 +7576,10 @@ class _DesktopAssistantBasicPaneState extends State<_DesktopAssistantBasicPane> 
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  labelWithHelp(l10n.assistantEditMaxTokensTitle, l10n.assistantEditMaxTokensDescription),
+                  labelWithHelp(
+                    l10n.assistantEditMaxTokensTitle,
+                    l10n.assistantEditMaxTokensDescription,
+                  ),
                   const SizedBox(height: 8),
                   TextField(
                     controller: _maxTokensCtrl,
@@ -6732,16 +7588,25 @@ class _DesktopAssistantBasicPaneState extends State<_DesktopAssistantBasicPane> 
                       hintText: l10n.assistantEditMaxTokensHint,
                       isDense: true,
                       // Increase height for desktop spec
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 20),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 20,
+                      ),
                       filled: true,
-                      fillColor: isDark ? Colors.white10 : const Color(0xFFF7F7F9),
+                      fillColor: isDark
+                          ? Colors.white10
+                          : const Color(0xFFF7F7F9),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(color: cs.outlineVariant.withOpacity(0.2)),
+                        borderSide: BorderSide(
+                          color: cs.outlineVariant.withOpacity(0.2),
+                        ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(color: cs.primary.withOpacity(0.5)),
+                        borderSide: BorderSide(
+                          color: cs.primary.withOpacity(0.5),
+                        ),
                       ),
                     ),
                     style: const TextStyle(fontSize: 13.5),
@@ -6749,14 +7614,20 @@ class _DesktopAssistantBasicPaneState extends State<_DesktopAssistantBasicPane> 
                       final trimmed = v.trim();
                       final n = int.tryParse(trimmed);
                       context.read<AssistantProvider>().updateAssistant(
-                        a.copyWith(maxTokens: n, clearMaxTokens: trimmed.isEmpty),
+                        a.copyWith(
+                          maxTokens: n,
+                          clearMaxTokens: trimmed.isEmpty,
+                        ),
                       );
                     },
                     onEditingComplete: () {
                       final trimmed = _maxTokensCtrl.text.trim();
                       final n = int.tryParse(trimmed);
                       context.read<AssistantProvider>().updateAssistant(
-                        a.copyWith(maxTokens: n, clearMaxTokens: trimmed.isEmpty),
+                        a.copyWith(
+                          maxTokens: n,
+                          clearMaxTokens: trimmed.isEmpty,
+                        ),
                       );
                     },
                   ),
@@ -6772,13 +7643,17 @@ class _DesktopAssistantBasicPaneState extends State<_DesktopAssistantBasicPane> 
                   simpleSwitchRow(
                     label: l10n.assistantEditUseAssistantAvatarTitle,
                     value: a.useAssistantAvatar,
-                    onChanged: (v) => context.read<AssistantProvider>().updateAssistant(a.copyWith(useAssistantAvatar: v)),
+                    onChanged: (v) => context
+                        .read<AssistantProvider>()
+                        .updateAssistant(a.copyWith(useAssistantAvatar: v)),
                   ),
                   sectionDivider(),
                   simpleSwitchRow(
                     label: l10n.assistantEditStreamOutputTitle,
                     value: a.streamOutput,
-                    onChanged: (v) => context.read<AssistantProvider>().updateAssistant(a.copyWith(streamOutput: v)),
+                    onChanged: (v) => context
+                        .read<AssistantProvider>()
+                        .updateAssistant(a.copyWith(streamOutput: v)),
                   ),
                 ],
               ),
@@ -6795,7 +7670,10 @@ class _DesktopAssistantBasicPaneState extends State<_DesktopAssistantBasicPane> 
                       Expanded(
                         child: Text(
                           l10n.assistantEditChatModelTitle,
-                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                       if (a.chatModelProvider != null && a.chatModelId != null)
@@ -6806,7 +7684,9 @@ class _DesktopAssistantBasicPaneState extends State<_DesktopAssistantBasicPane> 
                             color: cs.onSurface,
                             size: 20,
                             onTap: () async {
-                              await context.read<AssistantProvider>().updateAssistant(
+                              await context
+                                  .read<AssistantProvider>()
+                                  .updateAssistant(
                                     a.copyWith(clearChatModel: true),
                                   );
                             },
@@ -6820,26 +7700,48 @@ class _DesktopAssistantBasicPaneState extends State<_DesktopAssistantBasicPane> 
                     onExit: (_) => setState(() => _hoverChatModel = false),
                     child: _TactileRow(
                       onTap: () async {
-                      final sel = await showModelSelector(context);
-                      if (sel != null) {
-                        await context.read<AssistantProvider>().updateAssistant(
-                          a.copyWith(chatModelProvider: sel.providerKey, chatModelId: sel.modelId),
-                        );
-                      }
+                        final sel = await showModelSelector(context);
+                        if (sel != null) {
+                          await context
+                              .read<AssistantProvider>()
+                              .updateAssistant(
+                                a.copyWith(
+                                  chatModelProvider: sel.providerKey,
+                                  chatModelId: sel.modelId,
+                                ),
+                              );
+                        }
                       },
                       pressedScale: 0.98,
                       builder: (pressed) {
-                        final base = isDark ? Colors.white10 : const Color(0xFFF2F3F5);
-                        final pressOv = isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.05);
-                        final hoverOv = isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.04);
-                        final bgColor = pressed ? Color.alphaBlend(pressOv, base) : (_hoverChatModel ? Color.alphaBlend(hoverOv, base) : base);
+                        final base = isDark
+                            ? Colors.white10
+                            : const Color(0xFFF2F3F5);
+                        final pressOv = isDark
+                            ? Colors.white.withOpacity(0.06)
+                            : Colors.black.withOpacity(0.05);
+                        final hoverOv = isDark
+                            ? Colors.white.withOpacity(0.04)
+                            : Colors.black.withOpacity(0.04);
+                        final bgColor = pressed
+                            ? Color.alphaBlend(pressOv, base)
+                            : (_hoverChatModel
+                                  ? Color.alphaBlend(hoverOv, base)
+                                  : base);
                         final settings = context.read<SettingsProvider>();
-                        String display = l10n.assistantEditModelUseGlobalDefault;
-                        if (a.chatModelProvider != null && a.chatModelId != null) {
+                        String display =
+                            l10n.assistantEditModelUseGlobalDefault;
+                        if (a.chatModelProvider != null &&
+                            a.chatModelId != null) {
                           try {
-                            final cfg = settings.getProviderConfig(a.chatModelProvider!);
-                            final ov = cfg.modelOverrides[a.chatModelId] as Map?;
-                            final mdl = (ov != null && (ov['name'] as String?)?.isNotEmpty == true)
+                            final cfg = settings.getProviderConfig(
+                              a.chatModelProvider!,
+                            );
+                            final ov =
+                                cfg.modelOverrides[a.chatModelId] as Map?;
+                            final mdl =
+                                (ov != null &&
+                                    (ov['name'] as String?)?.isNotEmpty == true)
                                 ? (ov['name'] as String)
                                 : a.chatModelId!;
                             display = mdl;
@@ -6850,8 +7752,14 @@ class _DesktopAssistantBasicPaneState extends State<_DesktopAssistantBasicPane> 
                         return AnimatedContainer(
                           duration: const Duration(milliseconds: 160),
                           curve: Curves.easeOutCubic,
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                          decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(12)),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
+                          decoration: BoxDecoration(
+                            color: bgColor,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                           child: Row(
                             children: [
                               _BrandAvatarLike(name: display, size: 24),
@@ -6861,7 +7769,10 @@ class _DesktopAssistantBasicPaneState extends State<_DesktopAssistantBasicPane> 
                                   display,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ),
                             ],
@@ -6880,7 +7791,13 @@ class _DesktopAssistantBasicPaneState extends State<_DesktopAssistantBasicPane> 
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(l10n.assistantEditChatBackgroundTitle, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                  Text(
+                    l10n.assistantEditChatBackgroundTitle,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   if ((a.background ?? '').isEmpty) ...[
                     MouseRegion(
@@ -6890,23 +7807,56 @@ class _DesktopAssistantBasicPaneState extends State<_DesktopAssistantBasicPane> 
                         onTap: () => _pickBackground(context, a),
                         pressedScale: 0.98,
                         builder: (pressed) {
-                          final base = isDark ? Colors.white10 : const Color(0xFFF2F3F5);
-                          final pressOv = isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.05);
-                          final hoverOv = isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.04);
-                          final bg = pressed ? Color.alphaBlend(pressOv, base) : (_hoverBgChooser ? Color.alphaBlend(hoverOv, base) : base);
+                          final base = isDark
+                              ? Colors.white10
+                              : const Color(0xFFF2F3F5);
+                          final pressOv = isDark
+                              ? Colors.white.withOpacity(0.06)
+                              : Colors.black.withOpacity(0.05);
+                          final hoverOv = isDark
+                              ? Colors.white.withOpacity(0.04)
+                              : Colors.black.withOpacity(0.04);
+                          final bg = pressed
+                              ? Color.alphaBlend(pressOv, base)
+                              : (_hoverBgChooser
+                                    ? Color.alphaBlend(hoverOv, base)
+                                    : base);
                           final iconColor = cs.onSurface.withOpacity(0.75);
                           final textColor = cs.onSurface.withOpacity(0.9);
                           return AnimatedContainer(
                             duration: const Duration(milliseconds: 160),
                             curve: Curves.easeOutCubic,
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                            decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(12), border: Border.all(color: cs.outlineVariant.withOpacity(0.35))),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: bg,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: cs.outlineVariant.withOpacity(0.35),
+                              ),
+                            ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Padding(padding: const EdgeInsets.only(left: 2.0), child: Icon(Icons.image, size: 18, color: iconColor)),
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 2.0),
+                                  child: Icon(
+                                    Icons.image,
+                                    size: 18,
+                                    color: iconColor,
+                                  ),
+                                ),
                                 const SizedBox(width: 8),
-                                Text(l10n.assistantEditChooseImageButton, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: textColor)),
+                                Text(
+                                  l10n.assistantEditChooseImageButton,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: textColor,
+                                  ),
+                                ),
                               ],
                             ),
                           );
@@ -6916,13 +7866,32 @@ class _DesktopAssistantBasicPaneState extends State<_DesktopAssistantBasicPane> 
                   ] else ...[
                     Row(
                       children: [
-                        Expanded(child: _IosButton(label: l10n.assistantEditChooseImageButton, icon: Icons.image, onTap: () => _pickBackground(context, a))),
+                        Expanded(
+                          child: _IosButton(
+                            label: l10n.assistantEditChooseImageButton,
+                            icon: Icons.image,
+                            onTap: () => _pickBackground(context, a),
+                          ),
+                        ),
                         const SizedBox(width: 10),
-                        Expanded(child: _IosButton(label: l10n.assistantEditClearButton, icon: Lucide.X, onTap: () => context.read<AssistantProvider>().updateAssistant(a.copyWith(clearBackground: true)))),
+                        Expanded(
+                          child: _IosButton(
+                            label: l10n.assistantEditClearButton,
+                            icon: Lucide.X,
+                            onTap: () => context
+                                .read<AssistantProvider>()
+                                .updateAssistant(
+                                  a.copyWith(clearBackground: true),
+                                ),
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 12),
-                    ClipRRect(borderRadius: BorderRadius.circular(10), child: _BackgroundPreview(path: a.background!)),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: _BackgroundPreview(path: a.background!),
+                    ),
                   ],
                 ],
               ),
@@ -6937,15 +7906,29 @@ class _DesktopAssistantBasicPaneState extends State<_DesktopAssistantBasicPane> 
                   Row(
                     children: [
                       Expanded(
-                        child: Text(l10n.assistantEditChatFontScaleTitle, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                        child: Text(
+                          l10n.assistantEditChatFontScaleTitle,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
                       IosSwitch(
                         value: a.chatFontScale != null,
                         onChanged: (v) async {
                           if (v) {
-                            await context.read<AssistantProvider>().updateAssistant(a.copyWith(chatFontScale: 1.0));
+                            await context
+                                .read<AssistantProvider>()
+                                .updateAssistant(
+                                  a.copyWith(chatFontScale: 1.0),
+                                );
                           } else {
-                            await context.read<AssistantProvider>().updateAssistant(a.copyWith(clearChatFontScale: true));
+                            await context
+                                .read<AssistantProvider>()
+                                .updateAssistant(
+                                  a.copyWith(clearChatFontScale: true),
+                                );
                           }
                         },
                       ),
@@ -6954,7 +7937,10 @@ class _DesktopAssistantBasicPaneState extends State<_DesktopAssistantBasicPane> 
                   const SizedBox(height: 6),
                   Text(
                     l10n.assistantEditChatFontScaleDescription,
-                    style: TextStyle(fontSize: 12, color: cs.onSurface.withOpacity(0.6)),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: cs.onSurface.withOpacity(0.6),
+                    ),
                   ),
                   if (a.chatFontScale != null) ...[
                     const SizedBox(height: 12),
@@ -6964,13 +7950,17 @@ class _DesktopAssistantBasicPaneState extends State<_DesktopAssistantBasicPane> 
                       max: 1.5,
                       divisions: 20,
                       label: '${(a.chatFontScale! * 100).round()}%',
-                      onChanged: (v) => context.read<AssistantProvider>().updateAssistant(a.copyWith(chatFontScale: v)),
+                      onChanged: (v) => context
+                          .read<AssistantProvider>()
+                          .updateAssistant(a.copyWith(chatFontScale: v)),
                     ),
                     const SizedBox(height: 8),
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: isDark ? Colors.white.withOpacity(0.04) : const Color(0xFFF2F3F5),
+                        color: isDark
+                            ? Colors.white.withOpacity(0.04)
+                            : const Color(0xFFF2F3F5),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
@@ -6991,14 +7981,23 @@ class _DesktopAssistantBasicPaneState extends State<_DesktopAssistantBasicPane> 
   Future<void> _pickBackground(BuildContext context, Assistant a) async {
     try {
       final picker = ImagePicker();
-      final XFile? file = await picker.pickImage(source: ImageSource.gallery, maxWidth: 1920, imageQuality: 85);
+      final XFile? file = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1920,
+        imageQuality: 85,
+      );
       if (file != null) {
-        await context.read<AssistantProvider>().updateAssistant(a.copyWith(background: file.path));
+        await context.read<AssistantProvider>().updateAssistant(
+          a.copyWith(background: file.path),
+        );
       }
     } catch (_) {}
   }
 
-  Future<void> _openAssistantAvatarMenu(BuildContext context, Assistant a) async {
+  Future<void> _openAssistantAvatarMenu(
+    BuildContext context,
+    Assistant a,
+  ) async {
     final l10n = AppLocalizations.of(context)!;
     await showDesktopAnchoredMenu(
       context,
@@ -7014,7 +8013,9 @@ class _DesktopAssistantBasicPaneState extends State<_DesktopAssistantBasicPane> 
               hintText: l10n.assistantEditEmojiDialogHint,
             );
             if (emoji != null && emoji.isNotEmpty) {
-              await context.read<AssistantProvider>().updateAssistant(a.copyWith(avatar: emoji));
+              await context.read<AssistantProvider>().updateAssistant(
+                a.copyWith(avatar: emoji),
+              );
             }
           },
         ),
@@ -7027,12 +8028,24 @@ class _DesktopAssistantBasicPaneState extends State<_DesktopAssistantBasicPane> 
                 allowMultiple: false,
                 withData: false,
                 type: FileType.custom,
-                allowedExtensions: const ['png','jpg','jpeg','gif','webp','heic','heif'],
+                allowedExtensions: const [
+                  'png',
+                  'jpg',
+                  'jpeg',
+                  'gif',
+                  'webp',
+                  'heic',
+                  'heif',
+                ],
               );
-              final f = (res != null && res.files.isNotEmpty) ? res.files.first : null;
+              final f = (res != null && res.files.isNotEmpty)
+                  ? res.files.first
+                  : null;
               final path = f?.path;
               if (path != null && path.isNotEmpty) {
-                await context.read<AssistantProvider>().updateAssistant(a.copyWith(avatar: path));
+                await context.read<AssistantProvider>().updateAssistant(
+                  a.copyWith(avatar: path),
+                );
               }
             } catch (_) {}
           },
@@ -7040,17 +8053,25 @@ class _DesktopAssistantBasicPaneState extends State<_DesktopAssistantBasicPane> 
         DesktopContextMenuItem(
           icon: Lucide.Link,
           label: l10n.assistantEditAvatarEnterLink,
-          onTap: () async { await _inputAvatarUrl(context, a); },
+          onTap: () async {
+            await _inputAvatarUrl(context, a);
+          },
         ),
         DesktopContextMenuItem(
           svgAsset: 'assets/icons/tencent-qq.svg',
           label: l10n.assistantEditAvatarImportQQ,
-          onTap: () async { await _inputQQAvatar(context, a); },
+          onTap: () async {
+            await _inputQQAvatar(context, a);
+          },
         ),
         DesktopContextMenuItem(
           icon: Lucide.RotateCw,
           label: l10n.desktopAvatarMenuReset,
-          onTap: () async { await context.read<AssistantProvider>().updateAssistant(a.copyWith(clearAvatar: true)); },
+          onTap: () async {
+            await context.read<AssistantProvider>().updateAssistant(
+              a.copyWith(clearAvatar: true),
+            );
+          },
         ),
       ],
       offset: const Offset(0, 8),
@@ -7060,9 +8081,15 @@ class _DesktopAssistantBasicPaneState extends State<_DesktopAssistantBasicPane> 
   Future<void> _pickLocalAvatar(BuildContext context, Assistant a) async {
     try {
       final picker = ImagePicker();
-      final XFile? file = await picker.pickImage(source: ImageSource.gallery, maxWidth: 1024, imageQuality: 88);
+      final XFile? file = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1024,
+        imageQuality: 88,
+      );
       if (file != null) {
-        await context.read<AssistantProvider>().updateAssistant(a.copyWith(avatar: file.path));
+        await context.read<AssistantProvider>().updateAssistant(
+          a.copyWith(avatar: file.path),
+        );
       }
     } catch (_) {}
   }
@@ -7075,7 +8102,9 @@ class _DesktopAssistantBasicPaneState extends State<_DesktopAssistantBasicPane> 
       context: context,
       builder: (ctx) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           backgroundColor: cs.surface,
           title: Text(l10n.assistantEditImageUrlDialogTitle),
           content: TextField(
@@ -7084,15 +8113,32 @@ class _DesktopAssistantBasicPaneState extends State<_DesktopAssistantBasicPane> 
             decoration: InputDecoration(
               hintText: l10n.assistantEditImageUrlDialogHint,
               filled: true,
-              fillColor: Theme.of(ctx).brightness == Brightness.dark ? Colors.white10 : const Color(0xFFF2F3F5),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.transparent)),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.transparent)),
-              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: cs.primary.withOpacity(0.4))),
+              fillColor: Theme.of(ctx).brightness == Brightness.dark
+                  ? Colors.white10
+                  : const Color(0xFFF2F3F5),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.transparent),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Colors.transparent),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: cs.primary.withOpacity(0.4)),
+              ),
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: Text(l10n.assistantEditImageUrlDialogCancel)),
-            TextButton(onPressed: () => Navigator.of(ctx).pop(true), child: Text(l10n.assistantEditImageUrlDialogSave)),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: Text(l10n.assistantEditImageUrlDialogCancel),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: Text(l10n.assistantEditImageUrlDialogSave),
+            ),
           ],
         );
       },
@@ -7100,7 +8146,9 @@ class _DesktopAssistantBasicPaneState extends State<_DesktopAssistantBasicPane> 
     if (ok == true) {
       final url = controller.text.trim();
       if (url.isNotEmpty) {
-        await context.read<AssistantProvider>().updateAssistant(a.copyWith(avatar: url));
+        await context.read<AssistantProvider>().updateAssistant(
+          a.copyWith(avatar: url),
+        );
       }
     }
   }
@@ -7114,11 +8162,14 @@ class _DesktopAssistantBasicPaneState extends State<_DesktopAssistantBasicPane> 
       final trimmed = s.characters.take(1).toString().trim();
       return trimmed.isNotEmpty && trimmed == s.trim();
     }
+
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           backgroundColor: cs.surface,
           title: Text(l10n.assistantEditAvatarChooseEmoji),
           content: TextField(
@@ -7127,10 +8178,21 @@ class _DesktopAssistantBasicPaneState extends State<_DesktopAssistantBasicPane> 
             decoration: InputDecoration(
               hintText: '🙂',
               filled: true,
-              fillColor: Theme.of(ctx).brightness == Brightness.dark ? Colors.white10 : const Color(0xFFF2F3F5),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.transparent)),
-              enabledBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12)), borderSide: BorderSide(color: Colors.transparent)),
-              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: cs.primary.withOpacity(0.4))),
+              fillColor: Theme.of(ctx).brightness == Brightness.dark
+                  ? Colors.white10
+                  : const Color(0xFFF2F3F5),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.transparent),
+              ),
+              enabledBorder: const OutlineInputBorder(
+                borderRadius: BorderRadius.all(Radius.circular(12)),
+                borderSide: BorderSide(color: Colors.transparent),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: cs.primary.withOpacity(0.4)),
+              ),
             ),
             onChanged: (v) => value = v,
             onSubmitted: (_) {
@@ -7138,8 +8200,16 @@ class _DesktopAssistantBasicPaneState extends State<_DesktopAssistantBasicPane> 
             },
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: Text(l10n.assistantEditImageUrlDialogCancel)),
-            TextButton(onPressed: validGrapheme(value) ? () => Navigator.of(ctx).pop(true) : null, child: Text(l10n.assistantEditImageUrlDialogSave)),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: Text(l10n.assistantEditImageUrlDialogCancel),
+            ),
+            TextButton(
+              onPressed: validGrapheme(value)
+                  ? () => Navigator.of(ctx).pop(true)
+                  : null,
+              child: Text(l10n.assistantEditImageUrlDialogSave),
+            ),
           ],
         );
       },
@@ -7167,24 +8237,44 @@ class _DesktopAssistantBasicPaneState extends State<_DesktopAssistantBasicPane> 
           int acc = 0;
           for (int i = 0; i < lengths.length; i++) {
             acc += weights[i];
-            if (roll <= acc) { chosenLen = lengths[i]; break; }
+            if (roll <= acc) {
+              chosenLen = lengths[i];
+              break;
+            }
           }
           final sb = StringBuffer();
-          final firstGroups = <List<int>>[[1,2],[3,4],[5,6,7,8],[9]];
-          final firstWeights = <int>[128,4,2,1];
+          final firstGroups = <List<int>>[
+            [1, 2],
+            [3, 4],
+            [5, 6, 7, 8],
+            [9],
+          ];
+          final firstWeights = <int>[128, 4, 2, 1];
           final firstTotal = firstWeights.fold<int>(0, (a, b) => a + b);
           int r2 = rnd.nextInt(firstTotal) + 1;
-          int idx = 0; int a2 = 0;
-          for (int i = 0; i < firstGroups.length; i++) { a2 += firstWeights[i]; if (r2 <= a2) { idx = i; break; } }
+          int idx = 0;
+          int a2 = 0;
+          for (int i = 0; i < firstGroups.length; i++) {
+            a2 += firstWeights[i];
+            if (r2 <= a2) {
+              idx = i;
+              break;
+            }
+          }
           final group = firstGroups[idx];
           sb.write(group[rnd.nextInt(group.length)]);
-          for (int i = 1; i < chosenLen; i++) { sb.write(rnd.nextInt(10)); }
+          for (int i = 1; i < chosenLen; i++) {
+            sb.write(rnd.nextInt(10));
+          }
           return sb.toString();
         }
+
         return StatefulBuilder(
           builder: (ctx, setLocal) {
             return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
               backgroundColor: cs.surface,
               title: Text(l10n.assistantEditQQAvatarDialogTitle),
               content: TextField(
@@ -7194,10 +8284,21 @@ class _DesktopAssistantBasicPaneState extends State<_DesktopAssistantBasicPane> 
                 decoration: InputDecoration(
                   hintText: l10n.assistantEditQQAvatarDialogHint,
                   filled: true,
-                  fillColor: Theme.of(ctx).brightness == Brightness.dark ? Colors.white10 : const Color(0xFFF2F3F5),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.transparent)),
-                  enabledBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12)), borderSide: BorderSide(color: Colors.transparent)),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: cs.primary.withOpacity(0.4))),
+                  fillColor: Theme.of(ctx).brightness == Brightness.dark
+                      ? Colors.white10
+                      : const Color(0xFFF2F3F5),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.transparent),
+                  ),
+                  enabledBorder: const OutlineInputBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(12)),
+                    borderSide: BorderSide(color: Colors.transparent),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: cs.primary.withOpacity(0.4)),
+                  ),
                 ),
                 onChanged: (v) => setLocal(() => value = v),
               ),
@@ -7208,18 +8309,27 @@ class _DesktopAssistantBasicPaneState extends State<_DesktopAssistantBasicPane> 
                     bool applied = false;
                     for (int i = 0; i < maxTries; i++) {
                       final qq = randomQQ();
-                      final url = 'https://q2.qlogo.cn/headimg_dl?dst_uin=' + qq + '&spec=100';
+                      final url =
+                          'https://q2.qlogo.cn/headimg_dl?dst_uin=' +
+                          qq +
+                          '&spec=100';
                       try {
-                        final resp = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 5));
-                        if (resp.statusCode == 200 && resp.bodyBytes.isNotEmpty) {
-                          await context.read<AssistantProvider>().updateAssistant(a.copyWith(avatar: url));
+                        final resp = await http
+                            .get(Uri.parse(url))
+                            .timeout(const Duration(seconds: 5));
+                        if (resp.statusCode == 200 &&
+                            resp.bodyBytes.isNotEmpty) {
+                          await context
+                              .read<AssistantProvider>()
+                              .updateAssistant(a.copyWith(avatar: url));
                           applied = true;
                           break;
                         }
                       } catch (_) {}
                     }
                     if (applied) {
-                      if (Navigator.of(ctx).canPop()) Navigator.of(ctx).pop(false);
+                      if (Navigator.of(ctx).canPop())
+                        Navigator.of(ctx).pop(false);
                     } else {
                       showAppSnackBar(
                         context,
@@ -7230,8 +8340,16 @@ class _DesktopAssistantBasicPaneState extends State<_DesktopAssistantBasicPane> 
                   },
                   child: Text(l10n.assistantEditQQAvatarRandomButton),
                 ),
-                TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: Text(l10n.assistantEditQQAvatarDialogCancel)),
-                TextButton(onPressed: valid(value) ? () => Navigator.of(ctx).pop(true) : null, child: Text(l10n.assistantEditQQAvatarDialogSave)),
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(false),
+                  child: Text(l10n.assistantEditQQAvatarDialogCancel),
+                ),
+                TextButton(
+                  onPressed: valid(value)
+                      ? () => Navigator.of(ctx).pop(true)
+                      : null,
+                  child: Text(l10n.assistantEditQQAvatarDialogSave),
+                ),
               ],
             );
           },
@@ -7241,8 +8359,11 @@ class _DesktopAssistantBasicPaneState extends State<_DesktopAssistantBasicPane> 
     if (ok == true) {
       final qq = controller.text.trim();
       if (qq.isNotEmpty) {
-        final url = 'https://q2.qlogo.cn/headimg_dl?dst_uin=' + qq + '&spec=100';
-        await context.read<AssistantProvider>().updateAssistant(a.copyWith(avatar: url));
+        final url =
+            'https://q2.qlogo.cn/headimg_dl?dst_uin=' + qq + '&spec=100';
+        await context.read<AssistantProvider>().updateAssistant(
+          a.copyWith(avatar: url),
+        );
       }
     }
   }

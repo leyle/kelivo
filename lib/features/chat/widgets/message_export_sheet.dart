@@ -188,7 +188,7 @@ Future<File?> _renderAndSaveMessageImage(
   } catch (_) {}
 
   // Desktop uses larger width and lower pixel ratio for better proportions
-  final bool isDesktop = Platform.isWindows || Platform.isLinux || Platform.isMacOS;
+  final bool isDesktop = Platform.isMacOS;
   // Use assistant's chatFontScale if set, otherwise fall back to global setting
   final chatFontScale = assistant?.chatFontScale ?? settings.chatFontScale;
 
@@ -246,7 +246,7 @@ Future<File?> _renderAndSaveChatImage(
   } catch (_) {}
 
   // Desktop uses larger width and lower pixel ratio for better proportions
-  final bool isDesktop = Platform.isWindows || Platform.isLinux || Platform.isMacOS;
+  final bool isDesktop = Platform.isMacOS;
   // Use assistant's chatFontScale if set, otherwise fall back to global setting
   final chatFontScale = assistant?.chatFontScale ?? settings.chatFontScale;
 
@@ -501,7 +501,7 @@ Future<File?> _renderAndSavePagedOld(
 Future<void> showMessageExportSheet(BuildContext context, ChatMessage message) async {
   final cs = Theme.of(context).colorScheme;
   try {
-    if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+    if (Platform.isMacOS) {
       // Desktop: show centered dialog
       await showDialog<void>(
         context: context,
@@ -542,7 +542,7 @@ Future<void> showChatExportSheet(
 }) async {
   final cs = Theme.of(context).colorScheme;
   try {
-    if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+    if (Platform.isMacOS) {
       // Desktop: show centered dialog
       await showDialog<void>(
         context: context,
@@ -1289,7 +1289,7 @@ class _BatchExportSheetState extends State<_BatchExportSheet> {
 
       final filename = 'chat-export-${DateTime.now().millisecondsSinceEpoch}.md';
 
-      if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+      if (Platform.isMacOS) {
         // Desktop: choose save location
         final l10n = AppLocalizations.of(context)!;
         final String? savePath = await FilePicker.platform.saveFile(
@@ -1396,7 +1396,7 @@ class _BatchExportSheetState extends State<_BatchExportSheet> {
 
       final filename = 'chat-export-${DateTime.now().millisecondsSinceEpoch}.txt';
 
-      if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+      if (Platform.isMacOS) {
         // Desktop: choose save location
         final String? savePath = await FilePicker.platform.saveFile(
           dialogTitle: l10n.backupPageExportToFile,
@@ -1679,7 +1679,7 @@ class _ExportSheetState extends State<_ExportSheet> {
 
       final filename = 'chat-export-${DateTime.now().millisecondsSinceEpoch}.md';
 
-      if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+      if (Platform.isMacOS) {
         // Desktop: choose save location
         final String? savePath = await FilePicker.platform.saveFile(
           dialogTitle: AppLocalizations.of(context)!.backupPageExportToFile,
@@ -1763,7 +1763,7 @@ class _ExportSheetState extends State<_ExportSheet> {
 
       final filename = 'chat-export-${DateTime.now().millisecondsSinceEpoch}.txt';
 
-      if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+      if (Platform.isMacOS) {
         // Desktop: choose save location
         final String? savePath = await FilePicker.platform.saveFile(
           dialogTitle: AppLocalizations.of(context)!.backupPageExportToFile,

@@ -173,9 +173,7 @@ class ChatInputSection extends StatelessWidget {
 
   bool _isDesktopPlatform(BuildContext context) {
     final platform = Theme.of(context).platform;
-    return platform == TargetPlatform.macOS ||
-        platform == TargetPlatform.windows ||
-        platform == TargetPlatform.linux;
+    return platform == TargetPlatform.macOS;
   }
 
   void _enforceModelCapabilities(

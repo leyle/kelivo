@@ -602,7 +602,7 @@ class _RegexFormData {
 
 Future<_RegexFormData?> _showRegexEditor(BuildContext context, {AssistantRegex? rule}) async {
   final platform = Theme.of(context).platform;
-  final isDesktop = platform == TargetPlatform.macOS || platform == TargetPlatform.linux || platform == TargetPlatform.windows;
+  final isDesktop = platform == TargetPlatform.macOS;
   return isDesktop
       ? _showRegexDialog(context, rule: rule)
       : _showRegexBottomSheet(context, rule: rule);

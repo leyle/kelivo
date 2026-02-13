@@ -246,53 +246,7 @@ class _ChatHistoryPageState extends State<ChatHistoryPage>
       conversation: c,
       onTap: () => Navigator.of(context).pop(c.id),
     );
-
-    final platform = Theme.of(context).platform;
-    final isMobilePlatform =
-        platform == TargetPlatform.android || platform == TargetPlatform.iOS;
-    if (!isMobilePlatform) return tile;
-
-    final l10n = AppLocalizations.of(context)!;
-    final cs = Theme.of(context).colorScheme;
-
-    return Dismissible(
-      key: ValueKey('history-${c.id}'),
-      direction: DismissDirection.endToStart,
-      background: Container(
-        decoration: BoxDecoration(
-          color: cs.errorContainer,
-          borderRadius: BorderRadius.circular(14),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        alignment: Alignment.centerRight,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            Text(
-              l10n.chatHistoryPageDelete,
-              style: TextStyle(
-                color: cs.onErrorContainer,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Icon(Lucide.Trash2, color: cs.onErrorContainer, size: 18),
-          ],
-        ),
-      ),
-      onDismissed: (_) async {
-        await context.read<ChatService>().deleteConversation(c.id);
-        if (!mounted) return;
-        showAppSnackBar(
-          context,
-          message: l10n.sideDrawerDeleteSnackbar(c.title),
-          type: NotificationType.success,
-          duration: const Duration(seconds: 3),
-        );
-      },
-      child: tile,
-    );
+    return tile;
   }
 }
 
