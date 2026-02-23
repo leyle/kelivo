@@ -15,6 +15,7 @@ class Assistant {
   final double? topP; // null to disable; else 0.0 - 1.0
   final int contextMessageSize; // number of previous messages to include
   final bool limitContextMessages; // whether to enforce contextMessageSize
+  final bool excludeAssistantMessages; // whether to exclude assistant responses from context
   final bool streamOutput; // streaming responses
   final int?
   thinkingBudget; // null = use global/default; 0=off; >0 tokens budget
@@ -50,6 +51,7 @@ class Assistant {
     this.topP,
     this.contextMessageSize = 64,
     this.limitContextMessages = true,
+    this.excludeAssistantMessages = false,
     this.streamOutput = true,
     this.thinkingBudget,
     this.maxTokens,
@@ -79,6 +81,7 @@ class Assistant {
     double? topP,
     int? contextMessageSize,
     bool? limitContextMessages,
+    bool? excludeAssistantMessages,
     bool? streamOutput,
     int? thinkingBudget,
     int? maxTokens,
@@ -117,6 +120,7 @@ class Assistant {
       topP: clearTopP ? null : (topP ?? this.topP),
       contextMessageSize: contextMessageSize ?? this.contextMessageSize,
       limitContextMessages: limitContextMessages ?? this.limitContextMessages,
+      excludeAssistantMessages: excludeAssistantMessages ?? this.excludeAssistantMessages,
       streamOutput: streamOutput ?? this.streamOutput,
       thinkingBudget: clearThinkingBudget
           ? null
@@ -152,6 +156,7 @@ class Assistant {
     'topP': topP,
     'contextMessageSize': contextMessageSize,
     'limitContextMessages': limitContextMessages,
+    'excludeAssistantMessages': excludeAssistantMessages,
     'streamOutput': streamOutput,
     'thinkingBudget': thinkingBudget,
     'maxTokens': maxTokens,
@@ -181,6 +186,7 @@ class Assistant {
     topP: (json['topP'] as num?)?.toDouble(),
     contextMessageSize: (json['contextMessageSize'] as num?)?.toInt() ?? 64,
     limitContextMessages: json['limitContextMessages'] as bool? ?? true,
+    excludeAssistantMessages: json['excludeAssistantMessages'] as bool? ?? false,
     streamOutput: json['streamOutput'] as bool? ?? true,
     thinkingBudget: (json['thinkingBudget'] as num?)?.toInt(),
     maxTokens: (json['maxTokens'] as num?)?.toInt(),

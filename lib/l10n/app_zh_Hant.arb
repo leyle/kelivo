@@ -147,6 +147,8 @@
   "assistantEditParameterDisabled2": "已關閉（無限制）",
   "assistantEditContextMessagesTitle": "上下文訊息數量",
   "assistantEditContextMessagesDescription": "多少歷史訊息會被當作上下文傳送給模型，超過數量會忽略，只保留最近 N 條",
+  "assistantEditExcludeAssistantMessagesTitle": "排除助手的回覆",
+  "assistantEditExcludeAssistantMessagesDesc": "不將助手自己的歷史回覆作為上下文發給模型，非常適合翻譯、潤色、查單字等不依賴歷史回覆的工具型助手，可大幅節省 Token 消耗。",
   "assistantEditStreamOutputTitle": "串流輸出",
   "assistantEditStreamOutputDescription": "是否啟用訊息的串流輸出",
   "assistantEditThinkingBudgetTitle": "思考預算",

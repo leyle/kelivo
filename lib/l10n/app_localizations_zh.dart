@@ -661,6 +661,13 @@ class AppLocalizationsZh extends AppLocalizations {
       '多少历史消息会被当作上下文发送给模型，超过数量会忽略，只保留最近 N 条';
 
   @override
+  String get assistantEditExcludeAssistantMessagesTitle => '排除助手的回复';
+
+  @override
+  String get assistantEditExcludeAssistantMessagesDesc =>
+      '不将助手自己的历史回复作为上下文发给模型，非常适合翻译、润色、查词等不依赖历史回复的工具型助手，可大幅节省 Token 消耗。';
+
+  @override
   String get assistantEditStreamOutputTitle => '流式输出';
 
   @override
@@ -4302,6 +4309,13 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
       '多少历史消息会被当作上下文发送给模型，超过数量会忽略，只保留最近 N 条';
 
   @override
+  String get assistantEditExcludeAssistantMessagesTitle => '排除助手的回复';
+
+  @override
+  String get assistantEditExcludeAssistantMessagesDesc =>
+      '不将助手自己的历史回复作为上下文发给模型，非常适合翻译、润色、查词等不依赖历史回复的工具型助手，可大幅节省 Token 消耗。';
+
+  @override
   String get assistantEditStreamOutputTitle => '流式输出';
 
   @override
@@ -7906,6 +7920,13 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   @override
   String get assistantEditContextMessagesDescription =>
       '多少歷史訊息會被當作上下文傳送給模型，超過數量會忽略，只保留最近 N 條';
+
+  @override
+  String get assistantEditExcludeAssistantMessagesTitle => '排除助手的回覆';
+
+  @override
+  String get assistantEditExcludeAssistantMessagesDesc =>
+      '不將助手自己的歷史回覆作為上下文發給模型，非常適合翻譯、潤色、查單字等不依賴歷史回覆的工具型助手，可大幅節省 Token 消耗。';
 
   @override
   String get assistantEditStreamOutputTitle => '串流輸出';

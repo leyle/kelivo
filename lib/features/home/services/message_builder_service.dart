@@ -96,6 +96,7 @@ class MessageBuilderService {
     required Map<String, int> versionSelections,
     required Conversation? currentConversation,
     bool includeOpenAIToolMessages = false,
+    bool excludeAssistantMessages = false,
   }) {
     final tIndex = currentConversation?.truncateIndex ?? -1;
     final List<ChatMessage> sourceAll = (tIndex >= 0 && tIndex <= messages.length)
@@ -106,6 +107,10 @@ class MessageBuilderService {
     final out = <Map<String, dynamic>>[];
 
     for (final m in source) {
+      if (excludeAssistantMessages && m.role == 'assistant') {
+        continue;
+      }
+
       if (includeOpenAIToolMessages && m.role == 'assistant') {
         final events = chatService.getToolEvents(m.id);
         if (events.isNotEmpty) {

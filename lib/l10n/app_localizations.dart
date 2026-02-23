@@ -1337,6 +1337,18 @@ abstract class AppLocalizations {
   /// **'How many recent messages to keep in context'**
   String get assistantEditContextMessagesDescription;
 
+  /// No description provided for @assistantEditExcludeAssistantMessagesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Exclude Assistant Responses'**
+  String get assistantEditExcludeAssistantMessagesTitle;
+
+  /// No description provided for @assistantEditExcludeAssistantMessagesDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Do not include assistant\'s own past responses in the context memory. Very useful to save tokens for translators, formatting bots, and dictionary helpers.'**
+  String get assistantEditExcludeAssistantMessagesDesc;
+
   /// No description provided for @assistantEditStreamOutputTitle.
   ///
   /// In en, this message translates to:

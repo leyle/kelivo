@@ -2679,6 +2679,43 @@ class _BasicSettingsTabState extends State<_BasicSettingsTab> {
                           color: cs.onSurface.withOpacity(0.6),
                         ),
                       ),
+                      const SizedBox(height: 16),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  l10n.assistantEditExcludeAssistantMessagesTitle,
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  l10n.assistantEditExcludeAssistantMessagesDesc,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: cs.onSurface.withOpacity(0.7),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          IosSwitch(
+                            value: a.excludeAssistantMessages,
+                            onChanged: (v) async {
+                              await context
+                                  .read<AssistantProvider>()
+                                  .updateAssistant(
+                                      a.copyWith(excludeAssistantMessages: v));
+                            },
+                          ),
+                        ],
+                      ),
                     ] else ...[
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 8),
@@ -7563,9 +7600,25 @@ class _DesktopAssistantBasicPaneState
                                 contextMessageSize: _clampContextMessages(v),
                               ),
                             ),
+                        ),
                       ),
                     ),
-                  ),
+                  if (a.limitContextMessages) ...[
+                    const SizedBox(height: 16),
+                    headerWithSwitch(
+                      title: labelWithHelp(
+                        l10n.assistantEditExcludeAssistantMessagesTitle,
+                        l10n.assistantEditExcludeAssistantMessagesDesc,
+                      ),
+                      value: a.excludeAssistantMessages,
+                      onChanged: (v) {
+                        context
+                            .read<AssistantProvider>()
+                            .updateAssistant(
+                                a.copyWith(excludeAssistantMessages: v));
+                      },
+                    ),
+                  ],
                 ],
               ),
             ),

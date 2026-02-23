@@ -323,6 +323,8 @@
   "assistantEditParameterDisabled2": "Disabled (no restrictions)",
   "assistantEditContextMessagesTitle": "Context Messages",
   "assistantEditContextMessagesDescription": "How many recent messages to keep in context",
+  "assistantEditExcludeAssistantMessagesTitle": "Exclude Assistant Responses",
+  "assistantEditExcludeAssistantMessagesDesc": "Do not include assistant's own past responses in the context memory. Very useful to save tokens for translators, formatting bots, and dictionary helpers.",
   "assistantEditStreamOutputTitle": "Stream Output",
   "assistantEditStreamOutputDescription": "Enable streaming responses",
   "assistantEditThinkingBudgetTitle": "Thinking Budget",

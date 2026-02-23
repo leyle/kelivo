@@ -676,6 +676,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'How many recent messages to keep in context';
 
   @override
+  String get assistantEditExcludeAssistantMessagesTitle =>
+      'Exclude Assistant Responses';
+
+  @override
+  String get assistantEditExcludeAssistantMessagesDesc =>
+      'Do not include assistant\'s own past responses in the context memory. Very useful to save tokens for translators, formatting bots, and dictionary helpers.';
+
+  @override
   String get assistantEditStreamOutputTitle => 'Stream Output';
 
   @override

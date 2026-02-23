@@ -97,6 +97,7 @@ class MessageGenerationService {
       versionSelections: versionSelections,
       currentConversation: currentConversation,
       includeOpenAIToolMessages: includeOpenAIToolMessages,
+      excludeAssistantMessages: assistant?.excludeAssistantMessages ?? false,
     );
 
     // Process user messages (documents, OCR, templates)
