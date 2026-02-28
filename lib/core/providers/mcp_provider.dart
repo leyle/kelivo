@@ -611,6 +611,7 @@ class McpProvider extends ChangeNotifier {
     required String name,
     required McpTransportType transport,
     String url = '',
+    List<McpToolConfig> tools = const <McpToolConfig>[],
     Map<String, String> headers = const {},
     String? command,
     List<String> args = const <String>[],
@@ -624,6 +625,7 @@ class McpProvider extends ChangeNotifier {
       name: name.trim().isEmpty ? 'MCP' : name.trim(),
       transport: transport,
       url: url.trim(),
+      tools: tools,
       headers: headers,
       command: command?.trim(),
       args: args,
@@ -640,6 +642,45 @@ class McpProvider extends ChangeNotifier {
       unawaited(connect(id));
     }
     return id;
+  }
+
+  Future<({bool ok, String? error, List<McpToolConfig> tools})>
+  verifyServerDraft({
+    required McpTransportType transport,
+    String url = '',
+    Map<String, String> headers = const <String, String>{},
+    String? command,
+    List<String> args = const <String>[],
+    Map<String, String> env = const <String, String>{},
+    String? workingDirectory,
+  }) async {
+    final cfg = McpServerConfig(
+      id: '__probe__',
+      enabled: true,
+      name: 'probe',
+      transport: transport,
+      url: url.trim(),
+      headers: headers,
+      command: command?.trim(),
+      args: args,
+      env: env,
+      workingDirectory: (workingDirectory?.trim().isNotEmpty ?? false)
+          ? workingDirectory!.trim()
+          : null,
+    );
+
+    mcp.Client? client;
+    try {
+      client = await _connectClientForServer(cfg);
+      final tools = await _listToolConfigs(client);
+      return (ok: true, error: null, tools: tools);
+    } catch (e) {
+      return (ok: false, error: e.toString(), tools: const <McpToolConfig>[]);
+    } finally {
+      try {
+        client?.disconnect();
+      } catch (_) {}
+    }
   }
 
   Future<void> updateServer(McpServerConfig updated) async {
@@ -722,67 +763,7 @@ class McpProvider extends ChangeNotifier {
       //   debugPrint('[MCP/Headers] (none)');
       // }
 
-      final clientConfig = mcp.McpClient.simpleConfig(
-        name: 'Kelivo MCP',
-        version: '1.0.0',
-        // Turn on library-internal verbose logs
-        enableDebugLogging: false,
-        requestTimeout: _requestTimeout,
-      );
-
-      // In-memory builtin server path
-      if (server.transport == McpTransportType.inmemory) {
-        final engine = KelivoFetchMcpServerEngine();
-        final transport = KelivoInMemoryClientTransport(engine);
-        final client = mcp.McpClient.createClient(clientConfig);
-        await client.connect(transport);
-        _clients[id] = client;
-        _status[id] = McpStatus.connected;
-        _errors.remove(id);
-        notifyListeners();
-        await refreshTools(id);
-        _startHeartbeat(id);
-        return;
-      }
-
-      final mergedHeaders = <String, String>{...server.headers};
-      final transportConfig = () {
-        if (server.transport == McpTransportType.sse) {
-          return mcp.TransportConfig.sse(
-            serverUrl: server.url,
-            headers: mergedHeaders.isEmpty ? null : mergedHeaders,
-          );
-        } else if (server.transport == McpTransportType.http) {
-          return mcp.TransportConfig.streamableHttp(
-            baseUrl: server.url,
-            headers: mergedHeaders.isEmpty ? null : mergedHeaders,
-            timeout: _requestTimeout,
-          );
-        } else {
-          // STDIO; only supported on desktop
-          if (!_isDesktopPlatform()) {
-            throw StateError('STDIO transport not supported on this platform');
-          }
-          final cmd = server.command;
-          if (cmd == null || cmd.isEmpty) {
-            throw StateError('STDIO command is empty');
-          }
-          return mcp.TransportConfig.stdio(
-            command: cmd,
-            arguments: server.args,
-            workingDirectory: server.workingDirectory,
-            environment: server.env.isEmpty ? null : server.env,
-          );
-        }
-      }();
-
-      // debugPrint('[MCP/Connect] creating client (enableDebugLogging=true) ...');
-      final clientResult = await mcp.McpClient.createAndConnect(
-        config: clientConfig,
-        transportConfig: transportConfig,
-      );
-
-      final client = clientResult.fold((c) => c, (err) => throw err);
+      final client = await _connectClientForServer(server);
       _clients[id] = client;
       _status[id] = McpStatus.connected;
       _errors.remove(id);
@@ -803,6 +784,67 @@ class McpProvider extends ChangeNotifier {
       _errors[id] = e.toString();
       notifyListeners();
     }
+  }
+
+  mcp.McpClientConfig _buildClientConfig() => mcp.McpClient.simpleConfig(
+    name: 'Kelivo MCP',
+    version: '1.0.0',
+    // Turn on library-internal verbose logs
+    enableDebugLogging: false,
+    requestTimeout: _requestTimeout,
+  );
+
+  mcp.TransportConfig _buildTransportConfigForServer(McpServerConfig server) {
+    final mergedHeaders = <String, String>{...server.headers};
+    if (server.transport == McpTransportType.sse) {
+      return mcp.TransportConfig.sse(
+        serverUrl: server.url,
+        headers: mergedHeaders.isEmpty ? null : mergedHeaders,
+      );
+    }
+    if (server.transport == McpTransportType.http) {
+      return mcp.TransportConfig.streamableHttp(
+        baseUrl: server.url,
+        headers: mergedHeaders.isEmpty ? null : mergedHeaders,
+        timeout: _requestTimeout,
+      );
+    }
+    if (server.transport == McpTransportType.stdio) {
+      if (!_isDesktopPlatform()) {
+        throw StateError('STDIO transport not supported on this platform');
+      }
+      final cmd = server.command;
+      if (cmd == null || cmd.isEmpty) {
+        throw StateError('STDIO command is empty');
+      }
+      return mcp.TransportConfig.stdio(
+        command: cmd,
+        arguments: server.args,
+        workingDirectory: server.workingDirectory,
+        environment: server.env.isEmpty ? null : server.env,
+      );
+    }
+    throw StateError('Unsupported transport: ${server.transport}');
+  }
+
+  Future<mcp.Client> _connectClientForServer(McpServerConfig server) async {
+    final clientConfig = _buildClientConfig();
+
+    // In-memory builtin server path
+    if (server.transport == McpTransportType.inmemory) {
+      final engine = KelivoFetchMcpServerEngine();
+      final transport = KelivoInMemoryClientTransport(engine);
+      final client = mcp.McpClient.createClient(clientConfig);
+      await client.connect(transport);
+      return client;
+    }
+
+    final transportConfig = _buildTransportConfigForServer(server);
+    final clientResult = await mcp.McpClient.createAndConnect(
+      config: clientConfig,
+      transportConfig: transportConfig,
+    );
+    return clientResult.fold((c) => c, (err) => throw err);
   }
 
   Future<void> updateRequestTimeout(
@@ -1185,73 +1227,11 @@ class McpProvider extends ChangeNotifier {
     final client = _clients[id];
     if (client == null) return;
     try {
-      // debugPrint('[MCP/Tools] listTools() ...');
-      final tools = await client.listTools();
-      // debugPrint('[MCP/Tools] listTools() returned ${tools.length} tools');
       // Preserve enabled state from existing config
       final idx = _servers.indexWhere((e) => e.id == id);
       if (idx < 0) return;
       final existing = _servers[idx].tools;
-      final existingMap = {for (final t in existing) t.name: t};
-
-      List<McpToolConfig> merged = [];
-      for (final t in tools) {
-        final prior = existingMap[t.name];
-        // Extract params from inputSchema if present
-        final params = <McpParamSpec>[];
-        Map<String, dynamic>? schemaJson;
-        try {
-          final schema = t.inputSchema; // dynamic; depends on package
-          if (schema != null) {
-            // We attempt to read JSON schema-ish fields via toJson if provided
-            final Map<String, dynamic> js = (schema is Map<String, dynamic>)
-                ? schema
-                : (schema is Object && schema.toString().isNotEmpty)
-                ? (schema as dynamic).toJson?.call() as Map<String, dynamic>? ??
-                      {}
-                : {};
-            schemaJson = js;
-            final props =
-                (js['properties'] as Map?)?.cast<String, dynamic>() ??
-                const <String, dynamic>{};
-            final req =
-                (js['required'] as List?)?.map((e) => e.toString()).toSet() ??
-                const <String>{};
-            props.forEach((key, val) {
-              String? ty;
-              dynamic defVal;
-              try {
-                final v = (val as Map).cast<String, dynamic>();
-                final ttype = v['type'];
-                if (ttype is String) {
-                  ty = ttype;
-                } else if (ttype is List) {
-                  ty = ttype.map((e) => e.toString()).join('|');
-                }
-                defVal = v['default'];
-              } catch (_) {}
-              params.add(
-                McpParamSpec(
-                  name: key,
-                  required: req.contains(key),
-                  type: ty,
-                  defaultValue: defVal,
-                ),
-              );
-            });
-          }
-        } catch (_) {}
-
-        merged.add(
-          McpToolConfig(
-            enabled: prior?.enabled ?? true,
-            name: t.name,
-            description: t.description,
-            params: params,
-            schema: schemaJson,
-          ),
-        );
-      }
+      final merged = await _listToolConfigs(client, existing: existing);
 
       _servers[idx] = _servers[idx].copyWith(tools: merged);
       await _persist();
@@ -1261,6 +1241,74 @@ class McpProvider extends ChangeNotifier {
       // _logMcpException('listTools', serverId: id, error: e, stack: st);
       // ignore tool refresh errors; status stays connected
     }
+  }
+
+  Future<List<McpToolConfig>> _listToolConfigs(
+    mcp.Client client, {
+    List<McpToolConfig> existing = const <McpToolConfig>[],
+  }) async {
+    final tools = await client.listTools();
+    final existingMap = {for (final t in existing) t.name: t};
+    final merged = <McpToolConfig>[];
+
+    for (final t in tools) {
+      final prior = existingMap[t.name];
+      // Extract params from inputSchema if present
+      final params = <McpParamSpec>[];
+      Map<String, dynamic>? schemaJson;
+      try {
+        final schema = t.inputSchema; // dynamic; depends on package
+        if (schema != null) {
+          // We attempt to read JSON schema-ish fields via toJson if provided
+          final Map<String, dynamic> js = (schema is Map<String, dynamic>)
+              ? schema
+              : (schema is Object && schema.toString().isNotEmpty)
+              ? (schema as dynamic).toJson?.call() as Map<String, dynamic>? ??
+                    {}
+              : {};
+          schemaJson = js;
+          final props =
+              (js['properties'] as Map?)?.cast<String, dynamic>() ??
+              const <String, dynamic>{};
+          final req =
+              (js['required'] as List?)?.map((e) => e.toString()).toSet() ??
+              const <String>{};
+          props.forEach((key, val) {
+            String? ty;
+            dynamic defVal;
+            try {
+              final v = (val as Map).cast<String, dynamic>();
+              final ttype = v['type'];
+              if (ttype is String) {
+                ty = ttype;
+              } else if (ttype is List) {
+                ty = ttype.map((e) => e.toString()).join('|');
+              }
+              defVal = v['default'];
+            } catch (_) {}
+            params.add(
+              McpParamSpec(
+                name: key,
+                required: req.contains(key),
+                type: ty,
+                defaultValue: defVal,
+              ),
+            );
+          });
+        }
+      } catch (_) {}
+
+      merged.add(
+        McpToolConfig(
+          enabled: prior?.enabled ?? true,
+          name: t.name,
+          description: t.description,
+          params: params,
+          schema: schemaJson,
+        ),
+      );
+    }
+    return merged;
   }
 
   Future<void> ensureConnected(String id) async {

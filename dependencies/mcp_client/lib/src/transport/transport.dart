@@ -204,13 +204,19 @@ class StdioClientTransport implements ClientTransport {
 
       // Use Timer to give stdin a chance to process
       Timer(Duration(milliseconds: 10), () {
-        _logger.debug('Message sent successfully');
-        _sendNextMessage();
+        try {
+          _logger.debug('Message sent successfully');
+          _sendNextMessage();
+        } catch (e) {
+          _logger.debug('Async send continuation failed: $e');
+          _isSending = false;
+          _handleTransportError(Exception('Failed to continue send queue: $e'));
+        }
       });
     } catch (e) {
       _logger.debug('Error sending message: $e');
       _isSending = false;
-      throw Exception('Failed to write to process stdin: $e');
+      _handleTransportError(Exception('Failed to write to process stdin: $e'));
     }
   }
 

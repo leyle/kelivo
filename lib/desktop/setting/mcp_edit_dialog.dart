@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:convert';
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, TargetPlatform;
 
@@ -56,6 +57,11 @@ class _DesktopMcpEditDialogState extends State<_DesktopMcpEditDialog>
   final _argsCtrl = TextEditingController(); // space-separated args
   final _cwdCtrl = TextEditingController();
   final List<_HeaderEntry> _env = [];
+  bool _isVerifying = false;
+  String? _verifyError;
+  String? _verifiedSignature;
+  List<McpToolConfig> _verifiedTools = const <McpToolConfig>[];
+  final Map<String, bool> _verifiedToolEnabled = <String, bool>{};
 
   @override
   void initState() {
@@ -108,7 +114,6 @@ class _DesktopMcpEditDialogState extends State<_DesktopMcpEditDialog>
   }
 
   Future<void> _save() async {
-    final l10n = AppLocalizations.of(context)!;
     final mcp = context.read<McpProvider>();
     // Built-in server: only allow toggling enabled, no other changes
     if (isEdit && _transport == McpTransportType.inmemory) {
@@ -117,54 +122,34 @@ class _DesktopMcpEditDialogState extends State<_DesktopMcpEditDialog>
       if (mounted) Navigator.of(context).maybePop();
       return;
     }
-    final name = _nameCtrl.text.trim().isEmpty ? 'MCP' : _nameCtrl.text.trim();
-    final headers = <String, String>{
-      for (final h in _headers)
-        if (h.key.text.trim().isNotEmpty)
-          h.key.text.trim(): h.value.text.trim(),
-    };
-    if (_transport == McpTransportType.stdio) {
-      if (!_isDesktopPlatform()) {
-        showAppSnackBar(
-          context,
-          message: AppLocalizations.of(
-            context,
-          )!.mcpServerEditSheetStdioOnlyDesktop,
-          type: NotificationType.warning,
-        );
-        return;
-      }
-      final cmd = _cmdCtrl.text.trim();
-      if (cmd.isEmpty) {
-        showAppSnackBar(
-          context,
-          message: AppLocalizations.of(
-            context,
-          )!.mcpServerEditSheetStdioCommandRequired,
-          type: NotificationType.warning,
-        );
-        return;
-      }
-      final args = _parseArgs(_argsCtrl.text.trim());
-      final env = <String, String>{
-        for (final e in _env)
-          if (e.key.text.trim().isNotEmpty)
-            e.key.text.trim(): e.value.text.trim(),
-      };
-      final cwd = _cwdCtrl.text.trim();
+    final draft = _buildDraft(validateInputs: true);
+    if (draft == null) return;
+
+    final signature = _draftSignature(draft);
+    if (_enabled && _verifiedSignature != signature) {
+      final ok = await _verifyWithDraft(draft, showErrorSnack: true);
+      if (!ok) return;
+    }
+    final tools = _verifiedSignature == signature
+        ? _selectedVerifiedTools()
+        : const <McpToolConfig>[];
+
+    if (draft.transport == McpTransportType.stdio) {
+      final cwd = draft.workingDirectory ?? '';
       if (isEdit) {
         final old = mcp.getById(widget.serverId!)!;
         final clearing = cwd.isEmpty;
         await mcp.updateServer(
           old.copyWith(
             enabled: _enabled,
-            name: name,
+            name: draft.name,
             transport: McpTransportType.stdio,
             url: '',
             headers: const {},
-            command: cmd,
-            args: args,
-            env: env,
+            command: draft.command,
+            args: draft.args,
+            env: draft.env,
+            tools: tools.isEmpty ? old.tools : tools,
             workingDirectory: clearing ? null : cwd,
             clearWorkingDirectory: clearing,
           ),
@@ -172,42 +157,36 @@ class _DesktopMcpEditDialogState extends State<_DesktopMcpEditDialog>
       } else {
         await mcp.addServer(
           enabled: _enabled,
-          name: name,
+          name: draft.name,
           transport: McpTransportType.stdio,
-          command: cmd,
-          args: args,
-          env: env,
+          command: draft.command,
+          args: draft.args,
+          env: draft.env,
+          tools: tools,
           workingDirectory: cwd.isEmpty ? null : cwd,
         );
       }
     } else {
-      final url = _urlCtrl.text.trim();
-      if (url.isEmpty) {
-        showAppSnackBar(
-          context,
-          message: l10n.mcpServerEditSheetUrlRequired,
-          type: NotificationType.warning,
-        );
-        return;
-      }
       if (isEdit) {
         final old = mcp.getById(widget.serverId!)!;
         await mcp.updateServer(
           old.copyWith(
             enabled: _enabled,
-            name: name,
-            transport: _transport,
-            url: url,
-            headers: headers,
+            name: draft.name,
+            transport: draft.transport,
+            url: draft.url,
+            headers: draft.headers,
+            tools: tools.isEmpty ? old.tools : tools,
           ),
         );
       } else {
         await mcp.addServer(
           enabled: _enabled,
-          name: name,
-          transport: _transport,
-          url: url,
-          headers: headers,
+          name: draft.name,
+          transport: draft.transport,
+          url: draft.url,
+          headers: draft.headers,
+          tools: tools,
         );
       }
     }
@@ -215,7 +194,6 @@ class _DesktopMcpEditDialogState extends State<_DesktopMcpEditDialog>
   }
 
   Widget _headerBar() {
-    final cs = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
     return SizedBox(
       height: 52,
@@ -561,6 +539,7 @@ class _DesktopMcpEditDialogState extends State<_DesktopMcpEditDialog>
             ],
           ),
         ],
+        if (!isBuiltin) ...[const SizedBox(height: 16), _verifySection()],
         const SizedBox(height: 8),
       ],
     );
@@ -667,11 +646,367 @@ class _DesktopMcpEditDialogState extends State<_DesktopMcpEditDialog>
     return defaultTargetPlatform == TargetPlatform.macOS;
   }
 
+  ({
+    String name,
+    McpTransportType transport,
+    String url,
+    Map<String, String> headers,
+    String? command,
+    List<String> args,
+    Map<String, String> env,
+    String? workingDirectory,
+  })?
+  _buildDraft({required bool validateInputs}) {
+    final l10n = AppLocalizations.of(context)!;
+    final name = _nameCtrl.text.trim().isEmpty ? 'MCP' : _nameCtrl.text.trim();
+    final headers = <String, String>{
+      for (final h in _headers)
+        if (h.key.text.trim().isNotEmpty)
+          h.key.text.trim(): h.value.text.trim(),
+    };
+
+    if (_transport == McpTransportType.stdio) {
+      if (!_isDesktopPlatform()) {
+        if (validateInputs) {
+          showAppSnackBar(
+            context,
+            message: l10n.mcpServerEditSheetStdioOnlyDesktop,
+            type: NotificationType.warning,
+          );
+        }
+        return null;
+      }
+      final parsed = _parseCommandAndArgs(
+        commandText: _cmdCtrl.text.trim(),
+        argsText: _argsCtrl.text.trim(),
+      );
+      if (parsed.command.isEmpty) {
+        if (validateInputs) {
+          showAppSnackBar(
+            context,
+            message: l10n.mcpServerEditSheetStdioCommandRequired,
+            type: NotificationType.warning,
+          );
+        }
+        return null;
+      }
+      final env = <String, String>{
+        for (final e in _env)
+          if (e.key.text.trim().isNotEmpty)
+            e.key.text.trim(): e.value.text.trim(),
+      };
+      final cwd = _cwdCtrl.text.trim();
+      return (
+        name: name,
+        transport: McpTransportType.stdio,
+        url: '',
+        headers: const <String, String>{},
+        command: parsed.command,
+        args: parsed.args,
+        env: env,
+        workingDirectory: cwd.isEmpty ? null : cwd,
+      );
+    }
+
+    final url = _urlCtrl.text.trim();
+    if (url.isEmpty) {
+      if (validateInputs) {
+        showAppSnackBar(
+          context,
+          message: l10n.mcpServerEditSheetUrlRequired,
+          type: NotificationType.warning,
+        );
+      }
+      return null;
+    }
+    return (
+      name: name,
+      transport: _transport,
+      url: url,
+      headers: headers,
+      command: null,
+      args: const <String>[],
+      env: const <String, String>{},
+      workingDirectory: null,
+    );
+  }
+
+  String _draftSignature(
+    ({
+      String name,
+      McpTransportType transport,
+      String url,
+      Map<String, String> headers,
+      String? command,
+      List<String> args,
+      Map<String, String> env,
+      String? workingDirectory,
+    })
+    draft,
+  ) {
+    Map<String, String> sortMap(Map<String, String> m) {
+      final keys = m.keys.toList()..sort();
+      return <String, String>{for (final k in keys) k: m[k]!};
+    }
+
+    return jsonEncode({
+      'transport': draft.transport.name,
+      'url': draft.url,
+      'headers': sortMap(draft.headers),
+      'command': draft.command ?? '',
+      'args': draft.args,
+      'env': sortMap(draft.env),
+      'workingDirectory': draft.workingDirectory ?? '',
+    });
+  }
+
+  Future<bool> _verifyWithDraft(
+    ({
+      String name,
+      McpTransportType transport,
+      String url,
+      Map<String, String> headers,
+      String? command,
+      List<String> args,
+      Map<String, String> env,
+      String? workingDirectory,
+    })
+    draft, {
+    required bool showErrorSnack,
+  }) async {
+    final mcp = context.read<McpProvider>();
+    final signature = _draftSignature(draft);
+    setState(() {
+      _isVerifying = true;
+      _verifyError = null;
+    });
+
+    final result = await mcp.verifyServerDraft(
+      transport: draft.transport,
+      url: draft.url,
+      headers: draft.headers,
+      command: draft.command,
+      args: draft.args,
+      env: draft.env,
+      workingDirectory: draft.workingDirectory,
+    );
+    if (!mounted) return false;
+
+    if (result.ok) {
+      final enabledMap = <String, bool>{};
+      for (final t in result.tools) {
+        enabledMap[t.name] = _verifiedToolEnabled[t.name] ?? t.enabled;
+      }
+      setState(() {
+        _isVerifying = false;
+        _verifyError = null;
+        _verifiedSignature = signature;
+        _verifiedTools = result.tools;
+        _verifiedToolEnabled
+          ..clear()
+          ..addAll(enabledMap);
+      });
+      return true;
+    }
+
+    final error = result.error ?? 'MCP verification failed';
+    setState(() {
+      _isVerifying = false;
+      _verifyError = error;
+      _verifiedSignature = null;
+      _verifiedTools = const <McpToolConfig>[];
+      _verifiedToolEnabled.clear();
+    });
+    if (showErrorSnack) {
+      showAppSnackBar(
+        context,
+        message: error.split('\n').first,
+        type: NotificationType.error,
+      );
+    }
+    return false;
+  }
+
+  List<McpToolConfig> _selectedVerifiedTools() {
+    if (_verifiedTools.isEmpty) return const <McpToolConfig>[];
+    return _verifiedTools
+        .map(
+          (t) => t.copyWith(enabled: _verifiedToolEnabled[t.name] ?? t.enabled),
+        )
+        .toList(growable: false);
+  }
+
+  Widget _verifySection() {
+    final cs = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
+    final draft = _buildDraft(validateInputs: false);
+    final hasFresh =
+        draft != null && _verifiedSignature == _draftSignature(draft);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            FilledButton.tonalIcon(
+              onPressed: _isVerifying
+                  ? null
+                  : () async {
+                      final localDraft = _buildDraft(validateInputs: true);
+                      if (localDraft == null) return;
+                      await _verifyWithDraft(localDraft, showErrorSnack: true);
+                    },
+              icon: _isVerifying
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(lucide.Lucide.RefreshCw, size: 16),
+              label: Text(l10n.mcpServerEditSheetSyncToolsTooltip),
+            ),
+            const SizedBox(width: 10),
+            if (hasFresh && _verifiedTools.isNotEmpty)
+              Text(
+                '${_verifiedTools.length} ${l10n.mcpServerEditSheetTabTools.toLowerCase()}',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: cs.onSurface.withOpacity(0.7),
+                ),
+              ),
+          ],
+        ),
+        if (_verifyError != null) ...[
+          const SizedBox(height: 8),
+          Text(_verifyError!, style: TextStyle(fontSize: 12, color: cs.error)),
+        ],
+        if (hasFresh && _verifiedTools.isEmpty) ...[
+          const SizedBox(height: 8),
+          Text(
+            l10n.mcpServerEditSheetNoToolsHint,
+            style: TextStyle(
+              fontSize: 12,
+              color: cs.onSurface.withOpacity(0.7),
+            ),
+          ),
+        ],
+        if (hasFresh && _verifiedTools.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          Text(
+            l10n.mcpServerEditSheetTabTools,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 8),
+          Column(
+            children: [
+              for (final t in _verifiedTools)
+                _card(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              t.name,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            if ((t.description ?? '').isNotEmpty) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                t.description!,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: cs.onSurface.withOpacity(0.7),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      IosSwitch(
+                        value: _verifiedToolEnabled[t.name] ?? t.enabled,
+                        onChanged: (v) =>
+                            setState(() => _verifiedToolEnabled[t.name] = v),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+
+  ({String command, List<String> args}) _parseCommandAndArgs({
+    required String commandText,
+    required String argsText,
+  }) {
+    if (commandText.isEmpty) return (command: '', args: const <String>[]);
+    final parsedArgs = _parseArgs(argsText);
+    if (parsedArgs.isNotEmpty) return (command: commandText, args: parsedArgs);
+    final inline = _tokenizeCommandLine(commandText);
+    if (inline.isEmpty) return (command: '', args: const <String>[]);
+    if (inline.length == 1)
+      return (command: inline.first, args: const <String>[]);
+    return (command: inline.first, args: inline.sublist(1));
+  }
+
   List<String> _parseArgs(String text) {
     if (text.isEmpty) return const <String>[];
-    // Simple whitespace split; users can provide quoted args as a single token for now.
-    // For advanced quoting, consider a shell-like parser later.
-    return text.split(RegExp(r"\s+")).where((e) => e.isNotEmpty).toList();
+    return _tokenizeCommandLine(text);
+  }
+
+  List<String> _tokenizeCommandLine(String text) {
+    if (text.isEmpty) return const <String>[];
+    final tokens = <String>[];
+    final buf = StringBuffer();
+    var inSingle = false;
+    var inDouble = false;
+    var escaping = false;
+
+    bool isWhitespace(String ch) => ch == ' ' || ch == '\t' || ch == '\n';
+
+    void flush() {
+      if (buf.isEmpty) return;
+      tokens.add(buf.toString());
+      buf.clear();
+    }
+
+    for (final rune in text.runes) {
+      final ch = String.fromCharCode(rune);
+      if (escaping) {
+        buf.write(ch);
+        escaping = false;
+        continue;
+      }
+      if (ch == '\\' && !inSingle) {
+        escaping = true;
+        continue;
+      }
+      if (ch == '"' && !inSingle) {
+        inDouble = !inDouble;
+        continue;
+      }
+      if (ch == "'" && !inDouble) {
+        inSingle = !inSingle;
+        continue;
+      }
+      if (isWhitespace(ch) && !inSingle && !inDouble) {
+        flush();
+        continue;
+      }
+      buf.write(ch);
+    }
+    if (escaping) {
+      buf.write('\\');
+    }
+    flush();
+    return tokens;
   }
 
   @override
