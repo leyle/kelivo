@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:mcp_client/mcp_client.dart' as mcp;
@@ -817,14 +818,55 @@ class McpProvider extends ChangeNotifier {
       if (cmd == null || cmd.isEmpty) {
         throw StateError('STDIO command is empty');
       }
+      final resolvedCmd = _resolveExecutableForStdio(cmd);
       return mcp.TransportConfig.stdio(
-        command: cmd,
+        command: resolvedCmd,
         arguments: server.args,
         workingDirectory: server.workingDirectory,
         environment: server.env.isEmpty ? null : server.env,
       );
     }
     throw StateError('Unsupported transport: ${server.transport}');
+  }
+
+  String _resolveExecutableForStdio(String command) {
+    final trimmed = command.trim();
+    if (trimmed.isEmpty) return trimmed;
+    // Absolute/relative path explicitly provided by user.
+    if (trimmed.contains('/')) return trimmed;
+
+    final candidates = <String>[];
+    final envPath = Platform.environment['PATH'] ?? '';
+    if (envPath.isNotEmpty) {
+      candidates.addAll(
+        envPath
+            .split(':')
+            .where((p) => p.trim().isNotEmpty)
+            .map((p) => '$p/$trimmed'),
+      );
+    }
+    final home = Platform.environment['HOME'] ?? '';
+    if (home.isNotEmpty) {
+      candidates.addAll(<String>[
+        '$home/.local/bin/$trimmed',
+        '$home/.cargo/bin/$trimmed',
+        '$home/.pyenv/shims/$trimmed',
+      ]);
+    }
+    candidates.addAll(<String>[
+      '/opt/homebrew/bin/$trimmed',
+      '/usr/local/bin/$trimmed',
+      '/usr/bin/$trimmed',
+      '/bin/$trimmed',
+    ]);
+
+    for (final c in candidates) {
+      try {
+        final f = File(c);
+        if (f.existsSync()) return c;
+      } catch (_) {}
+    }
+    return trimmed;
   }
 
   Future<mcp.Client> _connectClientForServer(McpServerConfig server) async {
