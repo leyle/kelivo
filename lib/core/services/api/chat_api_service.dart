@@ -953,6 +953,64 @@ class ChatApiService {
     return 'high';
   }
 
+  static bool _supportsClaudeAdaptiveThinking(String modelId) {
+    final m = modelId.toLowerCase();
+    if (!m.contains('claude')) return false;
+    // Claude 4.6+ uses adaptive thinking + effort instead of manual budget tokens.
+    return m.contains('4-6') || m.contains('4.6');
+  }
+
+  static void _applyClaudeThinkingConfig({
+    required Map<String, dynamic> body,
+    required String modelId,
+    required bool isReasoning,
+    required int? thinkingBudget,
+  }) {
+    body.remove('thinking');
+    body.remove('output_config');
+    if (!isReasoning) return;
+
+    final effort = _effortForBudget(thinkingBudget);
+    if (_supportsClaudeAdaptiveThinking(modelId)) {
+      if (effort == 'off') return;
+      body['thinking'] = {'type': 'adaptive'};
+      if (effort != 'auto') {
+        body['output_config'] = {'effort': effort};
+      }
+      return;
+    }
+
+    int maxTok = (body['max_tokens'] as num?)?.toInt() ?? 4096;
+    if (maxTok <= 1024) {
+      // Claude manual mode requires budget_tokens >= 1024 and < max_tokens.
+      maxTok = 2048;
+      body['max_tokens'] = maxTok;
+    }
+
+    int? budgetTokens;
+    if (_isOff(thinkingBudget)) {
+      budgetTokens = null;
+    } else if (thinkingBudget != null && thinkingBudget > 0) {
+      budgetTokens = thinkingBudget;
+      if (maxTok <= budgetTokens) {
+        maxTok = budgetTokens + 1024;
+        body['max_tokens'] = maxTok;
+      }
+    } else {
+      // Legacy Claude models don't support native auto thinking; map auto/default to a safe budget.
+      budgetTokens = maxTok > 2048 ? 2048 : 1024;
+      if (maxTok <= budgetTokens) {
+        maxTok = budgetTokens + 1;
+        body['max_tokens'] = maxTok;
+      }
+    }
+
+    body['thinking'] = {
+      'type': budgetTokens == null ? 'disabled' : 'enabled',
+      if (budgetTokens != null) 'budget_tokens': budgetTokens,
+    };
+  }
+
   // Clean JSON Schema for Google Gemini API strict validation
   // Google requires array types to have 'items' field
   static Map<String, dynamic> _cleanSchemaForGemini(Map<String, dynamic> schema) {
@@ -3877,13 +3935,13 @@ class ChatApiService {
         if (topP != null) 'top_p': topP,
         if (allTools.isNotEmpty) 'tools': allTools,
         if (allTools.isNotEmpty) 'tool_choice': {'type': 'auto'},
-        if (isReasoning)
-          'thinking': {
-            'type': (thinkingBudget == 0) ? 'disabled' : 'enabled',
-            if (thinkingBudget != null && thinkingBudget > 0)
-              'budget_tokens': thinkingBudget,
-          },
       };
+      _applyClaudeThinkingConfig(
+        body: body,
+        modelId: upstreamModelId,
+        isReasoning: isReasoning,
+        thinkingBudget: thinkingBudget,
+      );
       final extraClaude = _customBody(config, modelId);
       if (extraClaude.isNotEmpty) (body as Map<String, dynamic>).addAll(extraClaude);
       if (extraBody != null && extraBody.isNotEmpty) {
