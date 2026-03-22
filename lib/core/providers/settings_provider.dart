@@ -17,6 +17,7 @@ import '../services/haptics.dart';
 import '../../utils/app_directories.dart';
 import '../../utils/sandbox_path_resolver.dart';
 import '../../utils/avatar_cache.dart';
+import '../utils/openai_model_compat.dart';
 
 // Desktop: topic list position
 enum DesktopTopicPosition { left, right }
@@ -230,6 +231,29 @@ class SettingsProvider extends ChangeNotifier {
     if (existed != null) return existed;
     // Return a non-persisted, default-constructed config for read-only scenarios.
     return ProviderConfig.defaultsFor(key, displayName: defaultName);
+  }
+
+  String resolveOpenAIUpstreamModelId(String providerKey, String modelId) {
+    final cfg = getProviderConfig(providerKey);
+    final kind = ProviderConfig.classify(
+      cfg.id,
+      explicitType: cfg.providerType,
+    );
+    if (kind != ProviderKind.openai) return modelId;
+    final rawOv = cfg.modelOverrides[modelId];
+    final ov = rawOv is Map ? rawOv.cast<String, dynamic>() : null;
+    return resolveApiModelIdOverride(ov, modelId);
+  }
+
+  bool supportsOpenAIXhighReasoning(String providerKey, String modelId) {
+    final cfg = getProviderConfig(providerKey);
+    final kind = ProviderConfig.classify(
+      cfg.id,
+      explicitType: cfg.providerType,
+    );
+    if (kind != ProviderKind.openai) return false;
+    final modelForCheck = resolveOpenAIUpstreamModelId(providerKey, modelId);
+    return openAISupportsXhighReasoning(modelForCheck);
   }
 
   // Explicitly ensure a provider config exists in memory (without persisting to storage).

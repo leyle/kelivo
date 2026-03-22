@@ -1811,7 +1811,11 @@ class _BasicSettingsTabState extends State<_BasicSettingsTab> {
                       currentBudget,
                     );
                   }
-                  await showReasoningBudgetSheet(context);
+                  await showReasoningBudgetSheet(
+                    context,
+                    modelProvider: a.chatModelProvider,
+                    modelId: a.chatModelId,
+                  );
                   final chosen = context
                       .read<SettingsProvider>()
                       .thinkingBudget;
@@ -2711,7 +2715,8 @@ class _BasicSettingsTabState extends State<_BasicSettingsTab> {
                               await context
                                   .read<AssistantProvider>()
                                   .updateAssistant(
-                                      a.copyWith(excludeAssistantMessages: v));
+                                    a.copyWith(excludeAssistantMessages: v),
+                                  );
                             },
                           ),
                         ],
@@ -7600,9 +7605,9 @@ class _DesktopAssistantBasicPaneState
                                 contextMessageSize: _clampContextMessages(v),
                               ),
                             ),
-                        ),
                       ),
                     ),
+                  ),
                   if (a.limitContextMessages) ...[
                     const SizedBox(height: 16),
                     headerWithSwitch(
@@ -7612,10 +7617,9 @@ class _DesktopAssistantBasicPaneState
                       ),
                       value: a.excludeAssistantMessages,
                       onChanged: (v) {
-                        context
-                            .read<AssistantProvider>()
-                            .updateAssistant(
-                                a.copyWith(excludeAssistantMessages: v));
+                        context.read<AssistantProvider>().updateAssistant(
+                          a.copyWith(excludeAssistantMessages: v),
+                        );
                       },
                     ),
                   ],

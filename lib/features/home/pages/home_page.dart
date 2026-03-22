@@ -1142,10 +1142,23 @@ class _HomePageState extends State<HomePage>
   }
 
   Future<void> _openReasoningSettings() async {
+    final settings = context.read<SettingsProvider>();
+    final assistant = context.read<AssistantProvider>().currentAssistant;
     if (PlatformUtils.isDesktop) {
-      await showDesktopReasoningBudgetPopover(context, anchorKey: _inputBarKey);
+      await showDesktopReasoningBudgetPopover(
+        context,
+        anchorKey: _inputBarKey,
+        modelProvider:
+            assistant?.chatModelProvider ?? settings.currentModelProvider,
+        modelId: assistant?.chatModelId ?? settings.currentModelId,
+      );
     } else {
-      await showReasoningBudgetSheet(context);
+      await showReasoningBudgetSheet(
+        context,
+        modelProvider:
+            assistant?.chatModelProvider ?? settings.currentModelProvider,
+        modelId: assistant?.chatModelId ?? settings.currentModelId,
+      );
     }
   }
 
