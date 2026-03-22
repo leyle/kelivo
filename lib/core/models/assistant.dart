@@ -3,19 +3,31 @@ import 'assistant_regex.dart';
 import 'preset_message.dart';
 
 class Assistant {
+  static const int defaultRecentChatsSummaryMessageCount = 5;
+  static const List<int> recentChatsSummaryMessageCountOptions = <int>[
+    1,
+    3,
+    5,
+    10,
+    20,
+    50,
+  ];
+
   final String id;
   final String name;
   final bool isEnabled; // controls assistant visibility in sidebar
   final String? avatar; // path/url/base64, null for initial-letter avatar
   final bool
   useAssistantAvatar; // replace model icon in chat with assistant avatar
+  final bool useAssistantName; // replace model name in chat with assistant name
   final String? chatModelProvider; // null -> use global default
   final String? chatModelId; // null -> use global default
   final double? temperature; // null to disable; else 0.0 - 2.0
   final double? topP; // null to disable; else 0.0 - 1.0
   final int contextMessageSize; // number of previous messages to include
   final bool limitContextMessages; // whether to enforce contextMessageSize
-  final bool excludeAssistantMessages; // whether to exclude assistant responses from context
+  final bool
+  excludeAssistantMessages; // whether to exclude assistant responses from context
   final bool streamOutput; // streaming responses
   final int?
   thinkingBudget; // null = use global/default; 0=off; >0 tokens budget
@@ -32,6 +44,7 @@ class Assistant {
   // Memory features
   final bool enableMemory; // assistant memory feature switch
   final bool enableRecentChatsReference; // include recent chat titles in prompt
+  final int recentChatsSummaryMessageCount; // refresh summary after N messages
   // Preset conversation messages (ordered)
   final List<PresetMessage> presetMessages;
   // Regex replacement rules
@@ -45,6 +58,7 @@ class Assistant {
     this.isEnabled = true,
     this.avatar,
     this.useAssistantAvatar = false,
+    this.useAssistantName = false,
     this.chatModelProvider,
     this.chatModelId,
     this.temperature,
@@ -64,6 +78,7 @@ class Assistant {
     this.customBody = const <Map<String, String>>[],
     this.enableMemory = false,
     this.enableRecentChatsReference = false,
+    this.recentChatsSummaryMessageCount = defaultRecentChatsSummaryMessageCount,
     this.presetMessages = const <PresetMessage>[],
     this.regexRules = const <AssistantRegex>[],
     this.chatFontScale,
@@ -75,6 +90,7 @@ class Assistant {
     bool? isEnabled,
     String? avatar,
     bool? useAssistantAvatar,
+    bool? useAssistantName,
     String? chatModelProvider,
     String? chatModelId,
     double? temperature,
@@ -94,6 +110,7 @@ class Assistant {
     List<Map<String, String>>? customBody,
     bool? enableMemory,
     bool? enableRecentChatsReference,
+    int? recentChatsSummaryMessageCount,
     List<PresetMessage>? presetMessages,
     List<AssistantRegex>? regexRules,
     double? chatFontScale,
@@ -112,6 +129,7 @@ class Assistant {
       isEnabled: isEnabled ?? this.isEnabled,
       avatar: clearAvatar ? null : (avatar ?? this.avatar),
       useAssistantAvatar: useAssistantAvatar ?? this.useAssistantAvatar,
+      useAssistantName: useAssistantName ?? this.useAssistantName,
       chatModelProvider: clearChatModel
           ? null
           : (chatModelProvider ?? this.chatModelProvider),
@@ -120,7 +138,8 @@ class Assistant {
       topP: clearTopP ? null : (topP ?? this.topP),
       contextMessageSize: contextMessageSize ?? this.contextMessageSize,
       limitContextMessages: limitContextMessages ?? this.limitContextMessages,
-      excludeAssistantMessages: excludeAssistantMessages ?? this.excludeAssistantMessages,
+      excludeAssistantMessages:
+          excludeAssistantMessages ?? this.excludeAssistantMessages,
       streamOutput: streamOutput ?? this.streamOutput,
       thinkingBudget: clearThinkingBudget
           ? null
@@ -136,6 +155,8 @@ class Assistant {
       enableMemory: enableMemory ?? this.enableMemory,
       enableRecentChatsReference:
           enableRecentChatsReference ?? this.enableRecentChatsReference,
+      recentChatsSummaryMessageCount:
+          recentChatsSummaryMessageCount ?? this.recentChatsSummaryMessageCount,
       presetMessages: presetMessages ?? this.presetMessages,
       regexRules: regexRules ?? this.regexRules,
       chatFontScale: clearChatFontScale
@@ -150,6 +171,7 @@ class Assistant {
     'isEnabled': isEnabled,
     'avatar': avatar,
     'useAssistantAvatar': useAssistantAvatar,
+    'useAssistantName': useAssistantName,
     'chatModelProvider': chatModelProvider,
     'chatModelId': chatModelId,
     'temperature': temperature,
@@ -169,6 +191,7 @@ class Assistant {
     'customBody': customBody,
     'enableMemory': enableMemory,
     'enableRecentChatsReference': enableRecentChatsReference,
+    'recentChatsSummaryMessageCount': recentChatsSummaryMessageCount,
     'presetMessages': PresetMessage.encodeList(presetMessages),
     'regexRules': regexRules.map((e) => e.toJson()).toList(),
     'chatFontScale': chatFontScale,
@@ -180,13 +203,15 @@ class Assistant {
     isEnabled: json['isEnabled'] as bool? ?? true,
     avatar: json['avatar'] as String?,
     useAssistantAvatar: json['useAssistantAvatar'] as bool? ?? false,
+    useAssistantName: json['useAssistantName'] as bool? ?? false,
     chatModelProvider: json['chatModelProvider'] as String?,
     chatModelId: json['chatModelId'] as String?,
     temperature: (json['temperature'] as num?)?.toDouble(),
     topP: (json['topP'] as num?)?.toDouble(),
     contextMessageSize: (json['contextMessageSize'] as num?)?.toInt() ?? 64,
     limitContextMessages: json['limitContextMessages'] as bool? ?? true,
-    excludeAssistantMessages: json['excludeAssistantMessages'] as bool? ?? false,
+    excludeAssistantMessages:
+        json['excludeAssistantMessages'] as bool? ?? false,
     streamOutput: json['streamOutput'] as bool? ?? true,
     thinkingBudget: (json['thinkingBudget'] as num?)?.toInt(),
     maxTokens: (json['maxTokens'] as num?)?.toInt(),
@@ -229,6 +254,13 @@ class Assistant {
     enableMemory: json['enableMemory'] as bool? ?? false,
     enableRecentChatsReference:
         json['enableRecentChatsReference'] as bool? ?? false,
+    recentChatsSummaryMessageCount: (() {
+      final raw = (json['recentChatsSummaryMessageCount'] as num?)?.toInt();
+      if (raw == null || raw < 1) {
+        return defaultRecentChatsSummaryMessageCount;
+      }
+      return raw;
+    })(),
     presetMessages: (() {
       try {
         return PresetMessage.decodeList(json['presetMessages']);

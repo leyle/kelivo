@@ -92,7 +92,9 @@ String _getRoleName(BuildContext context, ChatMessage msg) {
   } else if (msg.role == 'assistant') {
     // Check if using assistant  
     final assistant = context.read<AssistantProvider>().currentAssistant;
-    if (assistant != null && assistant.useAssistantAvatar == true && assistant.name.trim().isNotEmpty) {
+    if (assistant != null &&
+        (assistant.useAssistantAvatar == true || assistant.useAssistantName == true) &&
+        assistant.name.trim().isNotEmpty) {
       return assistant.name.trim();
     }
     // Otherwise use model display name
@@ -2478,9 +2480,10 @@ class _AssistantHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final assistant = context.read<AssistantProvider>().currentAssistant;
-    final useAssist = (assistant?.useAssistantAvatar == true);
+    final useAssistAvatar = (assistant?.useAssistantAvatar == true);
+    final useAssistName = (assistant?.useAssistantName == true);
     final name = () {
-      if (useAssist && (assistant?.name.trim().isNotEmpty ?? false)) {
+      if ((useAssistAvatar || useAssistName) && (assistant?.name.trim().isNotEmpty ?? false)) {
         return assistant!.name.trim();
       }
       return _modelDisplayName(context, message) ?? AppLocalizations.of(context)!.messageExportSheetAssistant;
@@ -2490,7 +2493,7 @@ class _AssistantHeader extends StatelessWidget {
     final double iconSize = isDesktop ? 22.0 : 28.0;
     final double nameFontSize = isDesktop ? 11.0 : 13.0;
 
-    final Widget leading = useAssist
+    final Widget leading = useAssistAvatar
         ? _AssistantAvatarSmall(assistant: assistant, size: iconSize)
         : _ModelIconSmall(providerKey: message.providerId, modelId: message.modelId, size: iconSize);
 

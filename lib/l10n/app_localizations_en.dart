@@ -644,7 +644,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get assistantEditUseAssistantAvatarSubtitle =>
-      'Use assistant avatar/name instead of model';
+      'Use assistant avatar instead of model avatar';
+
+  @override
+  String get assistantEditUseAssistantNameTitle => 'Use Assistant Name';
 
   @override
   String get assistantEditChatModelTitle => 'Chat Model';
@@ -1665,6 +1668,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Render reasoning (thinking) with Markdown';
 
   @override
+  String get displaySettingsPageEnableAssistantMarkdownTitle =>
+      'Render assistant messages with Markdown';
+
+  @override
   String get displaySettingsPageMobileCodeBlockWrapTitle =>
       'Mobile Code Block Word Wrap';
 
@@ -2094,6 +2101,34 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get defaultModelPageSummaryModelSubtitle =>
       'Used for generating conversation summaries; prefer fast and cheap models';
+
+  @override
+  String get assistantEditRecentChatsSummaryFrequencyTitle =>
+      'Summary Refresh Frequency';
+
+  @override
+  String get assistantEditRecentChatsSummaryFrequencyDescription =>
+      'Refresh recent-chat summaries after the selected number of new messages.';
+
+  @override
+  String assistantEditRecentChatsSummaryFrequencyOption(int count) {
+    return 'Every $count';
+  }
+
+  @override
+  String get assistantEditRecentChatsSummaryFrequencyCustomButton => 'Custom';
+
+  @override
+  String get assistantEditRecentChatsSummaryFrequencyCustomLabel =>
+      'New message count';
+
+  @override
+  String get assistantEditRecentChatsSummaryFrequencyCustomHint =>
+      'Enter a number greater than 0';
+
+  @override
+  String get assistantEditRecentChatsSummaryFrequencyCustomInvalid =>
+      'Please enter a whole number greater than 0';
 
   @override
   String get defaultModelPageTranslateModelTitle => 'Translation Model';

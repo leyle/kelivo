@@ -4632,6 +4632,8 @@ class _DisplaySettingsBody extends StatelessWidget {
                   _RowDivider(),
                   _ToggleRowReasoningMarkdown(),
                   _RowDivider(),
+                  _ToggleRowAssistantMarkdown(),
+                  _RowDivider(),
                   _AutoCollapseCodeBlocksSection(),
                 ],
               ),
@@ -6699,6 +6701,20 @@ class _ToggleRowReasoningMarkdown extends StatelessWidget {
       label: l10n.displaySettingsPageEnableReasoningMarkdownTitle,
       value: sp.enableReasoningMarkdown,
       onChanged: (v) => context.read<SettingsProvider>().setEnableReasoningMarkdown(v),
+    );
+  }
+}
+
+class _ToggleRowAssistantMarkdown extends StatelessWidget {
+  const _ToggleRowAssistantMarkdown();
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final sp = context.watch<SettingsProvider>();
+    return _ToggleRow(
+      label: l10n.displaySettingsPageEnableAssistantMarkdownTitle,
+      value: sp.enableAssistantMarkdown,
+      onChanged: (v) => context.read<SettingsProvider>().setEnableAssistantMarkdown(v),
     );
   }
 }

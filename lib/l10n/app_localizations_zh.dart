@@ -632,8 +632,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get assistantEditUseAssistantAvatarTitle => '使用助手头像';
 
   @override
-  String get assistantEditUseAssistantAvatarSubtitle =>
-      '在聊天中使用助手头像和名字而不是模型头像和名字';
+  String get assistantEditUseAssistantAvatarSubtitle => '在聊天中使用助手头像替代模型头像';
+
+  @override
+  String get assistantEditUseAssistantNameTitle => '使用助手名字';
 
   @override
   String get assistantEditChatModelTitle => '聊天模型';
@@ -1615,6 +1617,10 @@ class AppLocalizationsZh extends AppLocalizations {
       '思维链 Markdown 渲染';
 
   @override
+  String get displaySettingsPageEnableAssistantMarkdownTitle =>
+      '助手消息 Markdown 渲染';
+
+  @override
   String get displaySettingsPageMobileCodeBlockWrapTitle => '移动端代码块自动换行';
 
   @override
@@ -2026,6 +2032,32 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get defaultModelPageSummaryModelSubtitle => '用于生成对话摘要的模型，推荐使用快速且便宜的模型';
+
+  @override
+  String get assistantEditRecentChatsSummaryFrequencyTitle => '摘要更新频率';
+
+  @override
+  String get assistantEditRecentChatsSummaryFrequencyDescription =>
+      '累计达到所选条数的新消息后，会更新历史聊天摘要。';
+
+  @override
+  String assistantEditRecentChatsSummaryFrequencyOption(int count) {
+    return '每 $count 条';
+  }
+
+  @override
+  String get assistantEditRecentChatsSummaryFrequencyCustomButton => '自定义';
+
+  @override
+  String get assistantEditRecentChatsSummaryFrequencyCustomLabel => '新消息条数';
+
+  @override
+  String get assistantEditRecentChatsSummaryFrequencyCustomHint =>
+      '请输入大于 0 的整数';
+
+  @override
+  String get assistantEditRecentChatsSummaryFrequencyCustomInvalid =>
+      '请输入大于 0 的整数';
 
   @override
   String get defaultModelPageTranslateModelTitle => '翻译模型';
@@ -4286,8 +4318,10 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get assistantEditUseAssistantAvatarTitle => '使用助手头像';
 
   @override
-  String get assistantEditUseAssistantAvatarSubtitle =>
-      '在聊天中使用助手头像和名字而不是模型头像和名字';
+  String get assistantEditUseAssistantAvatarSubtitle => '在聊天中使用助手头像替代模型头像';
+
+  @override
+  String get assistantEditUseAssistantNameTitle => '使用助手名字';
 
   @override
   String get assistantEditChatModelTitle => '聊天模型';
@@ -5269,6 +5303,10 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
       '思维链 Markdown 渲染';
 
   @override
+  String get displaySettingsPageEnableAssistantMarkdownTitle =>
+      '助手消息 Markdown 渲染';
+
+  @override
   String get displaySettingsPageMobileCodeBlockWrapTitle => '移动端代码块自动换行';
 
   @override
@@ -5674,6 +5712,32 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get defaultModelPageTitleModelSubtitle => '用于总结对话标题的模型，推荐使用快速且便宜的模型';
+
+  @override
+  String get assistantEditRecentChatsSummaryFrequencyTitle => '摘要更新频率';
+
+  @override
+  String get assistantEditRecentChatsSummaryFrequencyDescription =>
+      '累计达到所选条数的新消息后，会更新历史聊天摘要。';
+
+  @override
+  String assistantEditRecentChatsSummaryFrequencyOption(int count) {
+    return '每 $count 条';
+  }
+
+  @override
+  String get assistantEditRecentChatsSummaryFrequencyCustomButton => '自定义';
+
+  @override
+  String get assistantEditRecentChatsSummaryFrequencyCustomLabel => '新消息条数';
+
+  @override
+  String get assistantEditRecentChatsSummaryFrequencyCustomHint =>
+      '请输入大于 0 的整数';
+
+  @override
+  String get assistantEditRecentChatsSummaryFrequencyCustomInvalid =>
+      '请输入大于 0 的整数';
 
   @override
   String get defaultModelPageTranslateModelTitle => '翻译模型';
@@ -7905,8 +7969,10 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get assistantEditUseAssistantAvatarTitle => '使用助理頭像';
 
   @override
-  String get assistantEditUseAssistantAvatarSubtitle =>
-      '在聊天中使用助理頭像和名字而不是模型頭像和名字';
+  String get assistantEditUseAssistantAvatarSubtitle => '在聊天中使用助理頭像取代模型頭像';
+
+  @override
+  String get assistantEditUseAssistantNameTitle => '使用助理名字';
 
   @override
   String get assistantEditChatModelTitle => '聊天模型';
@@ -8887,6 +8953,10 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
       '思维鏈 Markdown 渲染';
 
   @override
+  String get displaySettingsPageEnableAssistantMarkdownTitle =>
+      '助手訊息 Markdown 渲染';
+
+  @override
   String get displaySettingsPageMobileCodeBlockWrapTitle => '行動端程式碼區塊自動換行';
 
   @override
@@ -9298,6 +9368,32 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get defaultModelPageSummaryModelSubtitle => '用於生成對話摘要的模型，推薦使用快速且便宜的模型';
+
+  @override
+  String get assistantEditRecentChatsSummaryFrequencyTitle => '摘要更新頻率';
+
+  @override
+  String get assistantEditRecentChatsSummaryFrequencyDescription =>
+      '累計達到所選條數的新訊息後，會更新歷史聊天摘要。';
+
+  @override
+  String assistantEditRecentChatsSummaryFrequencyOption(int count) {
+    return '每 $count 則';
+  }
+
+  @override
+  String get assistantEditRecentChatsSummaryFrequencyCustomButton => '自訂';
+
+  @override
+  String get assistantEditRecentChatsSummaryFrequencyCustomLabel => '新訊息數量';
+
+  @override
+  String get assistantEditRecentChatsSummaryFrequencyCustomHint =>
+      '請輸入大於 0 的整數';
+
+  @override
+  String get assistantEditRecentChatsSummaryFrequencyCustomInvalid =>
+      '請輸入大於 0 的整數';
 
   @override
   String get defaultModelPageTranslateModelTitle => '翻譯模型';

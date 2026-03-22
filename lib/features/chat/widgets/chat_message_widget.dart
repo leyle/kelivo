@@ -45,6 +45,7 @@ class ChatMessageWidget extends StatefulWidget {
   final bool showModelIcon;
   // Assistant identity override
   final bool useAssistantAvatar;
+  final bool useAssistantName;
   final String? assistantName;
   final String? assistantAvatar; // path/url/emoji; null => use initial
   final bool showUserAvatar;
@@ -85,6 +86,7 @@ class ChatMessageWidget extends StatefulWidget {
     this.modelIcon,
     this.showModelIcon = true,
     this.useAssistantAvatar = false,
+    this.useAssistantName = false,
     this.assistantName,
     this.assistantAvatar,
     this.showUserAvatar = true,
@@ -304,8 +306,8 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   String _resolveModelDisplayName(SettingsProvider settings) {
     final modelId = widget.message.modelId;
     if (modelId == null || modelId.trim().isEmpty) {
-      // Prefer assistant's name when model id is missing (e.g., preset assistant messages)
-      return _assistantNameFallback();
+      return AppLocalizations.of(context)?.messageExportSheetAssistant ??
+          'Assistant';
     }
 
     final providerId = widget.message.providerId;
@@ -1319,11 +1321,11 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (settings.showModelNameTimestamp)
-                    widget.useAssistantAvatar
+                    widget.useAssistantName
                         ? Text(
                             widget.assistantName?.trim().isNotEmpty == true
                                 ? widget.assistantName!.trim()
-                                : 'Assistant',
+                                : _assistantNameFallback(),
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w500,
@@ -1564,15 +1566,24 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                                     fontSize: baseAssistant,
                                     height: 1.5,
                                   ),
-                                  child: MarkdownWithCodeHighlight(
-                                    text: visualContent,
-                                    onCitationTap: (id) =>
-                                        _handleCitationTap(id),
-                                    baseStyle: TextStyle(
-                                      fontSize: baseAssistant,
-                                      height: 1.5,
-                                    ),
-                                  ),
+                                  child: settings.enableAssistantMarkdown
+                                      ? MarkdownWithCodeHighlight(
+                                          text: visualContent,
+                                          onCitationTap: (id) =>
+                                              _handleCitationTap(id),
+                                          baseStyle: TextStyle(
+                                            fontSize: baseAssistant,
+                                            height: 1.5,
+                                          ),
+                                        )
+                                      : Text(
+                                          visualContent,
+                                          style: TextStyle(
+                                            fontSize: baseAssistant,
+                                            height: 1.5,
+                                            color: cs.onSurface,
+                                          ),
+                                        ),
                                 ),
                               ),
                             );
@@ -1711,18 +1722,30 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                                                     height: 1.4,
                                                   ),
                                                   child:
-                                                      MarkdownWithCodeHighlight(
-                                                        text: translationText!,
-                                                        onCitationTap: (id) =>
-                                                            _handleCitationTap(
-                                                              id,
-                                                            ),
-                                                        baseStyle: TextStyle(
-                                                          fontSize:
-                                                              baseTranslation,
-                                                          height: 1.4,
+                                                      settings
+                                                          .enableAssistantMarkdown
+                                                      ? MarkdownWithCodeHighlight(
+                                                          text:
+                                                              translationText!,
+                                                          onCitationTap: (id) =>
+                                                              _handleCitationTap(
+                                                                id,
+                                                              ),
+                                                          baseStyle: TextStyle(
+                                                            fontSize:
+                                                                baseTranslation,
+                                                            height: 1.4,
+                                                          ),
+                                                        )
+                                                      : Text(
+                                                          translationText!,
+                                                          style: TextStyle(
+                                                            fontSize:
+                                                                baseTranslation,
+                                                            height: 1.4,
+                                                            color: cs.onSurface,
+                                                          ),
                                                         ),
-                                                      ),
                                                 );
                                               },
                                             ),

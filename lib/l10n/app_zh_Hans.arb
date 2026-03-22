@@ -134,7 +134,8 @@
   "assistantEditDeleteTooltip": "删除",
   "assistantEditAssistantNameLabel": "助手名称",
   "assistantEditUseAssistantAvatarTitle": "使用助手头像",
-  "assistantEditUseAssistantAvatarSubtitle": "在聊天中使用助手头像和名字而不是模型头像和名字",
+  "assistantEditUseAssistantAvatarSubtitle": "在聊天中使用助手头像替代模型头像",
+  "assistantEditUseAssistantNameTitle": "使用助手名字",
   "assistantEditChatModelTitle": "聊天模型",
   "assistantEditChatModelSubtitle": "为该助手设置默认聊天模型（未设置时使用全局默认）",
   "assistantEditTemperatureDescription": "控制输出的随机性，范围 0–2",
@@ -695,6 +696,20 @@
   "defaultModelPageChatModelSubtitle": "全局默认的聊天模型",
   "defaultModelPageTitleModelTitle": "标题总结模型",
   "defaultModelPageTitleModelSubtitle": "用于总结对话标题的模型，推荐使用快速且便宜的模型",
+  "assistantEditRecentChatsSummaryFrequencyTitle": "摘要更新频率",
+  "assistantEditRecentChatsSummaryFrequencyDescription": "累计达到所选条数的新消息后，会更新历史聊天摘要。",
+  "assistantEditRecentChatsSummaryFrequencyOption": "每 {count} 条",
+  "@assistantEditRecentChatsSummaryFrequencyOption": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "assistantEditRecentChatsSummaryFrequencyCustomButton": "自定义",
+  "assistantEditRecentChatsSummaryFrequencyCustomLabel": "新消息条数",
+  "assistantEditRecentChatsSummaryFrequencyCustomHint": "请输入大于 0 的整数",
+  "assistantEditRecentChatsSummaryFrequencyCustomInvalid": "请输入大于 0 的整数",
   "defaultModelPageTranslateModelTitle": "翻译模型",
   "defaultModelPageTranslateModelSubtitle": "用于翻译消息内容的模型，推荐使用快速且准确的模型",
   "defaultModelPageOcrModelTitle": "OCR 模型",
@@ -1101,6 +1116,7 @@
   "displaySettingsPageEnableMathTitle": "启用数学公式渲染",
   "displaySettingsPageEnableUserMarkdownTitle": "用户消息 Markdown 渲染",
   "displaySettingsPageEnableReasoningMarkdownTitle": "思维链 Markdown 渲染",
+  "displaySettingsPageEnableAssistantMarkdownTitle": "助手消息 Markdown 渲染",
   "displaySettingsPageEnableMathSubtitle": "渲染 LaTeX 数学公式（行内与块级）",
   "displaySettingsPageMobileCodeBlockWrapTitle": "移动端代码块自动换行",
   "displaySettingsPageAutoCollapseCodeBlockTitle": "自动折叠代码块",

@@ -505,6 +505,141 @@ class _MemoryTab extends StatelessWidget {
     );
   }
 
+  Future<void> _showSummaryRefreshFrequencyDialog(
+    BuildContext context,
+    Assistant assistant,
+  ) async {
+    final l10n = AppLocalizations.of(context)!;
+    final ap = context.read<AssistantProvider>();
+    final options = Assistant.recentChatsSummaryMessageCountOptions;
+    final currentValue = assistant.recentChatsSummaryMessageCount;
+    final customController = TextEditingController(
+      text: options.contains(currentValue) ? '' : currentValue.toString(),
+    );
+
+    try {
+      await showDialog<void>(
+        context: context,
+        builder: (ctx) {
+          int selectedValue = options.contains(currentValue)
+              ? currentValue
+              : -1;
+
+          int? customValue() {
+            final parsed = int.tryParse(customController.text.trim());
+            if (parsed == null || parsed < 1) return null;
+            return parsed;
+          }
+
+          return StatefulBuilder(
+            builder: (ctx, setLocal) {
+              final resolvedValue = selectedValue == -1
+                  ? customValue()
+                  : selectedValue;
+              return AlertDialog(
+                title: Text(l10n.assistantEditRecentChatsSummaryFrequencyTitle),
+                content: SizedBox(
+                  width: 360,
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          l10n.assistantEditRecentChatsSummaryFrequencyDescription,
+                          style: TextStyle(
+                            fontSize: 12,
+                            height: 1.4,
+                            color: Theme.of(
+                              ctx,
+                            ).colorScheme.onSurface.withOpacity(0.68),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        ...options.map(
+                          (count) => RadioListTile<int>(
+                            dense: true,
+                            value: count,
+                            groupValue: selectedValue,
+                            title: Text(
+                              l10n.assistantEditRecentChatsSummaryFrequencyOption(
+                                count,
+                              ),
+                            ),
+                            onChanged: (_) {
+                              setLocal(() => selectedValue = count);
+                            },
+                          ),
+                        ),
+                        RadioListTile<int>(
+                          dense: true,
+                          value: -1,
+                          groupValue: selectedValue,
+                          title: Text(
+                            l10n.assistantEditRecentChatsSummaryFrequencyCustomButton,
+                          ),
+                          onChanged: (_) {
+                            setLocal(() => selectedValue = -1);
+                          },
+                        ),
+                        if (selectedValue == -1) ...[
+                          const SizedBox(height: 8),
+                          TextField(
+                            controller: customController,
+                            autofocus: !options.contains(currentValue),
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                            ],
+                            decoration: InputDecoration(
+                              labelText: l10n
+                                  .assistantEditRecentChatsSummaryFrequencyCustomLabel,
+                              hintText: l10n
+                                  .assistantEditRecentChatsSummaryFrequencyCustomHint,
+                              errorText:
+                                  customController.text.trim().isEmpty ||
+                                      customValue() != null
+                                  ? null
+                                  : l10n.assistantEditRecentChatsSummaryFrequencyCustomInvalid,
+                            ),
+                            onChanged: (_) => setLocal(() {}),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    child: Text(l10n.assistantEditEmojiDialogCancel),
+                  ),
+                  TextButton(
+                    onPressed: resolvedValue == null
+                        ? null
+                        : () async {
+                            if (resolvedValue != currentValue) {
+                              await ap.updateAssistant(
+                                assistant.copyWith(
+                                  recentChatsSummaryMessageCount: resolvedValue,
+                                ),
+                              );
+                            }
+                            if (ctx.mounted) Navigator.of(ctx).pop();
+                          },
+                    child: Text(l10n.assistantEditEmojiDialogSave),
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      );
+    } finally {
+      customController.dispose();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -572,6 +707,19 @@ class _MemoryTab extends StatelessWidget {
                   );
                 },
               ),
+              if (a.enableRecentChatsReference) ...[
+                _iosDivider(context),
+                _iosNavRow(
+                  context,
+                  icon: Lucide.FileClock,
+                  label: l10n.assistantEditRecentChatsSummaryFrequencyTitle,
+                  detailText: l10n
+                      .assistantEditRecentChatsSummaryFrequencyOption(
+                        a.recentChatsSummaryMessageCount,
+                      ),
+                  onTap: () => _showSummaryRefreshFrequencyDialog(context, a),
+                ),
+              ],
             ],
           ),
         ),
@@ -1844,6 +1992,16 @@ class _BasicSettingsTabState extends State<_BasicSettingsTab> {
                 onChanged: (v) => context
                     .read<AssistantProvider>()
                     .updateAssistant(a.copyWith(useAssistantAvatar: v)),
+              ),
+              _iosDivider(context),
+              _iosSwitchRow(
+                context,
+                icon: Lucide.Type,
+                label: l10n.assistantEditUseAssistantNameTitle,
+                value: a.useAssistantName,
+                onChanged: (v) => context
+                    .read<AssistantProvider>()
+                    .updateAssistant(a.copyWith(useAssistantName: v)),
               ),
               _iosDivider(context),
               // Stream output
@@ -7703,6 +7861,14 @@ class _DesktopAssistantBasicPaneState
                     onChanged: (v) => context
                         .read<AssistantProvider>()
                         .updateAssistant(a.copyWith(useAssistantAvatar: v)),
+                  ),
+                  sectionDivider(),
+                  simpleSwitchRow(
+                    label: l10n.assistantEditUseAssistantNameTitle,
+                    value: a.useAssistantName,
+                    onChanged: (v) => context
+                        .read<AssistantProvider>()
+                        .updateAssistant(a.copyWith(useAssistantName: v)),
                   ),
                   sectionDivider(),
                   simpleSwitchRow(
