@@ -416,6 +416,13 @@
   "backupPageNoBackups": "暫無備份",
   "backupPageRestoreTooltip": "還原",
   "backupPageDeleteTooltip": "刪除",
+  "backupPageDeleteConfirmTitle": "確認刪除",
+  "backupPageDeleteConfirmContent": "確定要刪除遠端備份「{name}」嗎？此操作無法復原。",
+  "@backupPageDeleteConfirmContent": {
+    "placeholders": {
+      "name": {}
+    }
+  },
   "backupPageBackupManagement": "備份管理",
   "backupPageWebDavBackup": "WebDAV 備份",
   "backupPageWebDavServerSettings": "WebDAV 伺服器設定",
