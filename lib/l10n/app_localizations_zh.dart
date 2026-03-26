@@ -324,6 +324,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get homePageMessageSearchHint => '在当前对话中搜索';
 
   @override
+  String get homePageMessageSearchAssistantHint => '在当前助手的对话中搜索';
+
+  @override
   String get homePageMessageSearchNoResults => '无匹配结果';
 
   @override
@@ -331,6 +334,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get homePageMessageSearchNext => '下一处匹配';
+
+  @override
+  String get homePageMessageSearchScopeConversation => '当前对话';
+
+  @override
+  String get homePageMessageSearchScopeAssistant => '同一助手';
 
   @override
   String get homePageMessageSearchTooltip => '查找对话';
@@ -4018,6 +4027,9 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get homePageMessageSearchHint => '在当前对话中搜索';
 
   @override
+  String get homePageMessageSearchAssistantHint => '在当前助手的对话中搜索';
+
+  @override
   String get homePageMessageSearchNoResults => '无匹配结果';
 
   @override
@@ -4025,6 +4037,12 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get homePageMessageSearchNext => '下一处匹配';
+
+  @override
+  String get homePageMessageSearchScopeConversation => '当前对话';
+
+  @override
+  String get homePageMessageSearchScopeAssistant => '同一助手';
 
   @override
   String get homePageMessageSearchTooltip => '查找对话';
@@ -7677,6 +7695,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get homePageMessageSearchHint => '在目前對話中搜尋';
 
   @override
+  String get homePageMessageSearchAssistantHint => '在目前助理的對話中搜尋';
+
+  @override
   String get homePageMessageSearchNoResults => '無符合結果';
 
   @override
@@ -7684,6 +7705,12 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get homePageMessageSearchNext => '下一個符合';
+
+  @override
+  String get homePageMessageSearchScopeConversation => '目前對話';
+
+  @override
+  String get homePageMessageSearchScopeAssistant => '同一助理';
 
   @override
   String get homePageMessageSearchTooltip => '搜尋對話';

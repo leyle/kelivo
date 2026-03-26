@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io' show File;
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show TargetPlatform;
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:provider/provider.dart';
@@ -10,12 +9,14 @@ import '../../../main.dart';
 import '../../../shared/widgets/interactive_drawer.dart';
 import '../../../shared/responsive/breakpoints.dart';
 import '../../../theme/design_tokens.dart';
+import '../../../core/services/chat/chat_service.dart';
 import '../../../core/providers/settings_provider.dart';
 import '../../../core/providers/assistant_provider.dart';
 import '../../../core/providers/quick_phrase_provider.dart';
 import '../../../core/providers/instruction_injection_provider.dart';
 import '../../../core/models/quick_phrase.dart';
 import '../../../core/models/chat_message.dart';
+import '../../../core/models/conversation.dart';
 import '../../../core/services/android_process_text.dart';
 import '../../../utils/sandbox_path_resolver.dart';
 import '../../../utils/platform_utils.dart';
@@ -50,6 +51,18 @@ import '../controllers/home_page_controller.dart';
 import 'home_mobile_layout.dart';
 import 'home_desktop_layout.dart';
 
+enum _MessageSearchScope { conversation, assistant }
+
+class _MessageSearchMatch {
+  const _MessageSearchMatch({
+    required this.conversationId,
+    required this.messageId,
+  });
+
+  final String conversationId;
+  final String messageId;
+}
+
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -78,9 +91,11 @@ class _HomePageState extends State<HomePage>
   final FocusNode _messageSearchFocus = FocusNode();
   StreamSubscription<ChatAction>? _chatActionSub;
   bool _messageSearchVisible = false;
-  List<String> _messageSearchMatches = const <String>[];
+  _MessageSearchScope _messageSearchScope = _MessageSearchScope.conversation;
+  List<_MessageSearchMatch> _messageSearchMatches =
+      const <_MessageSearchMatch>[];
   int _messageSearchIndex = -1;
-  String? _messageSearchConversationId;
+  String _messageSearchSubmittedQuery = '';
 
   // ============================================================================
   // Page Controller (manages all business logic and state)
@@ -172,8 +187,61 @@ class _HomePageState extends State<HomePage>
 
   void _onControllerChanged() {
     if (!mounted) return;
+    if (_messageSearchScope == _MessageSearchScope.assistant &&
+        !_canSearchAssistantConversations) {
+      _messageSearchScope = _MessageSearchScope.conversation;
+    }
     _rebuildMessageSearchMatches(resetIndex: false);
     setState(() {});
+  }
+
+  bool get _canSearchAssistantConversations {
+    final assistantId = _controller.currentConversation?.assistantId?.trim();
+    return assistantId != null && assistantId.isNotEmpty;
+  }
+
+  List<Conversation> _messageSearchConversations() {
+    final current = _controller.currentConversation;
+    if (current == null) return const <Conversation>[];
+    if (_messageSearchScope == _MessageSearchScope.conversation ||
+        !_canSearchAssistantConversations) {
+      return <Conversation>[current];
+    }
+
+    final chatService = context.read<ChatService>();
+    final assistantId = current.assistantId;
+    final others = chatService.getAllConversations().where((conversation) {
+      return conversation.id != current.id &&
+          conversation.assistantId == assistantId;
+    }).toList();
+    return <Conversation>[current, ...others];
+  }
+
+  List<ChatMessage> _messageSearchMessagesForConversation(
+    Conversation conversation,
+  ) {
+    if (_controller.currentConversation?.id == conversation.id) {
+      return _controller.messages;
+    }
+    return context.read<ChatService>().getMessages(conversation.id);
+  }
+
+  void _setMessageSearchScope(_MessageSearchScope scope) {
+    final nextScope =
+        (!_canSearchAssistantConversations &&
+            scope == _MessageSearchScope.assistant)
+        ? _MessageSearchScope.conversation
+        : scope;
+    if (_messageSearchScope == nextScope) return;
+    setState(() {
+      _messageSearchScope = nextScope;
+      if (_messageSearchSubmittedQuery.trim().isNotEmpty) {
+        _rebuildMessageSearchMatches(resetIndex: true);
+      }
+    });
+    if (_messageSearchSubmittedQuery.trim().isNotEmpty) {
+      _jumpToCurrentMessageSearchMatch();
+    }
   }
 
   void _onDrawerValueChanged() {
@@ -234,7 +302,6 @@ class _HomePageState extends State<HomePage>
     if (!_messageSearchVisible) {
       setState(() => _messageSearchVisible = true);
     }
-    _rebuildMessageSearchMatches(resetIndex: true);
     if (focus) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
@@ -253,7 +320,8 @@ class _HomePageState extends State<HomePage>
       _messageSearchVisible = false;
       if (clear) {
         _messageSearchController.clear();
-        _messageSearchMatches = const <String>[];
+        _messageSearchSubmittedQuery = '';
+        _messageSearchMatches = const <_MessageSearchMatch>[];
         _messageSearchIndex = -1;
       }
     });
@@ -261,40 +329,80 @@ class _HomePageState extends State<HomePage>
 
   void _onMessageSearchChanged() {
     if (!_messageSearchVisible) return;
+    setState(() {});
+  }
+
+  void _submitMessageSearch() {
+    final query = _messageSearchController.text.trim();
     setState(() {
+      _messageSearchSubmittedQuery = query;
       _rebuildMessageSearchMatches(resetIndex: true);
     });
-    _jumpToCurrentMessageSearchMatch();
+    if (query.isNotEmpty) {
+      _jumpToCurrentMessageSearchMatch();
+    }
   }
 
   void _rebuildMessageSearchMatches({required bool resetIndex}) {
-    final query = _messageSearchController.text.trim();
-    final convoId = _controller.currentConversation?.id;
-    final convoChanged = convoId != _messageSearchConversationId;
-    _messageSearchConversationId = convoId;
+    final query = _messageSearchSubmittedQuery.trim();
+    final previousMatch =
+        (!resetIndex &&
+            _messageSearchIndex >= 0 &&
+            _messageSearchIndex < _messageSearchMatches.length)
+        ? _messageSearchMatches[_messageSearchIndex]
+        : null;
 
     if (query.isEmpty) {
-      _messageSearchMatches = const <String>[];
+      _messageSearchMatches = const <_MessageSearchMatch>[];
       _messageSearchIndex = -1;
       return;
     }
 
     final lower = query.toLowerCase();
-    final collapsed = _controller.collapseVersions(_controller.messages);
-    final matches = <String>[];
-    for (final m in collapsed) {
-      final hay = _messageSearchHaystack(m).toLowerCase();
-      if (hay.contains(lower)) matches.add(m.id);
+    final matches = <_MessageSearchMatch>[];
+    for (final conversation in _messageSearchConversations()) {
+      final collapsed = _controller.collapseVersions(
+        _messageSearchMessagesForConversation(conversation),
+      );
+      for (final message in collapsed) {
+        final hay = _messageSearchHaystack(message).toLowerCase();
+        if (hay.contains(lower)) {
+          matches.add(
+            _MessageSearchMatch(
+              conversationId: conversation.id,
+              messageId: message.id,
+            ),
+          );
+        }
+      }
     }
     _messageSearchMatches = matches;
     if (matches.isEmpty) {
       _messageSearchIndex = -1;
-    } else if (resetIndex ||
-        convoChanged ||
-        _messageSearchIndex < 0 ||
-        _messageSearchIndex >= matches.length) {
-      _messageSearchIndex = 0;
+      return;
     }
+
+    if (previousMatch != null) {
+      final existingIndex = matches.indexWhere(
+        (match) =>
+            match.conversationId == previousMatch.conversationId &&
+            match.messageId == previousMatch.messageId,
+      );
+      if (existingIndex >= 0) {
+        _messageSearchIndex = existingIndex;
+        return;
+      }
+    }
+
+    final currentConversationId = _controller.currentConversation?.id;
+    final currentConversationIndex = currentConversationId == null
+        ? -1
+        : matches.indexWhere(
+            (match) => match.conversationId == currentConversationId,
+          );
+    _messageSearchIndex = currentConversationIndex >= 0
+        ? currentConversationIndex
+        : 0;
   }
 
   String _messageSearchHaystack(ChatMessage message) {
@@ -302,22 +410,26 @@ class _HomePageState extends State<HomePage>
     if (message.translation != null && message.translation!.trim().isNotEmpty) {
       buffer.write('\n${message.translation}');
     }
-    if (message.reasoningText != null &&
-        message.reasoningText!.trim().isNotEmpty) {
-      buffer.write('\n${message.reasoningText}');
-    }
     return buffer.toString();
   }
 
   Future<void> _jumpToCurrentMessageSearchMatch() async {
     if (!_messageSearchVisible) return;
     if (_messageSearchIndex < 0 ||
-        _messageSearchIndex >= _messageSearchMatches.length)
+        _messageSearchIndex >= _messageSearchMatches.length) {
       return;
-    final id = _messageSearchMatches[_messageSearchIndex];
+    }
+    final match = _messageSearchMatches[_messageSearchIndex];
+    if (_controller.currentConversation?.id != match.conversationId) {
+      await _controller.switchConversationAnimated(match.conversationId);
+      if (!mounted) return;
+      try {
+        await WidgetsBinding.instance.endOfFrame;
+      } catch (_) {}
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
-      await _controller.scrollToMessageId(id);
+      await _controller.scrollToMessageId(match.messageId);
     });
   }
 
@@ -329,8 +441,9 @@ class _HomePageState extends State<HomePage>
             (_messageSearchIndex + 1) % _messageSearchMatches.length;
       } else {
         _messageSearchIndex = (_messageSearchIndex - 1);
-        if (_messageSearchIndex < 0)
+        if (_messageSearchIndex < 0) {
           _messageSearchIndex = _messageSearchMatches.length - 1;
+        }
       }
     });
     await _jumpToCurrentMessageSearchMatch();
@@ -572,9 +685,7 @@ class _HomePageState extends State<HomePage>
                           )
                           .animate(
                             key: ValueKey(
-                              'tab_body_' +
-                                  (_controller.currentConversation?.id ??
-                                      'none'),
+                              'tab_body_${_controller.currentConversation?.id ?? 'none'}',
                             ),
                           )
                           .fadeIn(duration: 200.ms, curve: Curves.easeOutCubic),
@@ -747,12 +858,8 @@ class _HomePageState extends State<HomePage>
       selecting: _controller.selecting,
       selectedItems: _controller.selectedItems,
       dividerPadding: dividerPadding,
-      messageSearchMatches: _messageSearchMatches.toSet(),
-      messageSearchActiveId:
-          (_messageSearchIndex >= 0 &&
-              _messageSearchIndex < _messageSearchMatches.length)
-          ? _messageSearchMatches[_messageSearchIndex]
-          : null,
+      messageSearchMatches: _currentConversationMessageSearchMatchIds(),
+      messageSearchActiveId: _currentConversationMessageSearchActiveId(),
       streamingContentNotifier: _controller.streamingContentNotifier,
       onVersionChange: (groupId, version) async {
         await _controller.setSelectedVersion(groupId, version);
@@ -783,6 +890,59 @@ class _HomePageState extends State<HomePage>
     );
   }
 
+  Set<String> _currentConversationMessageSearchMatchIds() {
+    final conversationId = _controller.currentConversation?.id;
+    if (conversationId == null) return const <String>{};
+    return _messageSearchMatches
+        .where((match) => match.conversationId == conversationId)
+        .map((match) => match.messageId)
+        .toSet();
+  }
+
+  String? _currentConversationMessageSearchActiveId() {
+    if (_messageSearchIndex < 0 ||
+        _messageSearchIndex >= _messageSearchMatches.length) {
+      return null;
+    }
+    final match = _messageSearchMatches[_messageSearchIndex];
+    if (match.conversationId != _controller.currentConversation?.id) {
+      return null;
+    }
+    return match.messageId;
+  }
+
+  Widget _buildMessageSearchScopeToggle(AppLocalizations l10n) {
+    final cs = Theme.of(context).colorScheme;
+    return SegmentedButton<_MessageSearchScope>(
+      showSelectedIcon: false,
+      segments: <ButtonSegment<_MessageSearchScope>>[
+        ButtonSegment<_MessageSearchScope>(
+          value: _MessageSearchScope.conversation,
+          label: Text(l10n.homePageMessageSearchScopeConversation),
+        ),
+        ButtonSegment<_MessageSearchScope>(
+          value: _MessageSearchScope.assistant,
+          label: Text(l10n.homePageMessageSearchScopeAssistant),
+        ),
+      ],
+      selected: <_MessageSearchScope>{_messageSearchScope},
+      onSelectionChanged: (selection) {
+        if (selection.isEmpty) return;
+        _setMessageSearchScope(selection.first);
+      },
+      style: ButtonStyle(
+        visualDensity: VisualDensity.compact,
+        textStyle: WidgetStatePropertyAll<TextStyle>(
+          TextStyle(
+            fontSize: 12,
+            color: cs.onSurface,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildMessageSearchOverlay() {
     if (!_messageSearchVisible) return const SizedBox.shrink();
     final l10n = AppLocalizations.of(context)!;
@@ -793,12 +953,16 @@ class _HomePageState extends State<HomePage>
         .clamp(260.0, 560.0)
         .toDouble();
     final hasQuery = _messageSearchController.text.trim().isNotEmpty;
+    final hasSubmittedQuery = _messageSearchSubmittedQuery.trim().isNotEmpty;
     final hasMatches = _messageSearchMatches.isNotEmpty;
-    final countText = !hasQuery
+    final countText = !hasSubmittedQuery
         ? ''
         : hasMatches
         ? '${_messageSearchIndex + 1}/${_messageSearchMatches.length}'
         : l10n.homePageMessageSearchNoResults;
+    final hintText = _messageSearchScope == _MessageSearchScope.assistant
+        ? l10n.homePageMessageSearchAssistantHint
+        : l10n.homePageMessageSearchHint;
 
     return Positioned(
       top: topPad,
@@ -822,109 +986,137 @@ class _HomePageState extends State<HomePage>
                 ),
               ],
             ),
-            child: Row(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  Lucide.Search,
-                  size: 18,
-                  color: cs.onSurface.withOpacity(0.7),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: SizedBox(
-                    height: 34,
-                    child: TextField(
-                      controller: _messageSearchController,
-                      focusNode: _messageSearchFocus,
-                      textInputAction: TextInputAction.search,
-                      onSubmitted: (_) =>
-                          _jumpToNextMessageSearchMatch(forward: true),
-                      decoration: InputDecoration(
-                        hintText: l10n.homePageMessageSearchHint,
-                        isDense: true,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 8,
-                        ),
-                        filled: true,
-                        fillColor: cs.surfaceVariant.withOpacity(0.5),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(
-                            color: cs.outlineVariant.withOpacity(0.7),
-                          ),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(
-                            color: cs.outlineVariant.withOpacity(0.7),
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(
-                            color: cs.primary.withOpacity(0.9),
+                if (_canSearchAssistantConversations) ...[
+                  Row(
+                    children: [
+                      Expanded(child: _buildMessageSearchScopeToggle(l10n)),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                ],
+                Row(
+                  children: [
+                    Icon(
+                      Lucide.Search,
+                      size: 18,
+                      color: cs.onSurface.withOpacity(0.7),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: SizedBox(
+                        height: 34,
+                        child: TextField(
+                          controller: _messageSearchController,
+                          focusNode: _messageSearchFocus,
+                          textInputAction: TextInputAction.search,
+                          onSubmitted: (_) => _submitMessageSearch(),
+                          decoration: InputDecoration(
+                            hintText: hintText,
+                            isDense: true,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 8,
+                            ),
+                            filled: true,
+                            fillColor: cs.surfaceVariant.withOpacity(0.5),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(
+                                color: cs.outlineVariant.withOpacity(0.7),
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(
+                                color: cs.outlineVariant.withOpacity(0.7),
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(
+                                color: cs.primary.withOpacity(0.9),
+                              ),
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                if (countText.isNotEmpty)
-                  Text(
-                    countText,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: cs.onSurface.withOpacity(0.7),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      tooltip: MaterialLocalizations.of(context).searchFieldLabel,
+                      icon: Icon(
+                        Lucide.Search,
+                        size: 18,
+                        color: cs.onSurface.withOpacity(hasQuery ? 0.9 : 0.3),
+                      ),
+                      onPressed: hasQuery ? _submitMessageSearch : null,
+                      constraints: const BoxConstraints.tightFor(
+                        width: 34,
+                        height: 34,
+                      ),
+                      padding: EdgeInsets.zero,
                     ),
-                  ),
-                const SizedBox(width: 4),
-                IconButton(
-                  tooltip: l10n.homePageMessageSearchPrev,
-                  icon: Icon(
-                    Lucide.ChevronUp,
-                    size: 18,
-                    color: cs.onSurface.withOpacity(hasMatches ? 0.9 : 0.3),
-                  ),
-                  onPressed: hasMatches
-                      ? () => _jumpToNextMessageSearchMatch(forward: false)
-                      : null,
-                  constraints: const BoxConstraints.tightFor(
-                    width: 34,
-                    height: 34,
-                  ),
-                  padding: EdgeInsets.zero,
-                ),
-                IconButton(
-                  tooltip: l10n.homePageMessageSearchNext,
-                  icon: Icon(
-                    Lucide.ChevronDown,
-                    size: 18,
-                    color: cs.onSurface.withOpacity(hasMatches ? 0.9 : 0.3),
-                  ),
-                  onPressed: hasMatches
-                      ? () => _jumpToNextMessageSearchMatch(forward: true)
-                      : null,
-                  constraints: const BoxConstraints.tightFor(
-                    width: 34,
-                    height: 34,
-                  ),
-                  padding: EdgeInsets.zero,
-                ),
-                IconButton(
-                  tooltip: MaterialLocalizations.of(context).closeButtonLabel,
-                  icon: Icon(
-                    Lucide.X,
-                    size: 18,
-                    color: cs.onSurface.withOpacity(0.7),
-                  ),
-                  onPressed: () => _hideMessageSearch(clear: true),
-                  constraints: const BoxConstraints.tightFor(
-                    width: 34,
-                    height: 34,
-                  ),
-                  padding: EdgeInsets.zero,
+                    if (countText.isNotEmpty)
+                      Text(
+                        countText,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: cs.onSurface.withOpacity(0.7),
+                        ),
+                      ),
+                    const SizedBox(width: 4),
+                    IconButton(
+                      tooltip: l10n.homePageMessageSearchPrev,
+                      icon: Icon(
+                        Lucide.ChevronUp,
+                        size: 18,
+                        color: cs.onSurface.withOpacity(hasMatches ? 0.9 : 0.3),
+                      ),
+                      onPressed: hasMatches
+                          ? () => _jumpToNextMessageSearchMatch(forward: false)
+                          : null,
+                      constraints: const BoxConstraints.tightFor(
+                        width: 34,
+                        height: 34,
+                      ),
+                      padding: EdgeInsets.zero,
+                    ),
+                    IconButton(
+                      tooltip: l10n.homePageMessageSearchNext,
+                      icon: Icon(
+                        Lucide.ChevronDown,
+                        size: 18,
+                        color: cs.onSurface.withOpacity(hasMatches ? 0.9 : 0.3),
+                      ),
+                      onPressed: hasMatches
+                          ? () => _jumpToNextMessageSearchMatch(forward: true)
+                          : null,
+                      constraints: const BoxConstraints.tightFor(
+                        width: 34,
+                        height: 34,
+                      ),
+                      padding: EdgeInsets.zero,
+                    ),
+                    IconButton(
+                      tooltip: MaterialLocalizations.of(
+                        context,
+                      ).closeButtonLabel,
+                      icon: Icon(
+                        Lucide.X,
+                        size: 18,
+                        color: cs.onSurface.withOpacity(0.7),
+                      ),
+                      onPressed: () => _hideMessageSearch(clear: true),
+                      constraints: const BoxConstraints.tightFor(
+                        width: 34,
+                        height: 34,
+                      ),
+                      padding: EdgeInsets.zero,
+                    ),
+                  ],
                 ),
               ],
             ),

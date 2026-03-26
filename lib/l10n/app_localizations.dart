@@ -682,6 +682,12 @@ abstract class AppLocalizations {
   /// **'Search in this conversation'**
   String get homePageMessageSearchHint;
 
+  /// No description provided for @homePageMessageSearchAssistantHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search in this assistant\'s conversations'**
+  String get homePageMessageSearchAssistantHint;
+
   /// No description provided for @homePageMessageSearchNoResults.
   ///
   /// In en, this message translates to:
@@ -699,6 +705,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Next match'**
   String get homePageMessageSearchNext;
+
+  /// No description provided for @homePageMessageSearchScopeConversation.
+  ///
+  /// In en, this message translates to:
+  /// **'This chat'**
+  String get homePageMessageSearchScopeConversation;
+
+  /// No description provided for @homePageMessageSearchScopeAssistant.
+  ///
+  /// In en, this message translates to:
+  /// **'Same assistant'**
+  String get homePageMessageSearchScopeAssistant;
 
   /// No description provided for @homePageMessageSearchTooltip.
   ///

@@ -327,6 +327,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homePageMessageSearchHint => 'Search in this conversation';
 
   @override
+  String get homePageMessageSearchAssistantHint =>
+      'Search in this assistant\'s conversations';
+
+  @override
   String get homePageMessageSearchNoResults => 'No matches';
 
   @override
@@ -334,6 +338,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get homePageMessageSearchNext => 'Next match';
+
+  @override
+  String get homePageMessageSearchScopeConversation => 'This chat';
+
+  @override
+  String get homePageMessageSearchScopeAssistant => 'Same assistant';
 
   @override
   String get homePageMessageSearchTooltip => 'Find in conversation';

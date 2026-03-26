@@ -176,9 +176,12 @@
   "homePageClearContext": "Clear Context",
   "homePageClearContextWithCount": "Clear Context ({actual}/{configured})",
   "homePageMessageSearchHint": "Search in this conversation",
+  "homePageMessageSearchAssistantHint": "Search in this assistant's conversations",
   "homePageMessageSearchNoResults": "No matches",
   "homePageMessageSearchPrev": "Previous match",
   "homePageMessageSearchNext": "Next match",
+  "homePageMessageSearchScopeConversation": "This chat",
+  "homePageMessageSearchScopeAssistant": "Same assistant",
   "homePageMessageSearchTooltip": "Find in conversation",
   "@homePageClearContextWithCount": {
     "placeholders": {
