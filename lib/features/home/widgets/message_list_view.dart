@@ -235,8 +235,11 @@ class MessageListView extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
+        final maxContent = ChatLayoutConstants.maxWidthForAvailable(
+          constraints.maxWidth,
+        );
         final horizontalPad =
-            ((constraints.maxWidth - ChatLayoutConstants.maxContentWidth) / 2)
+            ((constraints.maxWidth - maxContent) / 2)
                 .clamp(0.0, double.infinity);
 
         final list = ListView.builder(

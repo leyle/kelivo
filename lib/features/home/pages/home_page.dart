@@ -699,16 +699,20 @@ class _HomePageState extends State<HomePage>
                   return false;
                 },
                 child: SizeChangedLayoutNotifier(
-                  child: Builder(
-                    builder: (context) {
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
                       Widget input = _buildChatInputBar(
                         context,
                         isTablet: true,
                       );
+                      final maxInput =
+                          ChatLayoutConstants.maxWidthForAvailable(
+                        constraints.maxWidth,
+                      );
                       input = Center(
                         child: ConstrainedBox(
-                          constraints: const BoxConstraints(
-                            maxWidth: ChatLayoutConstants.maxInputWidth,
+                          constraints: BoxConstraints(
+                            maxWidth: maxInput,
                           ),
                           child: input,
                         ),

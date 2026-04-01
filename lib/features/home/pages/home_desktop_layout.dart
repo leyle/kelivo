@@ -307,9 +307,9 @@ class HomeDesktopScaffold extends StatelessWidget {
                   child: AnimatedTextSwap(
                     text: capsuleLabel!,
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 16,
                       height: 1.1,
-                      color: isDark ? Colors.white.withOpacity(0.92) : cs.onSurface.withOpacity(0.9),
+                      color: cs.primary,
                       fontWeight: FontWeight.w500,
                     ),
                     maxLines: 1,
@@ -323,21 +323,58 @@ class HomeDesktopScaffold extends StatelessWidget {
       );
     }
 
+    final assistantName = _getAssistantName(context);
+
     final row = Row(
       mainAxisSize: MainAxisSize.max,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Flexible(
           fit: FlexFit.loose,
-          child: AnimatedSize(
-            duration: const Duration(milliseconds: 220),
-            curve: Curves.easeOutCubic,
-            child: AnimatedTextSwap(
-              text: title,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                flex: 0,
+                child: AnimatedSize(
+                  duration: const Duration(milliseconds: 220),
+                  curve: Curves.easeOutCubic,
+                  child: AnimatedTextSwap(
+                    text: assistantName,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: cs.onSurface.withValues(alpha: 0.5),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                child: Text(
+                  '/',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    color: cs.onSurface.withValues(alpha: 0.25),
+                  ),
+                ),
+              ),
+              Flexible(
+                child: AnimatedSize(
+                  duration: const Duration(milliseconds: 220),
+                  curve: Curves.easeOutCubic,
+                  child: AnimatedTextSwap(
+                    text: title,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
         if (capsule != null) ...[
@@ -378,7 +415,7 @@ class HomeDesktopScaffold extends StatelessWidget {
             child: child,
           ),
         ),
-        child: KeyedSubtree(key: ValueKey('hdr:$title|${capsuleLabel ?? ''}'), child: row),
+        child: KeyedSubtree(key: ValueKey('hdr:$assistantName|$title|${capsuleLabel ?? ''}'), child: row),
       ),
     );
   }
