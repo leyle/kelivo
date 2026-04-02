@@ -1296,6 +1296,9 @@ class ChatApiService {
     final effort = _effortForBudget(thinkingBudget);
     if (_supportsClaudeAdaptiveThinking(modelId)) {
       if (effort == 'off') return;
+      // Claude requires temperature=1 (the default) when thinking is enabled.
+      body.remove('temperature');
+      body.remove('top_p');
       body['thinking'] = {'type': 'adaptive'};
       if (effort != 'auto') {
         body['output_config'] = {'effort': effort};
@@ -1328,6 +1331,11 @@ class ChatApiService {
       }
     }
 
+    if (budgetTokens != null) {
+      // Claude requires temperature=1 (the default) when thinking is enabled.
+      body.remove('temperature');
+      body.remove('top_p');
+    }
     body['thinking'] = {
       'type': budgetTokens == null ? 'disabled' : 'enabled',
       if (budgetTokens != null) 'budget_tokens': budgetTokens,
