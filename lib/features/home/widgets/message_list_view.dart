@@ -95,6 +95,8 @@ class MessageListView extends StatelessWidget {
     this.onToggleTranslation,
     this.onToggleReasoningSegment,
     this.buildPinnedStreamingIndicator,
+    this.leftSidebarWidth = 0,
+    this.rightSidebarWidth = 0,
   });
 
   final ScrollController scrollController;
@@ -135,6 +137,10 @@ class MessageListView extends StatelessWidget {
   final void Function(String messageId, int segmentIndex)?
   onToggleReasoningSegment;
   final Widget Function()? buildPinnedStreamingIndicator;
+
+  /// Effective sidebar widths for window-centered alignment.
+  final double leftSidebarWidth;
+  final double rightSidebarWidth;
 
   /// Collapse message versions to show only selected version per group.
   List<ChatMessage> _collapseVersions(List<ChatMessage> items) {
@@ -235,19 +241,18 @@ class MessageListView extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final maxContent = ChatLayoutConstants.maxWidthForAvailable(
-          constraints.maxWidth,
+        final pad = ChatLayoutConstants.paddingForWindowCenter(
+          contentAreaWidth: constraints.maxWidth,
+          leftSidebarWidth: leftSidebarWidth,
+          rightSidebarWidth: rightSidebarWidth,
         );
-        final horizontalPad =
-            ((constraints.maxWidth - maxContent) / 2)
-                .clamp(0.0, double.infinity);
 
         final list = ListView.builder(
           controller: scrollController,
           padding: EdgeInsets.fromLTRB(
-            horizontalPad,
+            pad.left,
             8,
-            horizontalPad,
+            pad.right,
             isPinnedIndicatorActive ? 28 : 16,
           ),
           itemCount: collapsedMessages.length,

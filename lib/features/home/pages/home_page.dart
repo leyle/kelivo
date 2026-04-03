@@ -658,6 +658,13 @@ class _HomePageState extends State<HomePage>
   }
 
   Widget _buildTabletBody(BuildContext context, ColorScheme cs) {
+    final effectiveLeftSidebar = _controller.tabletSidebarOpen
+        ? _controller.embeddedSidebarWidth
+        : 0.0;
+    final effectiveRightSidebar = _controller.rightSidebarOpen
+        ? _controller.rightSidebarWidth
+        : 0.0;
+
     return Stack(
       children: [
         Padding(
@@ -681,6 +688,8 @@ class _HomePageState extends State<HomePage>
                                 vertical: 8,
                                 horizontal: 12,
                               ),
+                              leftSidebarWidth: effectiveLeftSidebar,
+                              rightSidebarWidth: effectiveRightSidebar,
                             ),
                           )
                           .animate(
@@ -705,17 +714,18 @@ class _HomePageState extends State<HomePage>
                         context,
                         isTablet: true,
                       );
-                      final maxInput =
-                          ChatLayoutConstants.maxWidthForAvailable(
-                        constraints.maxWidth,
+                      final pad =
+                          ChatLayoutConstants.paddingForWindowCenter(
+                        contentAreaWidth: constraints.maxWidth,
+                        leftSidebarWidth: effectiveLeftSidebar,
+                        rightSidebarWidth: effectiveRightSidebar,
                       );
-                      input = Center(
-                        child: ConstrainedBox(
-                          constraints: BoxConstraints(
-                            maxWidth: maxInput,
-                          ),
-                          child: input,
+                      input = Padding(
+                        padding: EdgeInsets.only(
+                          left: pad.left,
+                          right: pad.right,
                         ),
+                        child: input,
                       );
                       return input;
                     },
@@ -848,6 +858,8 @@ class _HomePageState extends State<HomePage>
   Widget _buildMessageListView(
     BuildContext context, {
     required EdgeInsetsGeometry dividerPadding,
+    double leftSidebarWidth = 0,
+    double rightSidebarWidth = 0,
   }) {
     return MessageListView(
       scrollController: _scrollController,
@@ -862,6 +874,8 @@ class _HomePageState extends State<HomePage>
       selecting: _controller.selecting,
       selectedItems: _controller.selectedItems,
       dividerPadding: dividerPadding,
+      leftSidebarWidth: leftSidebarWidth,
+      rightSidebarWidth: rightSidebarWidth,
       messageSearchMatches: _currentConversationMessageSearchMatchIds(),
       messageSearchActiveId: _currentConversationMessageSearchActiveId(),
       streamingContentNotifier: _controller.streamingContentNotifier,
