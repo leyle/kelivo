@@ -284,6 +284,7 @@ class GoogleProvider extends BaseProvider {
 
       if (cfg.vertexAI == true) {
         const knownClaude = <String>[
+          'claude-opus-4-7',
           'claude-opus-4-6',
           'claude-opus-4-5@20251101',
           'claude-opus-4-1@20250805',

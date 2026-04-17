@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:http/http.dart' as http;
+import 'package:meta/meta.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/model_provider.dart';
 import '../../models/token_usage.dart';
@@ -1279,8 +1280,20 @@ class ChatApiService {
   static bool _supportsClaudeAdaptiveThinking(String modelId) {
     final m = modelId.toLowerCase();
     if (!m.contains('claude')) return false;
-    // Claude 4.6+ uses adaptive thinking + effort instead of manual budget tokens.
-    return m.contains('4-6') || m.contains('4.6');
+    if (m.contains('claude-mythos-preview')) return true;
+    // Claude Opus 4.7 and later require adaptive thinking. Claude 4.6 models
+    // also support it and are the recommended configuration.
+    final opus = RegExp(r'claude-opus-(\d+)-(\d+)').firstMatch(m);
+    if (opus != null) {
+      final major = int.tryParse(opus.group(1) ?? '');
+      final minor = int.tryParse(opus.group(2) ?? '');
+      if (major != null &&
+          minor != null &&
+          (major > 4 || (major == 4 && minor >= 7))) {
+        return true;
+      }
+    }
+    return m.contains('claude-opus-4-6') || m.contains('claude-sonnet-4-6');
   }
 
   static void _applyClaudeThinkingConfig({
@@ -1299,7 +1312,7 @@ class ChatApiService {
       // Claude requires temperature=1 (the default) when thinking is enabled.
       body.remove('temperature');
       body.remove('top_p');
-      body['thinking'] = {'type': 'adaptive'};
+      body['thinking'] = {'type': 'adaptive', 'display': 'summarized'};
       if (effort != 'auto') {
         body['output_config'] = {'effort': effort};
       }
@@ -1339,7 +1352,25 @@ class ChatApiService {
     body['thinking'] = {
       'type': budgetTokens == null ? 'disabled' : 'enabled',
       if (budgetTokens != null) 'budget_tokens': budgetTokens,
+      if (budgetTokens != null) 'display': 'summarized',
     };
+  }
+
+  @visibleForTesting
+  static Map<String, dynamic> buildClaudeThinkingConfigForTest({
+    required String modelId,
+    required bool isReasoning,
+    required int? thinkingBudget,
+    int maxTokens = 4096,
+  }) {
+    final body = <String, dynamic>{'max_tokens': maxTokens};
+    _applyClaudeThinkingConfig(
+      body: body,
+      modelId: modelId,
+      isReasoning: isReasoning,
+      thinkingBudget: thinkingBudget,
+    );
+    return body;
   }
 
   // Clean JSON Schema for Google Gemini API strict validation
@@ -6928,26 +6959,20 @@ class ChatApiService {
   }
 
   static int _getMaxOutputTokensForClaudeModel(String modelId) {
-    switch (modelId) {
-      case 'claude-opus-4-6':
-      case 'claude-sonnet-4-6':
-        return 128000;
-      case 'claude-opus-4-5@20251101':
-      case 'claude-sonnet-4-5@20250929':
-      case 'claude-haiku-4-5@20251001':
-      case 'claude-sonnet-4@20250514':
-        return 64000;
-      case 'claude-opus-4-1@20250805':
-      case 'claude-opus-4@20250514':
-        return 32000;
-      case 'claude-3-haiku@20240307':
-        return 8000;
-      case 'claude-3-5-sonnet@20240620':
-      case 'claude-3-5-sonnet-v2@20241022':
-        return 8192;
-      default:
-        return 4096;
-    }
+    final m = modelId.toLowerCase();
+    if (m.startsWith('claude-opus-4-7')) return 128000;
+    if (m.startsWith('claude-opus-4-6')) return 128000;
+    if (m.startsWith('claude-sonnet-4-6')) return 128000;
+    if (m == 'claude-opus-4-5@20251101') return 64000;
+    if (m == 'claude-sonnet-4-5@20250929') return 64000;
+    if (m == 'claude-haiku-4-5@20251001') return 64000;
+    if (m == 'claude-sonnet-4@20250514') return 64000;
+    if (m == 'claude-opus-4-1@20250805') return 32000;
+    if (m == 'claude-opus-4@20250514') return 32000;
+    if (m == 'claude-3-haiku@20240307') return 8000;
+    if (m == 'claude-3-5-sonnet@20240620') return 8192;
+    if (m == 'claude-3-5-sonnet-v2@20241022') return 8192;
+    return 4096;
   }
 
   static Stream<ChatStreamChunk> _sendGoogleVertexClaudeStream({
@@ -7164,6 +7189,7 @@ class ChatApiService {
           if (_supportsClaudeAdaptiveThinking(upstreamId))
             'thinking': {
               'type': (effectiveThinkingBudget == 0) ? 'disabled' : 'adaptive',
+              if (effectiveThinkingBudget != 0) 'display': 'summarized',
             }
           else
             'thinking': {
@@ -7171,6 +7197,7 @@ class ChatApiService {
               if (effectiveThinkingBudget != null &&
                   effectiveThinkingBudget > 0)
                 'budget_tokens': effectiveThinkingBudget,
+              if (effectiveThinkingBudget != 0) 'display': 'summarized',
             },
         if (isReasoning &&
             _supportsClaudeAdaptiveThinking(upstreamId) &&
