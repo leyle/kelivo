@@ -1319,7 +1319,7 @@ class ChatApiService {
       return;
     }
 
-    int maxTok = (body['max_tokens'] as num?)?.toInt() ?? 4096;
+    int maxTok = (body['max_tokens'] as num?)?.toInt() ?? 16384;
     if (maxTok <= 1024) {
       // Claude manual mode requires budget_tokens >= 1024 and < max_tokens.
       maxTok = 2048;
@@ -1361,7 +1361,7 @@ class ChatApiService {
     required String modelId,
     required bool isReasoning,
     required int? thinkingBudget,
-    int maxTokens = 4096,
+    int maxTokens = 16384,
   }) {
     final body = <String, dynamic>{'max_tokens': maxTokens};
     _applyClaudeThinkingConfig(
@@ -5106,7 +5106,7 @@ class ChatApiService {
       // Prepare request body per round
       final body = <String, dynamic>{
         'model': upstreamModelId,
-        'max_tokens': maxTokens ?? 4096,
+        'max_tokens': maxTokens ?? 16384,
         'messages': convo,
         'stream': stream,
         if (systemPrompt.isNotEmpty) 'system': systemPrompt,
