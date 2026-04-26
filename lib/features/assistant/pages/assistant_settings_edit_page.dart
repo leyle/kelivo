@@ -255,6 +255,82 @@ class _MemoryTab extends StatelessWidget {
   const _MemoryTab({required this.assistantId});
   final String assistantId;
 
+  String _memoryIdText(int id) => id.toString();
+
+  Future<void> _copyMemoryId(BuildContext context, int id) async {
+    await Clipboard.setData(ClipboardData(text: _memoryIdText(id)));
+    if (!context.mounted) return;
+    showAppSnackBar(
+      context,
+      message: AppLocalizations.of(context)!.chatMessageWidgetCopiedToClipboard,
+      type: NotificationType.success,
+    );
+  }
+
+  Widget _memoryIdRow(BuildContext context, int id, {bool fullWidth = false}) {
+    final l10n = AppLocalizations.of(context)!;
+    final cs = Theme.of(context).colorScheme;
+    final idText = _memoryIdText(id);
+    final muted = cs.onSurface.withValues(alpha: 0.56);
+    final chip = Container(
+      constraints: fullWidth
+          ? const BoxConstraints()
+          : const BoxConstraints(maxWidth: 240),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: cs.onSurface.withValues(alpha: 0.045),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: cs.outlineVariant.withValues(alpha: 0.18),
+          width: 0.6,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: fullWidth ? MainAxisSize.max : MainAxisSize.min,
+        children: [
+          Text(
+            'ID',
+            style: TextStyle(
+              color: muted,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Tooltip(
+              message: idText,
+              child: Text(
+                idText,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: cs.onSurface.withValues(alpha: 0.72),
+                  fontSize: 11.5,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                  fontFamily: 'monospace',
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 4),
+          Tooltip(
+            message: l10n.shareProviderSheetCopyButton,
+            child: _TactileIconButton(
+              icon: Lucide.Copy,
+              size: 13,
+              color: muted,
+              semanticLabel: l10n.shareProviderSheetCopyButton,
+              onTap: () => _copyMemoryId(context, id),
+            ),
+          ),
+        ],
+      ),
+    );
+    return fullWidth ? SizedBox(width: double.infinity, child: chip) : chip;
+  }
+
   Future<void> _showAddEditSheet(
     BuildContext context, {
     int? id,
@@ -318,6 +394,13 @@ class _MemoryTab extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
+                        if (id != null) ...[
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: _memoryIdRow(ctx, id),
+                          ),
+                          const SizedBox(height: 10),
+                        ],
                         TextField(
                           controller: controller,
                           minLines: 3,
@@ -436,6 +519,10 @@ class _MemoryTab extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 12),
+                if (id != null) ...[
+                  _memoryIdRow(ctx, id, fullWidth: true),
+                  const SizedBox(height: 12),
+                ],
                 TextField(
                   controller: controller,
                   minLines: 1,
@@ -792,36 +879,42 @@ class _MemoryTab extends StatelessWidget {
               ),
               child: Padding(
                 padding: const EdgeInsets.all(12),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Expanded(
-                      child: Text(
-                        m.content,
-                        maxLines: 5,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 14),
-                      ),
+                    Row(
+                      children: [
+                        Expanded(child: _memoryIdRow(context, m.id)),
+                        const SizedBox(width: 6),
+                        _TactileIconButton(
+                          icon: Lucide.Pencil,
+                          size: 18,
+                          color: cs.primary,
+                          onTap: () => _showAddEditSheet(
+                            context,
+                            id: m.id,
+                            initial: m.content,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        _TactileIconButton(
+                          icon: Lucide.Trash2,
+                          size: 18,
+                          color: cs.error,
+                          onTap: () async {
+                            await context.read<MemoryProvider>().delete(
+                              id: m.id,
+                            );
+                          },
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 6),
-                    _TactileIconButton(
-                      icon: Lucide.Pencil,
-                      size: 18,
-                      color: cs.primary,
-                      onTap: () => _showAddEditSheet(
-                        context,
-                        id: m.id,
-                        initial: m.content,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    _TactileIconButton(
-                      icon: Lucide.Trash2,
-                      size: 18,
-                      color: cs.error,
-                      onTap: () async {
-                        await context.read<MemoryProvider>().delete(id: m.id);
-                      },
+                    const SizedBox(height: 10),
+                    Text(
+                      m.content,
+                      maxLines: 5,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 14),
                     ),
                   ],
                 ),
