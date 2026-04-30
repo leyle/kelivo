@@ -1776,6 +1776,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sideDrawerMenuUnpin => 'Unpin';
 
   @override
+  String get sideDrawerMenuFavorite => 'Favorite';
+
+  @override
+  String get sideDrawerMenuUnfavorite => 'Unfavorite';
+
+  @override
+  String get sideDrawerFavoritesTitle => 'Favorites';
+
+  @override
+  String get sideDrawerFavoritesEmpty => 'No favorited conversations yet';
+
+  @override
   String get sideDrawerMenuRegenerateTitle => 'Regenerate Title';
 
   @override

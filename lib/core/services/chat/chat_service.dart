@@ -337,6 +337,7 @@ class ChatService extends ChangeNotifier {
       truncateIndex: conversation.truncateIndex,
       assistantId: conversation.assistantId,
       versionSelections: Map<String, int>.from(conversation.versionSelections),
+      isFavorited: conversation.isFavorited,
     );
     await _conversationsBox.put(restored.id, restored);
 
@@ -570,6 +571,30 @@ class ChatService extends ChangeNotifier {
     conversation.isPinned = !conversation.isPinned;
     await conversation.save();
     notifyListeners();
+  }
+
+  Future<void> toggleFavoriteConversation(String id) async {
+    if (!_initialized) return;
+
+    if (_draftConversations.containsKey(id)) {
+      final draft = _draftConversations[id]!;
+      draft.isFavorited = !draft.isFavorited;
+      notifyListeners();
+      return;
+    }
+    final conversation = _conversationsBox.get(id);
+    if (conversation == null) return;
+
+    conversation.isFavorited = !conversation.isFavorited;
+    await conversation.save();
+    notifyListeners();
+  }
+
+  List<Conversation> getFavoriteConversations() {
+    if (!_initialized) return const <Conversation>[];
+    final list = _conversationsBox.values.where((c) => c.isFavorited).toList();
+    list.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+    return list;
   }
 
   Future<ChatMessage> addMessage({

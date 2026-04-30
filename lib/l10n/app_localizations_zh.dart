@@ -1713,6 +1713,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get sideDrawerMenuUnpin => '取消置顶';
 
   @override
+  String get sideDrawerMenuFavorite => '收藏';
+
+  @override
+  String get sideDrawerMenuUnfavorite => '取消收藏';
+
+  @override
+  String get sideDrawerFavoritesTitle => '收藏';
+
+  @override
+  String get sideDrawerFavoritesEmpty => '还没有收藏的对话';
+
+  @override
   String get sideDrawerMenuRegenerateTitle => '重新生成标题';
 
   @override
@@ -5416,6 +5428,18 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get sideDrawerMenuUnpin => '取消置顶';
 
   @override
+  String get sideDrawerMenuFavorite => '收藏';
+
+  @override
+  String get sideDrawerMenuUnfavorite => '取消收藏';
+
+  @override
+  String get sideDrawerFavoritesTitle => '收藏';
+
+  @override
+  String get sideDrawerFavoritesEmpty => '还没有收藏的对话';
+
+  @override
   String get sideDrawerMenuRegenerateTitle => '重新生成标题';
 
   @override
@@ -9081,6 +9105,18 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get sideDrawerMenuUnpin => '取消置頂';
+
+  @override
+  String get sideDrawerMenuFavorite => '收藏';
+
+  @override
+  String get sideDrawerMenuUnfavorite => '取消收藏';
+
+  @override
+  String get sideDrawerFavoritesTitle => '收藏';
+
+  @override
+  String get sideDrawerFavoritesEmpty => '還沒有收藏的對話';
 
   @override
   String get sideDrawerMenuRegenerateTitle => '重新生成標題';

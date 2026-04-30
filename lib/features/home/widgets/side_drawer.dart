@@ -258,6 +258,8 @@ class _SideDrawerState extends State<SideDrawer> with TickerProviderStateMixin {
     final l10n = AppLocalizations.of(context)!;
     final chatService = context.read<ChatService>();
     final isPinned = chatService.getConversation(chat.id)?.isPinned ?? false;
+    final isFavorited =
+        chatService.getConversation(chat.id)?.isFavorited ?? false;
     final isDesktop = defaultTargetPlatform == TargetPlatform.macOS;
 
     if (isDesktop) {
@@ -279,6 +281,15 @@ class _SideDrawerState extends State<SideDrawer> with TickerProviderStateMixin {
             label: isPinned ? l10n.sideDrawerMenuUnpin : l10n.sideDrawerMenuPin,
             onTap: () async {
               await chatService.togglePinConversation(chat.id);
+            },
+          ),
+          DesktopContextMenuItem(
+            icon: Lucide.Star,
+            label: isFavorited
+                ? l10n.sideDrawerMenuUnfavorite
+                : l10n.sideDrawerMenuFavorite,
+            onTap: () async {
+              await chatService.toggleFavoriteConversation(chat.id);
             },
           ),
           DesktopContextMenuItem(
@@ -457,6 +468,15 @@ class _SideDrawerState extends State<SideDrawer> with TickerProviderStateMixin {
                           : l10n.sideDrawerMenuPin,
                       action: () async {
                         await chatService.togglePinConversation(chat.id);
+                      },
+                    ),
+                    row(
+                      icon: Lucide.Star,
+                      label: isFavorited
+                          ? l10n.sideDrawerMenuUnfavorite
+                          : l10n.sideDrawerMenuFavorite,
+                      action: () async {
+                        await chatService.toggleFavoriteConversation(chat.id);
                       },
                     ),
                     row(
@@ -781,13 +801,16 @@ class _SideDrawerState extends State<SideDrawer> with TickerProviderStateMixin {
     final chatService = context.watch<ChatService>();
     final ap = context.watch<AssistantProvider>();
     final currentAssistantId = ap.currentAssistantId;
-    final conversations = chatService.getAllConversations().where((c) {
-      final assistantId = c.assistantId;
-      if (assistantId != null && !ap.isAssistantEnabled(assistantId)) {
-        return false;
-      }
-      return assistantId == currentAssistantId || assistantId == null;
-    }).toList();
+    final inFavoritesView = ap.isFavoritesView;
+    final conversations = inFavoritesView
+        ? chatService.getFavoriteConversations()
+        : chatService.getAllConversations().where((c) {
+            final assistantId = c.assistantId;
+            if (assistantId != null && !ap.isAssistantEnabled(assistantId)) {
+              return false;
+            }
+            return assistantId == currentAssistantId || assistantId == null;
+          }).toList();
     // Use last-activity time (updatedAt) for ordering and grouping
     final all = conversations
         .map((c) => ChatItem(id: c.id, title: c.title, created: c.updatedAt))
@@ -800,16 +823,21 @@ class _SideDrawerState extends State<SideDrawer> with TickerProviderStateMixin {
                 (c) => c.title.toLowerCase().contains(_query.toLowerCase()),
               )
               .toList();
-    final pinnedList =
-        base
+    // In favorites view, skip pinned/rest split — all items are "favorites"
+    // and sort purely by updatedAt (already done by getFavoriteConversations).
+    final pinnedList = inFavoritesView
+        ? const <ChatItem>[]
+        : (base
             .where(
               (c) => (chatService.getConversation(c.id)?.isPinned ?? false),
             )
             .toList()
-          ..sort((a, b) => b.created.compareTo(a.created));
-    final rest = base
-        .where((c) => !(chatService.getConversation(c.id)?.isPinned ?? false))
-        .toList();
+          ..sort((a, b) => b.created.compareTo(a.created)));
+    final rest = inFavoritesView
+        ? base
+        : base
+            .where((c) => !(chatService.getConversation(c.id)?.isPinned ?? false))
+            .toList();
     final groups = _groupByDate(context, rest);
 
     // Avatar renderer: emoji / url / file / default initial
@@ -1292,6 +1320,7 @@ class _SideDrawerState extends State<SideDrawer> with TickerProviderStateMixin {
                         pinnedList,
                         groups,
                         includeUpdateBanner: true,
+                        favoritesView: inFavoritesView,
                       ),
                     );
                   }
@@ -1322,6 +1351,7 @@ class _SideDrawerState extends State<SideDrawer> with TickerProviderStateMixin {
                           pinnedList,
                           groups,
                           includeUpdateBanner: true,
+                          favoritesView: inFavoritesView,
                         ),
                       ],
                     );
@@ -1340,6 +1370,7 @@ class _SideDrawerState extends State<SideDrawer> with TickerProviderStateMixin {
                       pinnedList,
                       groups,
                       includeUpdateBanner: true,
+                      favoritesView: inFavoritesView,
                     ),
                   );
                 }(),
@@ -1528,6 +1559,11 @@ class _SideDrawerState extends State<SideDrawer> with TickerProviderStateMixin {
     }
     final ap = context.read<AssistantProvider>();
     final chatService = context.read<ChatService>();
+
+    // Leave favorites view when explicitly selecting a concrete assistant
+    if (ap.isFavoritesView) {
+      ap.exitFavoritesView();
+    }
 
     // Save current conversation as the last conversation for the previous assistant
     final previousAssistantId = ap.currentAssistantId;
@@ -2627,7 +2663,7 @@ extension on _SideDrawerState {
           name: a.name,
           textColor: textBase2,
           embedded: widget.embedded,
-          selected: ap2.currentAssistantId == a.id,
+          selected: !ap2.isFavoritesView && ap2.currentAssistantId == a.id,
           onTap: () => _handleSelectAssistant(a),
           onEditTap: () => _openAssistantSettings(a.id),
           onLongPress: () => _showAssistantItemMenuMobile(a),
@@ -2696,6 +2732,39 @@ extension on _SideDrawerState {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          _FavoritesTile(
+            count: context.watch<ChatService>().getFavoriteConversations().length,
+            textColor: textBase2,
+            embedded: widget.embedded,
+            selected: ap2.isFavoritesView,
+            onTap: () {
+              final ap = context.read<AssistantProvider>();
+              if (ap.isFavoritesView) {
+                ap.exitFavoritesView();
+              } else {
+                ap.enterFavoritesView();
+                if (_isDesktop && widget.embedded && widget.useDesktopTabs) {
+                  try {
+                    _tabController?.animateTo(
+                      1,
+                      duration: const Duration(milliseconds: 140),
+                      curve: Curves.easeOutCubic,
+                    );
+                  } catch (_) {}
+                }
+              }
+            },
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            child: Container(
+              height: 1,
+              color: Theme.of(context)
+                  .colorScheme
+                  .outlineVariant
+                  .withOpacity(0.3),
+            ),
+          ),
           if (ungrouped.isNotEmpty)
             buildReorderable(
               ungrouped,
@@ -2737,6 +2806,7 @@ extension on _SideDrawerState {
     List<ChatItem> pinnedList,
     List<_ChatGroup> groups, {
     bool includeUpdateBanner = false,
+    bool favoritesView = false,
   }) {
     final children = <Widget>[];
     if (includeUpdateBanner) {
@@ -2850,6 +2920,29 @@ extension on _SideDrawerState {
                 ].join(',')),
           ),
           children: [
+            if (favoritesView && pinnedList.isEmpty && groups.isEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 48, 16, 24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Lucide.Star,
+                      size: 40,
+                      color: cs.onSurface.withOpacity(0.2),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      AppLocalizations.of(context)!.sideDrawerFavoritesEmpty,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: cs.onSurface.withOpacity(0.55),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             if (pinnedList.isNotEmpty) ...[
               Padding(
                 padding: const EdgeInsets.fromLTRB(14, 6, 0, 6),
@@ -2883,6 +2976,11 @@ extension on _SideDrawerState {
                           loading: widget.loadingConversationIds.contains(
                             pinnedList[i].id,
                           ),
+                          showFavoriteBadge: !favoritesView &&
+                              (chatService
+                                      .getConversation(pinnedList[i].id)
+                                      ?.isFavorited ??
+                                  false),
                           onTap: () {
                             final closeDrawer = !context
                                 .read<SettingsProvider>()
@@ -2939,45 +3037,91 @@ extension on _SideDrawerState {
               Column(
                 children: [
                   for (int j = 0; j < group.items.length; j++)
-                    _ChatTile(
-                          chat: group.items[j],
-                          textColor: textBase,
-                          selected:
-                              group.items[j].id ==
-                              chatService.currentConversationId,
-                          loading: widget.loadingConversationIds.contains(
-                            group.items[j].id,
-                          ),
-                          onTap: () {
-                            final closeDrawer = !context
-                                .read<SettingsProvider>()
-                                .keepSidebarOpenOnTopicTap;
-                            widget.onSelectConversation?.call(
-                              group.items[j].id,
-                              closeDrawer: closeDrawer,
+                    Builder(
+                      builder: (_) {
+                        final item = group.items[j];
+                        final conv = chatService.getConversation(item.id);
+                        String? subtitle;
+                        Widget? subtitleLeading;
+                        if (favoritesView) {
+                          final aid = conv?.assistantId;
+                          Assistant? a;
+                          if (aid != null) {
+                            final list = context
+                                .read<AssistantProvider>()
+                                .assistants;
+                            final idx =
+                                list.indexWhere((x) => x.id == aid);
+                            if (idx != -1) a = list[idx];
+                          }
+                          subtitle = a?.name;
+                          subtitleLeading = a == null
+                              ? null
+                              : _assistantAvatar(context, a, size: 14);
+                        }
+                        final badge = !favoritesView &&
+                            (conv?.isFavorited ?? false);
+                        return _ChatTile(
+                              chat: item,
+                              textColor: textBase,
+                              selected:
+                                  item.id ==
+                                  chatService.currentConversationId,
+                              loading: widget.loadingConversationIds
+                                  .contains(item.id),
+                              showFavoriteBadge: badge,
+                              subtitle: subtitle,
+                              subtitleLeading: subtitleLeading,
+                              onTap: () {
+                                final closeDrawer = !context
+                                    .read<SettingsProvider>()
+                                    .keepSidebarOpenOnTopicTap;
+                                if (favoritesView) {
+                                  // Switch the active assistant context to the
+                                  // favorited conversation's owner so the UI
+                                  // chrome (breadcrumb, background, model
+                                  // selector) and outgoing-message handling
+                                  // match the opened conversation. We keep
+                                  // _favoritesView=true so the ⭐ tile stays
+                                  // selected and the Topics panel still shows
+                                  // the favorites list.
+                                  final aid =
+                                      chatService.getConversation(item.id)?.assistantId;
+                                  if (aid != null) {
+                                    final ap = context.read<AssistantProvider>();
+                                    if (ap.currentAssistantId != aid) {
+                                      ap.setCurrentAssistant(aid);
+                                    }
+                                  }
+                                }
+                                widget.onSelectConversation?.call(
+                                  item.id,
+                                  closeDrawer: closeDrawer,
+                                );
+                              },
+                              onLongPress: () =>
+                                  _showChatMenu(context, item),
+                              onSecondaryTap: (pos) => _showChatMenu(
+                                context,
+                                item,
+                                anchor: pos,
+                              ),
+                            )
+                            .animate(
+                              key: ValueKey(
+                                'grp-${group.label}-${item.id}',
+                              ),
+                            )
+                            .fadeIn(duration: 220.ms, delay: (16 * j).ms)
+                            .moveY(
+                              begin: 6,
+                              end: 0,
+                              duration: 240.ms,
+                              curve: Curves.easeOutCubic,
+                              delay: (16 * j).ms,
                             );
-                          },
-                          onLongPress: () =>
-                              _showChatMenu(context, group.items[j]),
-                          onSecondaryTap: (pos) => _showChatMenu(
-                            context,
-                            group.items[j],
-                            anchor: pos,
-                          ),
-                        )
-                        .animate(
-                          key: ValueKey(
-                            'grp-${group.label}-${group.items[j].id}',
-                          ),
-                        )
-                        .fadeIn(duration: 220.ms, delay: (16 * j).ms)
-                        .moveY(
-                          begin: 6,
-                          end: 0,
-                          duration: 240.ms,
-                          curve: Curves.easeOutCubic,
-                          delay: (16 * j).ms,
-                        ),
+                      },
+                    ),
                 ],
               ),
               if (context.watch<SettingsProvider>().showChatListDate)
@@ -3007,6 +3151,9 @@ class _ChatTile extends StatefulWidget {
     this.onSecondaryTap,
     this.selected = false,
     this.loading = false,
+    this.showFavoriteBadge = false,
+    this.subtitle,
+    this.subtitleLeading,
   });
 
   final ChatItem chat;
@@ -3016,6 +3163,9 @@ class _ChatTile extends StatefulWidget {
   final void Function(Offset globalPosition)? onSecondaryTap;
   final bool selected;
   final bool loading;
+  final bool showFavoriteBadge;
+  final String? subtitle;
+  final Widget? subtitleLeading;
 
   @override
   State<_ChatTile> createState() => _ChatTileState();
@@ -3082,15 +3232,58 @@ class _ChatTileState extends State<_ChatTile> {
             child: Row(
               children: [
                 Expanded(
-                  child: Text(
-                    widget.chat.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: _isDesktop ? 14 : 15,
-                      color: widget.textColor,
-                      fontWeight: FontWeight.w400,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        children: [
+                          if (widget.showFavoriteBadge) ...[
+                            Icon(
+                              Lucide.Star,
+                              size: 12,
+                              color: cs.primary,
+                            ),
+                            const SizedBox(width: 4),
+                          ],
+                          Expanded(
+                            child: Text(
+                              widget.chat.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: _isDesktop ? 14 : 15,
+                                color: widget.textColor,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (widget.subtitle != null) ...[
+                        const SizedBox(height: 2),
+                        Row(
+                          children: [
+                            if (widget.subtitleLeading != null) ...[
+                              widget.subtitleLeading!,
+                              const SizedBox(width: 4),
+                            ],
+                            Expanded(
+                              child: Text(
+                                widget.subtitle!,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  color: widget.textColor.withOpacity(0.55),
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
                   ),
                 ),
                 if (widget.loading) ...[
@@ -3593,6 +3786,104 @@ class _AssistantInlineTileState extends State<_AssistantInlineTile> {
           ? null
           : (details) => widget.onSecondaryTapDown!(details.globalPosition),
       child: content,
+    );
+  }
+}
+
+class _FavoritesTile extends StatefulWidget {
+  const _FavoritesTile({
+    required this.count,
+    required this.textColor,
+    required this.embedded,
+    required this.onTap,
+    this.selected = false,
+  });
+
+  final int count;
+  final Color textColor;
+  final bool embedded;
+  final VoidCallback onTap;
+  final bool selected;
+
+  @override
+  State<_FavoritesTile> createState() => _FavoritesTileState();
+}
+
+class _FavoritesTileState extends State<_FavoritesTile> {
+  bool _hovered = false;
+  bool get _isDesktop => defaultTargetPlatform == TargetPlatform.macOS;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
+    final embedded = widget.embedded;
+    final double size = _isDesktop ? 28 : 32;
+    final Color tileColor = _isDesktop
+        ? (embedded
+              ? (widget.selected
+                    ? cs.primary.withOpacity(0.16)
+                    : Colors.transparent)
+              : (widget.selected ? cs.primary.withOpacity(0.12) : cs.surface))
+        : (embedded ? Colors.transparent : cs.surface);
+    final Color bg = _isDesktop && !widget.selected && _hovered
+        ? (embedded
+              ? cs.primary.withOpacity(0.08)
+              : cs.surface.withOpacity(0.9))
+        : tileColor;
+    final avatar = Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: cs.primary.withOpacity(0.15),
+        shape: BoxShape.circle,
+      ),
+      alignment: Alignment.center,
+      child: Icon(
+        Lucide.Star,
+        size: size * 0.55,
+        color: cs.primary,
+      ),
+    );
+    final label = widget.count > 0
+        ? '${l10n.sideDrawerFavoritesTitle} (${widget.count})'
+        : l10n.sideDrawerFavoritesTitle;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+      child: MouseRegion(
+        onEnter: (_) {
+          if (_isDesktop) setState(() => _hovered = true);
+        },
+        onExit: (_) {
+          if (_isDesktop) setState(() => _hovered = false);
+        },
+        cursor: _isDesktop ? SystemMouseCursors.click : SystemMouseCursors.basic,
+        child: IosCardPress(
+          baseColor: bg,
+          borderRadius: BorderRadius.circular(16),
+          haptics: false,
+          onTap: widget.onTap,
+          padding: EdgeInsets.fromLTRB(_isDesktop ? 12 : 4, 6, 12, 6),
+          child: Row(
+            children: [
+              avatar,
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: _isDesktop ? 14 : 15,
+                    fontWeight: FontWeight.w600,
+                    color: widget.textColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

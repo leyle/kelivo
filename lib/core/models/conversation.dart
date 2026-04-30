@@ -59,6 +59,10 @@ class Conversation extends HiveObject {
   @HiveField(14)
   double scrollMessageOffset;
 
+  // Cross-assistant favorite flag
+  @HiveField(15, defaultValue: false)
+  bool isFavorited;
+
   Conversation({
     String? id,
     required this.title,
@@ -75,6 +79,7 @@ class Conversation extends HiveObject {
     double? scrollOffset,
     this.scrollMessageId,
     double? scrollMessageOffset,
+    this.isFavorited = false,
   })  : id = id ?? const Uuid().v4(),
         createdAt = createdAt ?? DateTime.now(),
         updatedAt = updatedAt ?? DateTime.now(),
@@ -105,6 +110,7 @@ class Conversation extends HiveObject {
     String? scrollMessageId,
     double? scrollMessageOffset,
     bool clearScrollMessageId = false,
+    bool? isFavorited,
   }) {
     return Conversation(
       id: id ?? this.id,
@@ -123,6 +129,7 @@ class Conversation extends HiveObject {
       scrollOffset: scrollOffset ?? this.scrollOffset,
       scrollMessageId: clearScrollMessageId ? null : (scrollMessageId ?? this.scrollMessageId),
       scrollMessageOffset: scrollMessageOffset ?? this.scrollMessageOffset,
+      isFavorited: isFavorited ?? this.isFavorited,
     );
   }
 
@@ -143,6 +150,7 @@ class Conversation extends HiveObject {
       'scrollOffset': scrollOffset,
       'scrollMessageId': scrollMessageId,
       'scrollMessageOffset': scrollMessageOffset,
+      'isFavorited': isFavorited,
     };
   }
 
@@ -163,6 +171,7 @@ class Conversation extends HiveObject {
       scrollOffset: (json['scrollOffset'] as num?)?.toDouble() ?? -1.0,
       scrollMessageId: json['scrollMessageId'] as String?,
       scrollMessageOffset: (json['scrollMessageOffset'] as num?)?.toDouble() ?? 0.0,
+      isFavorited: json['isFavorited'] as bool? ?? false,
     );
   }
 }

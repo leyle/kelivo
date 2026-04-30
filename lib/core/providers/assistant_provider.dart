@@ -24,6 +24,21 @@ class AssistantProvider extends ChangeNotifier {
   /// Key: assistantId, Value: conversationId
   final Map<String, String> _lastConversationPerAssistant = <String, String>{};
 
+  bool _favoritesView = false;
+  bool get isFavoritesView => _favoritesView;
+
+  void enterFavoritesView() {
+    if (_favoritesView) return;
+    _favoritesView = true;
+    notifyListeners();
+  }
+
+  void exitFavoritesView() {
+    if (!_favoritesView) return;
+    _favoritesView = false;
+    notifyListeners();
+  }
+
   List<Assistant> get assistants => List.unmodifiable(_assistants);
   List<Assistant> get enabledAssistants =>
       List.unmodifiable(_assistants.where((a) => a.isEnabled));

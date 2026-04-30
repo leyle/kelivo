@@ -422,6 +422,7 @@ class HomeDesktopScaffold extends StatelessWidget {
 
   List<Widget> _buildActions(BuildContext context, bool topicsOnRight) {
     final l10n = AppLocalizations.of(context)!;
+    final favoritesView = context.watch<AssistantProvider>().isFavoritesView;
     return [
       // Right sidebar toggle (desktop + topics on right)
       if (_isDesktop && topicsOnRight)
@@ -442,14 +443,19 @@ class HomeDesktopScaffold extends StatelessWidget {
         onTap: onOpenMessageSearch,
       ),
       const SizedBox(width: 2),
-      IosIconButton(
-        size: 20,
-        padding: const EdgeInsets.all(8),
-        minSize: 40,
-        icon: Lucide.MessageCirclePlus,
-        onTap: () async {
-          await onCreateNewConversation();
-        },
+      Opacity(
+        opacity: favoritesView ? 0.4 : 1.0,
+        child: IosIconButton(
+          size: 20,
+          padding: const EdgeInsets.all(8),
+          minSize: 40,
+          icon: Lucide.MessageCirclePlus,
+          onTap: favoritesView
+              ? null
+              : () async {
+                  await onCreateNewConversation();
+                },
+        ),
       ),
       const SizedBox(width: 6),
     ];

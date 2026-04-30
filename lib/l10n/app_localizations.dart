@@ -3359,6 +3359,30 @@ abstract class AppLocalizations {
   /// **'Unpin'**
   String get sideDrawerMenuUnpin;
 
+  /// No description provided for @sideDrawerMenuFavorite.
+  ///
+  /// In en, this message translates to:
+  /// **'Favorite'**
+  String get sideDrawerMenuFavorite;
+
+  /// No description provided for @sideDrawerMenuUnfavorite.
+  ///
+  /// In en, this message translates to:
+  /// **'Unfavorite'**
+  String get sideDrawerMenuUnfavorite;
+
+  /// No description provided for @sideDrawerFavoritesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Favorites'**
+  String get sideDrawerFavoritesTitle;
+
+  /// No description provided for @sideDrawerFavoritesEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No favorited conversations yet'**
+  String get sideDrawerFavoritesEmpty;
+
   /// No description provided for @sideDrawerMenuRegenerateTitle.
   ///
   /// In en, this message translates to:
